@@ -41,6 +41,7 @@ const productSchema = z.object({
   minStock: z.coerce.number().min(0),
   imageUrl: z.string().nullable().optional(),
 });
+type ProductFormInput = z.input<typeof productSchema>;
 type ProductFormValues = z.infer<typeof productSchema>;
 
 function Thumbnail({ url, size = 44 }: { url: string | null; size?: number }) {
@@ -256,7 +257,7 @@ function AddProductSheet({
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<ProductFormValues>({
+  } = useForm<ProductFormInput, unknown, ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: { unit: "pc", gstPercent: 5, purchasePrice: 0, currentStock: 0, minStock: 0, imageUrl: null },
   });

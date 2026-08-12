@@ -96,7 +96,7 @@ export function SalesScreen() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(d) => d.slice(5)} />
                   <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v: number) => formatINR(v)} />
+                  <Tooltip formatter={(v) => formatINR(Number(v ?? 0))} />
                   <Bar dataKey="sales" fill="var(--brand)" />
                 </BarChart>
               </ResponsiveContainer>

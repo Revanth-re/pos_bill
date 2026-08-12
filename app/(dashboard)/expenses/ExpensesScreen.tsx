@@ -39,7 +39,8 @@ const expenseSchema = z.object({
   description: z.string().optional(),
   paymentMethod: z.enum(["CASH", "UPI", "CARD", "CREDIT"]),
 });
-type ExpenseFormValues = z.infer<typeof expenseSchema>;
+type ExpenseFormInput = z.input<typeof expenseSchema>;
+type ExpenseFormValues = z.output<typeof expenseSchema>;
 
 export function ExpensesScreen({
   initialExpenses,
@@ -166,7 +167,7 @@ function AddExpenseSheet({
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<ExpenseFormValues>({
+  } = useForm<ExpenseFormInput, unknown, ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: { paymentMethod: "CASH" },
   });
