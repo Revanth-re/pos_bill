@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Minus, X, History } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProductImage } from "@/components/ui/ProductImage";
+import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/utils";
 import { useCatalogStore } from "@/stores/catalogStore";
 
@@ -36,27 +37,105 @@ const TYPE_LABEL: Record<Movement["type"], string> = {
   RECIPE_DEDUCTION: "Recipe use",
 };
 
-export function InventoryScreen({
-  products,
-  initialMovements,
-  canAdjust,
-}: {
-  products: ProductStock[];
-  initialMovements: Movement[];
-  canAdjust: boolean;
-}) {
+const MOVEMENTS_KEY = "pos-inventory-movements-v1";
+
+export function InventoryScreen({ canAdjust }: { canAdjust: boolean }) {
+  const managedProducts = useCatalogStore((s) => s.managedProducts);
+  const loadingManaged = useCatalogStore((s) => s.loadingManaged);
+  const ensureManagedCatalog = useCatalogStore((s) => s.ensureManagedCatalog);
   const patchPosStock = useCatalogStore((s) => s.patchPosStock);
-  const [stockList, setStockList] = useState(products);
-  const [movements, setMovements] = useState(initialMovements);
+
+  const [hydrated, setHydrated] = useState(false);
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [movementsLoading, setMovementsLoading] = useState(false);
   const [adjusting, setAdjusting] = useState<ProductStock | null>(null);
   const [tab, setTab] = useState<"stock" | "history">("stock");
 
+  useEffect(() => {
+    if (useCatalogStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useCatalogStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void ensureManagedCatalog();
+  }, [hydrated, ensureManagedCatalog]);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(MOVEMENTS_KEY);
+      if (raw) setMovements(JSON.parse(raw) as Movement[]);
+    } catch {
+      /* ignore */
+    }
+
+    let cancelled = false;
+    (async () => {
+      if (movements.length === 0) setMovementsLoading(true);
+      try {
+        const res = await fetch("/api/inventory/movements");
+        if (!res.ok) return;
+        const body = await res.json();
+        const rows: Movement[] = (body.movements as Record<string, unknown>[]).map((m) => {
+          const product = m.product as { name?: string; unit?: string } | null;
+          const staff = m.staff as { user?: { name?: string } } | null;
+          return {
+            id: String(m.id),
+            productName: product?.name ?? "—",
+            unit: product?.unit ?? "",
+            type: m.type as Movement["type"],
+            quantity: Number(m.quantity),
+            reason: (m.reason as string | null) ?? null,
+            staffName: staff?.user?.name ?? "System",
+            createdAt: String(m.createdAt),
+          };
+        });
+        if (!cancelled) {
+          setMovements(rows);
+          sessionStorage.setItem(MOVEMENTS_KEY, JSON.stringify(rows));
+        }
+      } finally {
+        if (!cancelled) setMovementsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
+  }, []);
+
+  const stockList: ProductStock[] = useMemo(
+    () =>
+      managedProducts
+        .filter((p) => p.status === "ACTIVE" && (p.trackInventory ?? true))
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          unit: p.unit,
+          currentStock: p.currentStock,
+          minStock: p.minStock,
+          imageUrl: p.imageUrl,
+        })),
+    [managedProducts]
+  );
+
   const lowStock = stockList.filter((p) => p.currentStock <= p.minStock);
+  const showBoot = stockList.length === 0 && (loadingManaged || !hydrated);
 
   function handleAdjusted(productId: string, newStock: number, movement: Movement) {
-    setStockList((prev) => prev.map((p) => (p.id === productId ? { ...p, currentStock: newStock } : p)));
     patchPosStock(productId, newStock);
-    setMovements((prev) => [movement, ...prev]);
+    setMovements((prev) => {
+      const next = [movement, ...prev];
+      try {
+        sessionStorage.setItem(MOVEMENTS_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
     setAdjusting(null);
   }
 
@@ -96,7 +175,11 @@ export function InventoryScreen({
         </button>
       </div>
 
-      {tab === "stock" ? (
+      {showBoot ? (
+        <div className="flex justify-center py-16">
+          <Spinner className="h-6 w-6" />
+        </div>
+      ) : tab === "stock" ? (
         <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
           {stockList.map((p) => {
             const low = p.currentStock <= p.minStock;
@@ -127,7 +210,14 @@ export function InventoryScreen({
         </ul>
       ) : (
         <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
-          {movements.length === 0 && <li className="p-4 text-base text-muted">No stock movements yet.</li>}
+          {movementsLoading && movements.length === 0 && (
+            <li className="flex justify-center p-6">
+              <Spinner className="h-5 w-5" />
+            </li>
+          )}
+          {!movementsLoading && movements.length === 0 && (
+            <li className="p-4 text-base text-muted">No stock movements yet.</li>
+          )}
           {movements.map((m) => (
             <li key={m.id} className="p-3">
               <div className="flex items-center justify-between">

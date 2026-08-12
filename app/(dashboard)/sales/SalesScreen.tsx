@@ -5,24 +5,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { formatINR, cn } from "@/lib/utils";
 import { Skeleton, SkeletonList } from "@/components/ui/Skeleton";
 import { useT } from "@/lib/i18n/LanguageProvider";
+import { useSalesCache } from "@/stores/salesCache";
 
 type RangeKey = "today" | "yesterday" | "week" | "month";
-
-interface ReportData {
-  totalSales: number;
-  totalOrders: number;
-  avgOrderValue: number;
-  byProduct: { name: string; quantity: number; revenue: number }[];
-  byPayment: { method: string; amount: number }[];
-  byCashier: { name: string; sales: number; bills: number }[];
-  dailySeries: { date: string; sales: number }[];
-}
 
 export function SalesScreen() {
   const t = useT();
   const [range, setRange] = useState<RangeKey>("today");
-  const [data, setData] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const data = useSalesCache((s) => s.byRange[range]?.data ?? null);
+  const loading = useSalesCache((s) => s.loading);
+  const ensure = useSalesCache((s) => s.ensure);
 
   const RANGE_LABEL: Record<RangeKey, string> = {
     today: t("sales.today"),
@@ -38,21 +30,10 @@ export function SalesScreen() {
   };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/reports/sales?range=${range}`);
-        const d = await res.json();
-        if (!cancelled) setData(d);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [range]);
+    void ensure(range);
+  }, [range, ensure]);
+
+  const showBoot = !data && loading;
 
   return (
     <div className="p-4 lg:p-6 space-y-4">
@@ -76,7 +57,7 @@ export function SalesScreen() {
         ))}
       </div>
 
-      {loading || !data ? (
+      {showBoot || !data ? (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <Skeleton className="h-20" />
@@ -128,7 +109,9 @@ export function SalesScreen() {
                   <li key={p.name} className="flex items-center justify-between p-3">
                     <div>
                       <p className="font-bold text-ink">{p.name}</p>
-                      <p className="text-sm text-muted tabular">{p.quantity} {t("sales.sold")}</p>
+                      <p className="text-sm text-muted tabular">
+                        {p.quantity} {t("sales.sold")}
+                      </p>
                     </div>
                     <p className="font-bold text-brand tabular">{formatINR(p.revenue)}</p>
                   </li>
@@ -139,7 +122,9 @@ export function SalesScreen() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="border-2 border-border bg-surface">
-              <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">{t("sales.paymentBreakdown")}</p>
+              <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">
+                {t("sales.paymentBreakdown")}
+              </p>
               {data.byPayment.length === 0 ? (
                 <p className="p-4 text-base text-muted">{t("sales.noPayments")}</p>
               ) : (
@@ -164,7 +149,9 @@ export function SalesScreen() {
                     <li key={c.name} className="flex items-center justify-between p-3">
                       <div>
                         <p className="font-bold text-ink">{c.name}</p>
-                        <p className="text-sm text-muted tabular">{c.bills} {t("sales.bills")}</p>
+                        <p className="text-sm text-muted tabular">
+                          {c.bills} {t("sales.bills")}
+                        </p>
                       </div>
                       <p className="font-bold tabular">{formatINR(c.sales)}</p>
                     </li>

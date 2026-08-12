@@ -46,10 +46,11 @@ export function BillingScreen({ businessName, cashierName }: Props) {
   const addProduct = useCartStore((s) => s.addProduct);
 
   useEffect(() => {
-    const finish = () => setHydrated(true);
-    finish();
-    const unsub = useCatalogStore.persist.onFinishHydration(finish);
-    return unsub;
+    if (useCatalogStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useCatalogStore.persist.onFinishHydration(() => setHydrated(true));
   }, []);
 
   useEffect(() => {
@@ -62,8 +63,6 @@ export function BillingScreen({ businessName, cashierName }: Props) {
   const filtered = useMemo(() => {
     let list = products;
     if (activeCategory) {
-      // Categories come from the catalog; product.categoryId isn't on CartProduct.
-      // Filtering by category is handled when searching via API below if needed.
       list = list;
     }
     if (query) {
@@ -201,7 +200,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
 
   const estimatedTotal = estimateCartTotal(lines);
   const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
-  const showBootSpinner = (!hydrated || (products.length === 0 && loadingProducts));
+  const showBootSpinner = products.length === 0 && (loadingProducts || !hydrated);
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] flex-col md:h-screen">

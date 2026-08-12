@@ -59,9 +59,11 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const finish = () => setHydrated(true);
-    finish();
-    return useCatalogStore.persist.onFinishHydration(finish);
+    if (useCatalogStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useCatalogStore.persist.onFinishHydration(() => setHydrated(true));
   }, []);
 
   useEffect(() => {
@@ -87,7 +89,7 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
     }
   }
 
-  const showBoot = !hydrated || (products.length === 0 && loading);
+  const showBoot = products.length === 0 && (loading || !hydrated);
 
   return (
     <div className="p-4 lg:p-6 space-y-4">

@@ -48,9 +48,11 @@ export function CustomersScreen({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const finish = () => setHydrated(true);
-    finish();
-    return useCatalogStore.persist.onFinishHydration(finish);
+    if (useCatalogStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useCatalogStore.persist.onFinishHydration(() => setHydrated(true));
   }, []);
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export function CustomersScreen({
     setSelected((s) => (s && s.id === customerId ? { ...s, outstandingBalance: newBalance } : s));
   }
 
-  const showBoot = !hydrated || (customers.length === 0 && loading);
+  const showBoot = customers.length === 0 && (loading || !hydrated);
 
   return (
     <div className="p-4 lg:p-6 space-y-4">

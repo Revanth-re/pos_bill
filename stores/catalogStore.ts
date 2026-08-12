@@ -34,7 +34,7 @@ export interface CustomerCacheRow {
   outstandingBalance: number;
 }
 
-const STALE_MS = 5 * 60 * 1000; // 5 minutes — show cache, refresh in background after this
+const STALE_MS = 30 * 60 * 1000; // 30 min — keep showing cache; soft-refresh in background
 
 interface CatalogState {
   products: CartProduct[];
@@ -147,7 +147,9 @@ export const useCatalogStore = create<CatalogState>()(
         if (!force && products.length > 0 && fresh) return;
         if (loadingProducts) return;
 
-        set({ loadingProducts: true });
+        // Only block the UI with a spinner when we have nothing to show.
+        const hasCache = products.length > 0;
+        if (!hasCache) set({ loadingProducts: true });
         try {
           const [prodRes, catRes] = await Promise.all([
             fetch("/api/products?limit=200"),
@@ -178,7 +180,8 @@ export const useCatalogStore = create<CatalogState>()(
         if (!force && managedProducts.length > 0 && fresh) return;
         if (loadingManaged) return;
 
-        set({ loadingManaged: true });
+        const hasCache = managedProducts.length > 0;
+        if (!hasCache) set({ loadingManaged: true });
         try {
           const [prodRes, catRes] = await Promise.all([
             fetch("/api/products?status=all&limit=500"),
@@ -208,7 +211,8 @@ export const useCatalogStore = create<CatalogState>()(
         if (!force && customers.length > 0 && fresh) return;
         if (loadingCustomers) return;
 
-        set({ loadingCustomers: true });
+        const hasCache = customers.length > 0;
+        if (!hasCache) set({ loadingCustomers: true });
         try {
           const res = await fetch("/api/customers");
           if (res.ok) {
