@@ -1,0 +1,14 @@
+{
+  "name": "POS - Billing & Business Manager",
+  "short_name": "POS",
+  "description": "Fast POS, billing, inventory and business intelligence for small Indian food businesses.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f7f4ec",
+  "theme_color": "#16302c",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/*
+  Design direction, revised for a 35+ shop-owner audience: bigger,
+  bolder, plainer. No pill-everything trend-styling. Sharp, clearly
+  bordered panels that read like a printed ledger or a bank form --
+  corners only round on things you press. Type is a full step larger
+  than typical web defaults and weights are heavier throughout so text
+  holds up under bad kitchen lighting and on a phone held at arm's length.
+*/
+:root {
+  --ink: #16302c;
+  --ink-soft: #3d4f4b;
+  --paper: #f7f4ec;
+  --surface: #ffffff;
+  --brand: #b5502c;
+  --brand-dark: #8f3e21;
+  --brand-soft: #f3ddce;
+  --gold: #d9a441;
+  --gold-soft: #f6e6c4;
+  --success: #2f7a4d;
+  --success-soft: #dcefe1;
+  --danger: #b23a2e;
+  --danger-soft: #f7ddd8;
+  --muted: #5a615c;
+  --border: #c9c0aa;
+  --border-strong: #16302c;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --font-sans: "Segoe UI", "Noto Sans", Verdana, Tahoma, Geneva, sans-serif;
+}
+
+/* A full step larger than typical web defaults (16px -> ~18px base) so
+   body text, labels, and prices are comfortable to read without zooming. */
+html {
+  font-size: 112.5%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prices and quantities always align on tabular figures - a ledger feel
+   and it keeps digits from jittering as the cart total updates live. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Signature element: the cart-total ticket gets a torn-receipt bottom
+   edge, the one deliberately bold visual flourish in an otherwise quiet UI. */
+.receipt-edge {
+  position: relative;
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 96%,
+    95% 100%, 90% 96%, 85% 100%, 80% 96%, 75% 100%, 70% 96%, 65% 100%,
+    60% 96%, 55% 100%, 50% 96%, 45% 100%, 40% 96%, 35% 100%, 30% 96%,
+    25% 100%, 20% 96%, 15% 100%, 10% 96%, 5% 100%, 0% 96%
+  );
+}
+
+/* Large, unmistakable touch targets everywhere in the POS - spec section 2. */
+.touch-target {
+  min-height: 48px;
+}
+
+@media (max-width: 767px) {
+  .touch-target {
+    min-height: 54px;
+  }
+}
+
+/* Standard panel: this is the one class every card/table/sheet in the app
+   should use. Sharp corners, a clearly visible 1.5px border (not a faint
+   hairline), and no shadow trickery -- reads like paper, not glass. */
+.panel {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 0;
+}
+
+/* Standard form field: same sharp-corner rule, bigger padding and text
+   than a typical web input so it's comfortable to tap and easy to read. */
+.field {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 2px;
+  padding: 0.75rem 0.85rem;
+  font-size: 1rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+.field:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
