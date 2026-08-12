@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/auth";
 import { can, type Permission } from "@/lib/permissions";
 
 const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Permission }[] = [
+  { href: "/profile", label: "Profile", icon: User },
   { href: "/products", label: "Products", icon: ShoppingBag, permission: "products.view" },
   { href: "/customers", label: "Customers & Udhaari", icon: Users, permission: "customers.view" },
   { href: "/expenses", label: "Expenses", icon: Wallet, permission: "expenses.view" },
@@ -12,7 +13,6 @@ const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Per
   { href: "/day-closing", label: "Day Closing", icon: Lock, permission: "dayClosing.perform" },
   { href: "/staff", label: "Staff", icon: UserCog, permission: "staff.manage" },
   { href: "/settings", label: "Settings", icon: Settings, permission: "settings.manage" },
-  { href: "/profile", label: "Profile", icon: User },
 ];
 
 export default async function MorePage() {

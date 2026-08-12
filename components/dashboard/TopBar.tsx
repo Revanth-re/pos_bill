@@ -20,7 +20,7 @@ export function TopBar({ businessName }: { businessName: string }) {
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-dark"
         aria-label="Profile"
       >
-        <User className="h-4.5 w-4.5" />
+            <User className="h-5 w-5" />
       </Link>
     </header>
   );

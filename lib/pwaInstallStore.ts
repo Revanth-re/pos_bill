@@ -10,6 +10,12 @@ export interface BeforeInstallPromptEvent extends Event {
 
 export type InstallPlatform = "chromium" | "ios-safari" | "unsupported";
 
+export interface PwaInstallSnapshot {
+  installed: boolean;
+  canPromptNatively: boolean;
+  platform: InstallPlatform;
+}
+
 type Listener = () => void;
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
@@ -17,6 +23,21 @@ let installed = false;
 let platform: InstallPlatform = "unsupported";
 let bootstrapped = false;
 const listeners = new Set<Listener>();
+
+/** Cached snapshot — useSyncExternalStore requires a stable Object.is
+ * result when nothing changed, or Profile (and any Install card) will
+ * infinite-re-render and never paint. */
+let snapshot: PwaInstallSnapshot = {
+  installed: false,
+  canPromptNatively: false,
+  platform: "unsupported",
+};
+
+export const SERVER_PWA_SNAPSHOT: PwaInstallSnapshot = {
+  installed: false,
+  canPromptNatively: false,
+  platform: "unsupported",
+};
 
 function detectPlatform(): InstallPlatform {
   if (typeof navigator === "undefined") return "unsupported";
@@ -35,7 +56,16 @@ function isStandalone(): boolean {
   );
 }
 
+function refreshSnapshot() {
+  snapshot = {
+    installed,
+    canPromptNatively: !!deferredPrompt,
+    platform,
+  };
+}
+
 function notify() {
+  refreshSnapshot();
   listeners.forEach((l) => l());
 }
 
@@ -45,6 +75,7 @@ export function bootstrapPwaInstall() {
 
   installed = isStandalone();
   platform = detectPlatform();
+  refreshSnapshot();
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
@@ -60,12 +91,12 @@ export function bootstrapPwaInstall() {
   });
 }
 
-export function getPwaInstallSnapshot() {
-  return {
-    installed,
-    canPromptNatively: !!deferredPrompt,
-    platform,
-  };
+export function getPwaInstallSnapshot(): PwaInstallSnapshot {
+  return snapshot;
+}
+
+export function getServerPwaSnapshot(): PwaInstallSnapshot {
+  return SERVER_PWA_SNAPSHOT;
 }
 
 export function subscribePwaInstall(listener: Listener) {

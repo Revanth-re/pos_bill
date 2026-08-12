@@ -94,11 +94,49 @@ export class BrowserPrinter implements ReceiptPrinter {
     const html = this.preview(data);
     const win = window.open("", "_blank", "width=400,height=600");
     if (!win) throw new Error("Pop-up blocked — allow pop-ups to print receipts.");
-    win.document.write(html);
-    win.document.close();
-    win.onload = () => {
-      win.focus();
-      win.print();
-    };
+
+    // Resolve only after the browser print dialog finishes (print or cancel).
+    // Previously this returned immediately, so the UI said "printed" before
+    // the cashier actually printed anything.
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        try {
+          win.close();
+        } catch {
+          /* ignore */
+        }
+        resolve();
+      };
+
+      win.document.write(html);
+      win.document.close();
+
+      win.onafterprint = () => finish();
+
+      const triggerPrint = () => {
+        try {
+          win.focus();
+          win.print();
+          // Fallback if afterprint never fires (some mobile browsers).
+          window.setTimeout(() => {
+            if (!settled) finish();
+          }, 1500);
+        } catch (e) {
+          if (!settled) {
+            settled = true;
+            reject(e instanceof Error ? e : new Error("Unable to print."));
+          }
+        }
+      };
+
+      if (win.document.readyState === "complete") {
+        triggerPrint();
+      } else {
+        win.onload = () => triggerPrint();
+      }
+    });
   }
 }

@@ -26,17 +26,11 @@ export function ReceiptModal({
   const [state, setState] = useState<PrintState>("loading");
   const [error, setError] = useState<string | null>(null);
 
-  // Load the business's saved printer/Bluetooth pairing whenever the
-  // receipt opens. IMPORTANT: this never triggers a print automatically —
-  // real thermal receipt printers are Bluetooth devices, and both pairing
-  // (navigator.bluetooth.requestDevice) and the browser print dialog
-  // (window.print) legally require a direct user tap to fire at all. Doing
-  // this from a background effect silently fails on mobile (the popup
-  // gets blocked with no error), which is exactly what looked like the
-  // app "getting stuck" after billing. So: load state here, then always
-  // wait for an explicit tap on Connect/Print below.
+  // Load printer settings only — never auto-print (needs a user gesture).
   useEffect(() => {
     if (!open) return;
+    setState("loading");
+    setError(null);
     let cancelled = false;
     fetch("/api/printers/default")
       .then((r) => r.json())
@@ -46,9 +40,6 @@ export function ReceiptModal({
         const btId: string | null = d.printer?.bluetoothDeviceId ?? null;
         setPrinterType(type);
         setBluetoothDeviceId(btId);
-        // Ask for a Bluetooth printer whenever one isn't paired yet and the
-        // browser can support it — a real POS counter is printing to a
-        // physical thermal printer, not this device's own browser dialog.
         setState(!btId && isBluetoothSupported() ? "needs-bluetooth" : "ready");
       })
       .catch(() => {
@@ -89,20 +80,28 @@ export function ReceiptModal({
         setError(err.message || "Could not connect to the Bluetooth printer.");
         setState("error");
       }
-      // NotFoundError = user closed the picker without choosing — stay put,
-      // they can tap Connect again or use "Print without Bluetooth" below.
+      // NotFoundError = user closed the picker — stay on connect screen.
     }
   }
+
+  const printed = state === "success";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center sm:justify-center bg-black/40">
       <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-2 text-success">
-            <CheckCircle2 className="h-6 w-6" />
-            <span className="font-bold text-ink">Bill completed</span>
-          </div>
-          <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
+          {printed ? (
+            <div className="flex items-center gap-2 text-success">
+              <CheckCircle2 className="h-6 w-6" />
+              <span className="font-bold text-ink">Bill completed</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-brand">
+              <Printer className="h-6 w-6" />
+              <span className="font-bold text-ink">Print receipt</span>
+            </div>
+          )}
+          <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -110,8 +109,14 @@ export function ReceiptModal({
         {offline && (
           <div className="mx-4 mb-3 flex items-center gap-2 rounded-xl border border-accent-dark/30 bg-accent-soft px-3 py-2 text-sm font-medium text-ink-soft">
             <WifiOff className="h-4 w-4 shrink-0" />
-            Saved offline — will sync automatically when back online.
+            Sale saved offline — will sync when back online. Still print the receipt below.
           </div>
+        )}
+
+        {!printed && !offline && state !== "loading" && (
+          <p className="mx-4 mb-3 text-sm text-ink-soft">
+            Sale is saved. Print the receipt to finish this bill.
+          </p>
         )}
 
         {state === "loading" && (
@@ -139,10 +144,10 @@ export function ReceiptModal({
           </div>
         )}
 
-        {state === "success" ? (
+        {printed ? (
           <div className="mx-4 mb-4 flex flex-col items-center rounded-2xl border border-success/30 bg-success-soft p-4 text-center">
             <CheckCircle2 className="mb-2 h-8 w-8 text-success" />
-            <p className="text-base font-bold text-ink">Sent to printer</p>
+            <p className="text-base font-bold text-ink">Printed successfully</p>
             <p className="mt-1 text-sm text-ink-soft">Reprint anytime from Sales history.</p>
           </div>
         ) : (
@@ -155,7 +160,9 @@ export function ReceiptModal({
                     key={t}
                     onClick={() => setPrinterType(t)}
                     className={`touch-target rounded-xl border-2 px-1 text-sm font-bold transition-all ${
-                      printerType === t ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
+                      printerType === t
+                        ? "border-brand bg-brand-soft text-brand-dark"
+                        : "border-border text-ink-soft"
                     }`}
                   >
                     {t === "THERMAL_58MM" ? "58mm" : t === "THERMAL_80MM" ? "80mm" : t === "A4" ? "A4" : "Browser"}
@@ -185,18 +192,26 @@ export function ReceiptModal({
               </span>
             </Button>
             <Button variant="secondary" onClick={onClose}>
-              New Bill
+              Skip print — New Bill
             </Button>
           </div>
         )}
 
-        {state === "success" && (
+        {printed && (
           <div className="grid grid-cols-1 gap-2 p-4 pt-0">
             <Button variant="secondary" onClick={() => setState("ready")}>
               Print Again
             </Button>
             <Button size="lg" onClick={onClose}>
               New Bill
+            </Button>
+          </div>
+        )}
+
+        {state === "needs-bluetooth" && (
+          <div className="px-4 pb-4">
+            <Button variant="secondary" className="w-full" onClick={onClose}>
+              Skip print — New Bill
             </Button>
           </div>
         )}

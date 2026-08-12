@@ -155,7 +155,9 @@ export function BillingScreen({ businessName, cashierName }: Props) {
   function handleCheckoutSuccess({ invoice, offline }: { invoice?: unknown; offline: boolean }) {
     setPaymentOpen(false);
     setCartOpenMobile(false);
-    toast.success(offline ? t("toast.savedOffline") : t("toast.billCompleted"));
+    // Don't toast "completed" yet — that only happens after a successful print
+    // in ReceiptModal. Offline still needs a heads-up that the sale was queued.
+    if (offline) toast.info(t("toast.savedOffline"));
     setReceipt({ data: buildReceiptData(invoice), offline });
   }
 
@@ -191,7 +193,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     }
 
     setCartOpenMobile(false);
-    toast.success(result.offline ? t("toast.savedOffline") : t("toast.billCompleted"));
+    if (result.offline) toast.info(t("toast.savedOffline"));
     const data = buildReceiptData(result.invoice);
     setReceipt({ data, offline: result.offline });
     useCartStore.getState().clear();
