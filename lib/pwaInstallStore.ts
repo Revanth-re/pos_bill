@@ -1,7 +1,5 @@
-/** Module-level PWA install prompt capture.
- * `beforeinstallprompt` often fires once on first page load — long before
- * React mounts. An inline head script stores it on window; this module
- * picks that up so Profile → Install still works. */
+/** Native PWA install — capture `beforeinstallprompt` early, call
+ * `prompt()` only from a direct user tap (no awaits before it). */
 
 export interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -49,14 +47,10 @@ function detectPlatform(): InstallPlatform {
   const isSafari = /safari/i.test(ua) && !/crios|fxios|edgios|chrome/i.test(ua);
   if (isIOS && isSafari) return "ios-safari";
 
-  // Chrome / Edge / Android WebView Chromium — even if the native prompt
-  // hasn't fired yet (engagement heuristics), treat as chromium so we show
-  // Install steps instead of "open in Chrome".
   const isChromium =
     (/Chrome|CriOS|Edg|EdgiOS|SamsungBrowser/i.test(ua) && !/OPR|Opera|Firefox/i.test(ua)) ||
     !!deferredPrompt;
-  if (isChromium) return "chromium";
-  return "unsupported";
+  return isChromium ? "chromium" : "unsupported";
 }
 
 function isStandalone(): boolean {
@@ -88,30 +82,31 @@ function adoptDeferred(e: BeforeInstallPromptEvent | null) {
   notify();
 }
 
+function syncFromWindow() {
+  if (typeof window === "undefined") return;
+  if (window.__POS_PWA?.deferred) {
+    adoptDeferred(window.__POS_PWA.deferred);
+  }
+}
+
 export function bootstrapPwaInstall() {
   if (typeof window === "undefined" || bootstrapped) return;
   bootstrapped = true;
 
   installed = isStandalone();
   platform = detectPlatform();
-
-  // Pick up prompt captured by the head script before React loaded.
-  if (window.__POS_PWA?.deferred) {
-    adoptDeferred(window.__POS_PWA.deferred);
-  }
-
+  syncFromWindow();
   refreshSnapshot();
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     const ev = e as BeforeInstallPromptEvent;
-    if (window.__POS_PWA) window.__POS_PWA.deferred = ev;
+    if (!window.__POS_PWA) window.__POS_PWA = { deferred: null };
+    window.__POS_PWA.deferred = ev;
     adoptDeferred(ev);
   });
 
-  window.addEventListener("pos-pwa-prompt", () => {
-    if (window.__POS_PWA?.deferred) adoptDeferred(window.__POS_PWA.deferred);
-  });
+  window.addEventListener("pos-pwa-prompt", () => syncFromWindow());
 
   window.addEventListener("appinstalled", () => {
     installed = true;
@@ -136,28 +131,33 @@ export function subscribePwaInstall(listener: Listener) {
   };
 }
 
+/**
+ * IMPORTANT: call this directly from a click handler with no awaits before it.
+ * Chrome requires `prompt()` inside a user gesture; awaiting SW/network first
+ * kills that gesture and the install dialog never appears.
+ */
 export async function promptPwaInstall(): Promise<"accepted" | "dismissed" | "unavailable"> {
-  // Re-check window in case the head script got it after our last snapshot.
-  if (!deferredPrompt && typeof window !== "undefined" && window.__POS_PWA?.deferred) {
-    deferredPrompt = window.__POS_PWA.deferred;
-  }
+  syncFromWindow();
   if (!deferredPrompt) return "unavailable";
 
   const event = deferredPrompt;
+  // Clear before awaiting so a second tap doesn't double-call a spent event.
+  deferredPrompt = null;
+  if (typeof window !== "undefined" && window.__POS_PWA) {
+    window.__POS_PWA.deferred = null;
+  }
+  refreshSnapshot();
+  notify();
+
   try {
     await event.prompt();
     const choice = await event.userChoice;
-    deferredPrompt = null;
-    if (window.__POS_PWA) window.__POS_PWA.deferred = null;
     if (choice.outcome === "accepted") {
       installed = true;
+      notify();
     }
-    notify();
     return choice.outcome;
   } catch {
-    deferredPrompt = null;
-    if (typeof window !== "undefined" && window.__POS_PWA) window.__POS_PWA.deferred = null;
-    notify();
     return "unavailable";
   }
 }

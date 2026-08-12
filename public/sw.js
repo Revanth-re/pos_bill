@@ -1,26 +1,32 @@
-// Minimal service worker: precache the app shell, cache product images in
-// the browser, and fall back to the network for everything else. IndexedDB
-// (lib/offline/db.ts) — not the cache — is what makes billing itself work
-// offline; this worker's job is keeping the POS screen + photos loadable.
-const CACHE_NAME = "pos-shell-v2";
+// App-shell SW — required for Chrome's native install prompt.
+// Keep install lightweight so registration never fails on redirects.
+const CACHE_NAME = "pos-shell-v3";
 const IMAGE_CACHE = "pos-images-v1";
-const APP_SHELL = ["/", "/billing", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).catch(() => {})
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(["/manifest.json"]))
+      .catch(() => {})
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   const keep = new Set([CACHE_NAME, IMAGE_CACHE]);
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => !keep.has(k)).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => !keep.has(k)).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 function isProductImage(url) {
@@ -33,8 +39,6 @@ function isProductImage(url) {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  // Never cache API calls — billing must always hit the network or the
-  // offline queue, never a stale cached response.
   if (event.request.url.includes("/api/")) return;
 
   if (isProductImage(event.request.url)) {
@@ -54,18 +58,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Network-first for navigations/pages so installability stays stable.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((res) => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((res) => {
+        if (res.ok && event.request.destination !== "document") {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

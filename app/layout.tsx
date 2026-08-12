@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/Toaster";
@@ -25,15 +24,17 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-const PWA_CAPTURE = `(function(){try{window.__POS_PWA=window.__POS_PWA||{deferred:null};window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__POS_PWA.deferred=e;window.dispatchEvent(new Event('pos-pwa-prompt'));});window.addEventListener('appinstalled',function(){window.__POS_PWA.deferred=null;});}catch(e){}})();`;
+/** Registers SW + captures beforeinstallprompt BEFORE React hydrates.
+ * Must stay synchronous in the first paint so Chrome's install event is not missed. */
+const EARLY_PWA = `(function(){try{window.__POS_PWA=window.__POS_PWA||{deferred:null};window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__POS_PWA.deferred=e;window.dispatchEvent(new Event('pos-pwa-prompt'));});window.addEventListener('appinstalled',function(){window.__POS_PWA.deferred=null;});if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="h-full antialiased">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: EARLY_PWA }} />
+      </head>
       <body className="min-h-full flex flex-col bg-paper text-ink">
-        <Script id="pwa-prompt-capture" strategy="beforeInteractive">
-          {PWA_CAPTURE}
-        </Script>
         <Providers>{children}</Providers>
         <Toaster />
       </body>
