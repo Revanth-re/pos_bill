@@ -24,6 +24,7 @@ export function usePwaInstall() {
     installed: snap.installed,
     canPromptNatively: snap.canPromptNatively,
     platform: snap.platform,
+    secureContext: snap.secureContext,
     promptInstall: promptPwaInstall,
   };
 }

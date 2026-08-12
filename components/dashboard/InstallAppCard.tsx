@@ -1,17 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, CheckCircle2, Share } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
+import { waitForInstallPrompt } from "@/lib/pwaInstallStore";
 import { toast } from "@/stores/toastStore";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function InstallAppCard() {
   const t = useT();
-  const { installed, canPromptNatively, platform, promptInstall } = usePwaInstall();
+  const { installed, canPromptNatively, platform, secureContext, promptInstall } = usePwaInstall();
+  const [preparing, setPreparing] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showIosSteps, setShowIosSteps] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  // Wait here (on Profile) until Chrome fires beforeinstallprompt — no refresh needed.
+  useEffect(() => {
+    if (installed) {
+      setPreparing(false);
+      return;
+    }
+    if (platform === "ios-safari") {
+      setPreparing(false);
+      return;
+    }
+    if (!secureContext) {
+      setPreparing(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPreparing(true);
+    void waitForInstallPrompt(25000).then((ok) => {
+      if (cancelled) return;
+      setReady(ok || canPromptNatively);
+      setPreparing(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [installed, platform, secureContext, canPromptNatively]);
+
+  useEffect(() => {
+    if (canPromptNatively) {
+      setReady(true);
+      setPreparing(false);
+    }
+  }, [canPromptNatively]);
 
   if (installed) {
     return (
@@ -22,14 +59,21 @@ export function InstallAppCard() {
     );
   }
 
+  if (!secureContext) {
+    return (
+      <p className="text-sm text-muted">
+        Install needs a secure link (https). Open this POS with https, then tap Install.
+      </p>
+    );
+  }
+
   async function handleClick() {
-    // iOS has no beforeinstallprompt API — Share sheet is the only path.
     if (platform === "ios-safari") {
       setShowIosSteps(true);
       return;
     }
 
-    // Call prompt() immediately from this tap — do not await anything first.
+    // prompt() must run directly from this tap — no awaits before it.
     setBusy(true);
     try {
       const outcome = await promptInstall();
@@ -38,25 +82,46 @@ export function InstallAppCard() {
         return;
       }
       if (outcome === "dismissed") return;
-
-      // Prompt event not ready yet (SW still settling). One refresh usually
-      // makes Chrome fire beforeinstallprompt; keep UX as a toast only.
-      toast.info("Install not ready yet — refresh this page, then tap Install again.");
+      toast.error("Install dialog unavailable. Stay on this page a moment and try again.");
     } finally {
       setBusy(false);
     }
   }
 
+  const canInstallNow = ready || canPromptNatively;
+
   return (
     <div>
-      <Button variant="primary" onClick={handleClick} loading={busy} disabled={busy}>
+      <Button
+        variant="primary"
+        onClick={handleClick}
+        loading={busy || preparing}
+        disabled={busy || preparing || (platform !== "ios-safari" && !canInstallNow)}
+      >
         <span className="inline-flex items-center gap-2">
-          <Download className="h-4 w-4" /> {t("settings.installTitle")}
+          <Download className="h-4 w-4" />
+          {preparing
+            ? "Preparing install…"
+            : platform === "ios-safari"
+              ? t("settings.installTitle")
+              : canInstallNow
+                ? t("settings.installTitle")
+                : "Install unavailable"}
         </span>
       </Button>
 
-      {canPromptNatively && (
-        <p className="mt-2 text-sm text-muted">Your device will ask to install POS.</p>
+      {preparing && (
+        <p className="mt-2 text-sm text-muted">Getting the install ready — tap Install when this finishes.</p>
+      )}
+
+      {!preparing && canInstallNow && platform !== "ios-safari" && (
+        <p className="mt-2 text-sm text-muted">Tap Install — your phone will ask to add POS.</p>
+      )}
+
+      {!preparing && !canInstallNow && platform === "chromium" && (
+        <p className="mt-2 text-sm text-muted">
+          Chrome hasn&apos;t offered install yet. Make sure you&apos;re on https, then open billing once and come back here.
+        </p>
       )}
 
       {showIosSteps && (
