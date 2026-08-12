@@ -5,11 +5,12 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { Plus, X, Search, Package, Utensils } from "lucide-react";
+import { Plus, X, Search, Package, Utensils, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ImagePicker } from "@/components/dashboard/ImagePicker";
 import { RecipeEditorSheet } from "@/components/dashboard/RecipeEditorSheet";
 import { formatINR, cn } from "@/lib/utils";
+import { toast } from "@/stores/toastStore";
 
 interface ProductRow {
   id: string;
@@ -61,7 +62,7 @@ function Thumbnail({ url, size = 44 }: { url: string | null; size?: number }) {
       alt=""
       width={size}
       height={size}
-      unoptimized
+     
       className="shrink-0 border-2 border-border object-cover"
       style={{ width: size, height: size }}
     />
@@ -82,6 +83,7 @@ export function ProductsScreen({
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [recipeProduct, setRecipeProduct] = useState<{ id: string; name: string } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -95,7 +97,10 @@ export function ProductsScreen({
   async function handleDelete(id: string) {
     if (!confirm("Remove this product from the menu?")) return;
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-    if (res.ok) setProducts((p) => p.filter((row) => row.id !== id));
+    if (res.ok) {
+      setProducts((p) => p.filter((row) => row.id !== id));
+      toast.success("Product removed");
+    }
   }
 
   return (
@@ -139,7 +144,7 @@ export function ProductsScreen({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="border-2 border-border bg-surface p-8 text-center">
+        <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-base text-muted mb-3">No products yet</p>
           {canEdit && <Button onClick={() => setFormOpen(true)}>Add Product</Button>}
         </div>
@@ -179,6 +184,12 @@ export function ProductsScreen({
                     <td className="p-3 text-right tabular text-ink-soft">{p.gstPercent}%</td>
                     {canEdit && (
                       <td className="p-3 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => setEditingProduct(p)}
+                          className="mr-3 inline-flex items-center gap-1 text-sm font-bold text-ink-soft hover:underline"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </button>
                         <button
                           onClick={() => setRecipeProduct({ id: p.id, name: p.name })}
                           className="mr-3 inline-flex items-center gap-1 text-sm font-bold text-brand hover:underline"
@@ -230,6 +241,18 @@ export function ProductsScreen({
         />
       )}
 
+      {editingProduct && (
+        <EditProductSheet
+          product={editingProduct}
+          categories={categories}
+          onClose={() => setEditingProduct(null)}
+          onSaved={(updated) => {
+            setProducts((prev) => prev.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)));
+            setEditingProduct(null);
+          }}
+        />
+      )}
+
       {recipeProduct && (
         <RecipeEditorSheet
           productId={recipeProduct.id}
@@ -277,13 +300,14 @@ function AddProductSheet({
       return;
     }
     const body = await res.json();
+    toast.success("Product saved");
     onCreated({ ...values, id: body.product.id });
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md border-t-2 sm:border-2 border-ink bg-surface max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Add Product</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />
@@ -348,6 +372,132 @@ function AddProductSheet({
             {submitting ? "Saving…" : "Save Product"}
           </Button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function EditProductSheet({
+  product,
+  categories,
+  onClose,
+  onSaved,
+}: {
+  product: ProductRow;
+  categories: { id: string; name: string }[];
+  onClose: () => void;
+  onSaved: (p: ProductRow) => void;
+}) {
+  const [name, setName] = useState(product.name);
+  const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
+  const [sku, setSku] = useState(product.sku ?? "");
+  const [barcode, setBarcode] = useState(product.barcode ?? "");
+  const [sellingPrice, setSellingPrice] = useState(String(product.sellingPrice));
+  const [purchasePrice, setPurchasePrice] = useState(String(product.purchasePrice));
+  const [gstPercent, setGstPercent] = useState(String(product.gstPercent));
+  const [minStock, setMinStock] = useState(String(product.minStock));
+  const [imageUrl, setImageUrl] = useState<string | null>(product.imageUrl);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError(null);
+    const res = await fetch(`/api/products/${product.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        categoryId: categoryId || undefined,
+        sku: sku || undefined,
+        barcode: barcode || undefined,
+        sellingPrice: parseFloat(sellingPrice) || 0,
+        purchasePrice: parseFloat(purchasePrice) || 0,
+        gstPercent: parseFloat(gstPercent) || 0,
+        minStock: parseFloat(minStock) || 0,
+        imageUrl: imageUrl ?? undefined,
+      }),
+    });
+    setSubmitting(false);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "Unable to save changes.");
+      return;
+    }
+    toast.success("Product updated");
+    onSaved({
+      ...product,
+      name,
+      categoryId: categoryId || null,
+      categoryName: categories.find((c) => c.id === categoryId)?.name ?? null,
+      sku: sku || null,
+      barcode: barcode || null,
+      sellingPrice: parseFloat(sellingPrice) || 0,
+      purchasePrice: parseFloat(purchasePrice) || 0,
+      gstPercent: parseFloat(gstPercent) || 0,
+      minStock: parseFloat(minStock) || 0,
+      imageUrl,
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <h2 className="text-lg font-bold text-ink">Edit Product</h2>
+          <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <ImagePicker value={imageUrl} onChange={setImageUrl} />
+
+          <Field label="Product name">
+            <input value={name} onChange={(e) => setName(e.target.value)} className="field" />
+          </Field>
+          <Field label="Category">
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="field">
+              <option value="">No category</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="SKU">
+              <input value={sku} onChange={(e) => setSku(e.target.value)} className="field" />
+            </Field>
+            <Field label="Barcode">
+              <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="field" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Selling price (₹)">
+              <input type="number" step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} className="field" />
+            </Field>
+            <Field label="Purchase price (₹)">
+              <input type="number" step="0.01" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} className="field" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="GST %">
+              <input type="number" step="0.01" value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} className="field" />
+            </Field>
+            <Field label="Minimum stock">
+              <input type="number" step="0.01" value={minStock} onChange={(e) => setMinStock(e.target.value)} className="field" />
+            </Field>
+          </div>
+
+          {error && (
+            <p className="rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
+          )}
+
+          <Button className="w-full" size="lg" onClick={handleSubmit} loading={submitting}>
+            Save Changes
+          </Button>
+        </div>
       </div>
     </div>
   );

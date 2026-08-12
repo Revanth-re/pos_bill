@@ -96,12 +96,12 @@ export function CustomersScreen({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="border-2 border-border bg-surface p-8 text-center">
+        <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-base text-muted mb-3">No customers yet</p>
           {canManage && <Button onClick={() => setFormOpen(true)}>Add Customer</Button>}
         </div>
       ) : (
-        <ul className="border-2 border-border bg-surface divide-y-2 divide-border">
+        <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
           {filtered.map((c) => (
             <li key={c.id}>
               <button
@@ -188,8 +188,8 @@ function AddCustomerSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm border-t-2 sm:border-2 border-ink bg-surface">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Add Customer</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />
@@ -288,8 +288,8 @@ function CustomerDetailSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md border-t-2 sm:border-2 border-ink bg-surface max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <div>
             <h2 className="text-lg font-bold text-ink">{customer.name}</h2>
             {customer.phone && <p className="text-sm text-muted">{customer.phone}</p>}
@@ -299,7 +299,7 @@ function CustomerDetailSheet({
           </button>
         </div>
 
-        <div className="border-b-2 border-border p-4">
+        <div className="border-b border-border p-4">
           <p className="text-sm font-semibold text-muted">Outstanding balance</p>
           <p className={cn("text-3xl font-extrabold tabular", balance > 0 ? "text-danger" : "text-success")}>
             {formatINR(balance)}
@@ -317,7 +317,7 @@ function CustomerDetailSheet({
           <p className="mb-2 text-sm font-bold text-ink-soft">Ledger</p>
           {loading && <p className="text-sm text-muted">Loading…</p>}
           {!loading && ledger.length === 0 && <p className="text-sm text-muted">No transactions yet.</p>}
-          <ul className="divide-y-2 divide-border border-2 border-border">
+          <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
             {ledger.map((entry) => (
               <li key={entry.id} className="flex items-center justify-between p-3">
                 <div>
@@ -337,7 +337,7 @@ function CustomerDetailSheet({
         </div>
 
         {paymentOpen && (
-          <div className="border-t-2 border-border p-4 space-y-3">
+          <div className="border-t border-border p-4 space-y-3">
             <label className="field-label">Payment amount (up to {formatINR(balance)})</label>
             <input
               type="number"

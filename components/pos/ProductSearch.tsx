@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Search, ScanLine } from "lucide-react";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 /**
  * USB/Bluetooth barcode scanners behave as HID keyboards: they "type" the
@@ -19,6 +20,7 @@ export function ProductSearch({
   onBarcodeEnter: (code: string) => void;
 }) {
   const [value, setValue] = useState("");
+  const t = useT();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export function ProductSearch({
             setValue("");
           }
         }}
-        placeholder="Search name, SKU, barcode…"
+        placeholder={t("pos.search")}
         className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-muted"
       />
       <button

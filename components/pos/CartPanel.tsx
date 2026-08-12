@@ -1,12 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus, Trash2, Percent, Tag } from "lucide-react";
+import { Minus, Plus, Trash2, Percent, Tag, Printer } from "lucide-react";
 import { useCartStore, estimateCartTotal } from "@/stores/cartStore";
 import { formatINR, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
-export function CartPanel({ onCheckout, onHold }: { onCheckout: () => void; onHold: () => void }) {
+export function CartPanel({
+  onQuickPrint,
+  onCheckout,
+  onHold,
+  printing,
+}: {
+  onQuickPrint: () => void;
+  onCheckout: () => void;
+  onHold: () => void;
+  printing?: boolean;
+}) {
   const lines = useCartStore((s) => s.lines);
   const incrementLine = useCartStore((s) => s.incrementLine);
   const decrementLine = useCartStore((s) => s.decrementLine);
@@ -17,6 +28,8 @@ export function CartPanel({ onCheckout, onHold }: { onCheckout: () => void; onHo
   const orderType = useCartStore((s) => s.orderType);
   const setOrderType = useCartStore((s) => s.setOrderType);
 
+  const t = useT();
+
   const [discountingLineId, setDiscountingLineId] = useState<string | null>(null);
 
   const estimatedTotal = estimateCartTotal(lines);
@@ -25,18 +38,18 @@ export function CartPanel({ onCheckout, onHold }: { onCheckout: () => void; onHo
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="font-bold text-ink">Cart {itemCount > 0 && `(${itemCount})`}</h2>
+        <h2 className="font-bold text-ink">{t("pos.cart")} {itemCount > 0 && `(${itemCount})`}</h2>
         <div className="flex rounded-full border border-border p-0.5 text-xs font-semibold">
-          {(["TAKEAWAY", "DINE_IN"] as const).map((t) => (
+          {(["TAKEAWAY", "DINE_IN"] as const).map((ot) => (
             <button
-              key={t}
-              onClick={() => setOrderType(t)}
+              key={ot}
+              onClick={() => setOrderType(ot)}
               className={cn(
                 "rounded-full px-3 py-1.5 transition-colors",
-                orderType === t ? "bg-ink text-white" : "text-ink-soft"
+                orderType === ot ? "bg-ink text-white" : "text-ink-soft"
               )}
             >
-              {t === "TAKEAWAY" ? "Takeaway" : "Dine-in"}
+              {ot === "TAKEAWAY" ? t("pos.takeaway") : t("pos.dineIn")}
             </button>
           ))}
         </div>
@@ -136,20 +149,25 @@ export function CartPanel({ onCheckout, onHold }: { onCheckout: () => void; onHo
 
           <div className="receipt-edge bg-ink px-4 pt-3 pb-5 text-white">
             <div className="flex items-center justify-between text-sm opacity-80">
-              <span>Estimated total</span>
-              <span className="tabular">{formatINR(estimatedTotal)}</span>
+              <span>{t("pos.total")}</span>
+              <span className="tabular text-lg font-bold text-accent">{formatINR(estimatedTotal)}</span>
             </div>
-            <p className="mt-0.5 text-[11px] opacity-60">
-              Final total (incl. GST) is confirmed at payment
-            </p>
+            <p className="mt-0.5 text-[11px] opacity-60">Includes GST · Cash by default, tap Split for other methods</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button variant="secondary" onClick={onHold}>
-              Hold Bill
+          <Button variant="primary" size="lg" className="w-full" onClick={onQuickPrint} loading={printing}>
+            <span className="inline-flex items-center gap-2">
+              <Printer className="h-5 w-5" />
+              {printing ? t("pos.printing") : t("pos.printBill")}
+            </span>
+          </Button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" size="sm" onClick={onHold}>
+              {t("pos.holdBill")}
             </Button>
-            <Button variant="primary" onClick={onCheckout}>
-              Charge {formatINR(estimatedTotal)}
+            <Button variant="secondary" size="sm" onClick={onCheckout}>
+              {t("pos.splitCredit")}
             </Button>
           </div>
         </div>

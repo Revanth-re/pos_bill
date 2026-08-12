@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatINR, cn } from "@/lib/utils";
+import { toast } from "@/stores/toastStore";
 
 interface ExpenseRow {
   id: string;
@@ -116,12 +117,12 @@ export function ExpensesScreen({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="border-2 border-border bg-surface p-8 text-center">
+        <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-base text-muted mb-3">No expenses in this range</p>
           {canManage && <Button onClick={() => setFormOpen(true)}>Add Expense</Button>}
         </div>
       ) : (
-        <ul className="border-2 border-border bg-surface divide-y-2 divide-border">
+        <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
           {filtered.map((e) => (
             <li key={e.id} className="flex items-center justify-between p-3">
               <div>
@@ -187,6 +188,7 @@ function AddExpenseSheet({
       return;
     }
     const body = await res.json();
+    toast.success("Expense saved");
     onCreated({
       id: body.expense.id,
       amount: Number(body.expense.amount),
@@ -200,8 +202,8 @@ function AddExpenseSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md border-t-2 sm:border-2 border-ink bg-surface max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Add Expense</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />

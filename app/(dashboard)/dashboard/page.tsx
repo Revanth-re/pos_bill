@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { can } from "@/lib/permissions";
 import { getBusinessInsights } from "@/lib/insights/getBusinessInsights";
 import { formatINR } from "@/lib/utils";
+import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import Link from "next/link";
 
 function startOfToday() {
@@ -44,27 +45,29 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kpi label="Today's Sales" value={formatINR(todaySales)} />
+        <Kpi label="Today's Sales" value={formatINR(todaySales)} accent="brand" />
         <Kpi label="Orders" value={String(todayOrders)} />
-        <Kpi label="Low Stock Items" value={String(lowStockCount)} />
+        <Kpi label="Low Stock Items" value={String(lowStockCount)} accent={lowStockCount > 0 ? "danger" : undefined} />
         <Kpi label="Outstanding Credit" value={formatINR(Number(outstandingCredit._sum.outstandingBalance ?? 0))} />
         <Kpi label="Active Tiffin Plans" value={String(activeSubs)} />
       </div>
 
+      <DashboardCharts />
+
       {canViewProfit && (
-        <div className="border-2 border-border bg-surface p-4">
-          <p className="text-sm font-semibold text-ink-soft mb-2">Profit snapshot</p>
-          <p className="text-xs text-muted">
-            Gross &amp; net profit combine Sales Tracking + Expenses data (Phase 2). Wire this panel up to{" "}
-            <code className="rounded bg-paper px-1">lib/reports/profit.ts</code> once those modules are built.
-          </p>
-        </div>
+        <Link
+          href="/reports"
+          className="block rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md"
+        >
+          <p className="text-sm font-bold text-ink-soft mb-1">Profit snapshot</p>
+          <p className="text-sm text-muted">See Sales − COGS − Expenses broken down for today, this week, or this month →</p>
+        </Link>
       )}
 
       <div>
         <h2 className="mb-2 text-sm font-bold text-ink-soft">Business Alerts</h2>
         {insights.length === 0 ? (
-          <div className="border-2 border-border bg-surface p-4 text-sm text-muted">
+          <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm text-sm text-muted">
             No alerts right now — everything looks on track.
           </div>
         ) : (
@@ -72,7 +75,7 @@ export default async function DashboardPage() {
             {insights.map((insight, i) => (
               <li
                 key={i}
-                className="flex items-start gap-3 border-2 border-border bg-surface p-3"
+                className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm"
               >
                 <span className="text-xl leading-none">{insight.icon}</span>
                 <div className="flex-1 min-w-0">
@@ -81,7 +84,7 @@ export default async function DashboardPage() {
                 </div>
                 <Link
                   href={insight.actionUrl}
-                  className="shrink-0 rounded-sm bg-brand-soft px-2.5 py-1.5 text-xs font-bold text-brand-dark border border-brand/30"
+                  className="shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-bold text-brand-dark border border-brand/30 transition-colors hover:bg-brand hover:text-white"
                 >
                   {insight.actionLabel}
                 </Link>
@@ -90,20 +93,21 @@ export default async function DashboardPage() {
           </ul>
         )}
       </div>
-
-      <div className="border-2 border-border bg-surface p-4 text-sm text-muted">
-        Sales trend chart, top products, and payment breakdown (Recharts) land here once the Sales Tracking
-        module (Phase 2) is wired to real historical data — see <code className="rounded bg-paper px-1">components/dashboard</code>.
-      </div>
     </div>
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({ label, value, accent }: { label: string; value: string; accent?: "brand" | "danger" }) {
   return (
-    <div className="border-2 border-border bg-surface p-4">
+    <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md">
       <p className="text-xs font-medium text-muted">{label}</p>
-      <p className="mt-1 text-xl font-extrabold text-ink tabular">{value}</p>
+      <p
+        className={`mt-1 text-xl font-extrabold tabular ${
+          accent === "brand" ? "text-brand" : accent === "danger" ? "text-danger" : "text-ink"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

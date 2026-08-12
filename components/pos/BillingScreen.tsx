@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PauseCircle, ShoppingCart } from "lucide-react";
+import { PauseCircle, Printer } from "lucide-react";
 import { CategoryTabs, type CategoryOption } from "./CategoryTabs";
 import { ProductGrid } from "./ProductGrid";
 import { ProductSearch } from "./ProductSearch";
@@ -12,6 +12,9 @@ import { ReceiptModal } from "./ReceiptModal";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { useCartStore, estimateCartTotal, type CartProduct } from "@/stores/cartStore";
 import { formatINR } from "@/lib/utils";
+import { submitBill } from "@/lib/billing/submitBill";
+import { toast } from "@/stores/toastStore";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ReceiptData } from "@/lib/printing/types";
 
 interface Props {
@@ -29,6 +32,8 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
   const [receipt, setReceipt] = useState<{ data: ReceiptData; offline: boolean } | null>(null);
+  const [quickPrinting, setQuickPrinting] = useState(false);
+  const t = useT();
 
   const lines = useCartStore((s) => s.lines);
   const orderType = useCartStore((s) => s.orderType);
@@ -80,15 +85,12 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
     if (match) addProduct(match);
   }
 
-  function handleCheckoutSuccess({ invoice, offline }: { invoice?: unknown; offline: boolean }) {
-    setPaymentOpen(false);
-    setCartOpenMobile(false);
-
+  function buildReceiptData(invoice: unknown): ReceiptData {
     const inv = invoice as
       | { invoiceNumber?: string; grandTotal?: number; subtotal?: number; discountTotal?: number; cgstTotal?: number; sgstTotal?: number; igstTotal?: number }
       | undefined;
 
-    const data: ReceiptData = {
+    return {
       businessName,
       invoiceNumber: inv?.invoiceNumber ?? "OFFLINE-PENDING",
       createdAt: new Date().toLocaleString("en-IN"),
@@ -108,7 +110,45 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
       grandTotal: Number(inv?.grandTotal ?? estimateCartTotal(lines)),
       payments: [],
     };
-    setReceipt({ data, offline });
+  }
+
+  function handleCheckoutSuccess({ invoice, offline }: { invoice?: unknown; offline: boolean }) {
+    setPaymentOpen(false);
+    setCartOpenMobile(false);
+    toast.success(offline ? t("toast.savedOffline") : t("toast.billCompleted"));
+    setReceipt({ data: buildReceiptData(invoice), offline });
+  }
+
+  // Two-click billing: tap product(s), tap PRINT BILL. Defaults to a full
+  // cash payment with no customer — the common case for a quick counter
+  // sale. "Split / Credit" (which opens the full PaymentSheet) is still
+  // right there for anything that needs a real payment-method choice.
+  async function handleQuickPrint() {
+    const { lines: cartLines, orderType: cartOrderType, billDiscount, heldBillId, customerId } = useCartStore.getState();
+    if (cartLines.length === 0) return;
+
+    setQuickPrinting(true);
+    const total = estimateCartTotal(cartLines);
+    const result = await submitBill({
+      orderType: cartOrderType,
+      items: cartLines.map((l) => ({ productId: l.product.id, quantity: l.quantity, discount: l.discount })),
+      billDiscount,
+      customerId,
+      payments: [{ method: "CASH", amount: Math.round(total * 100) / 100 }],
+      heldBillId,
+    });
+    setQuickPrinting(false);
+
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    setCartOpenMobile(false);
+    toast.success(result.offline ? t("toast.savedOffline") : t("toast.billCompleted"));
+    const data = buildReceiptData(result.invoice);
+    setReceipt({ data, offline: result.offline });
+    useCartStore.getState().clear();
   }
 
   const estimatedTotal = estimateCartTotal(lines);
@@ -124,10 +164,10 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
         <ConnectionStatus />
         <button
           onClick={() => setHeldOpen(true)}
-          className="touch-target flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-ink-soft hover:border-brand/40"
+          className="no-select touch-target flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-ink-soft transition-colors hover:border-brand/40"
         >
           <PauseCircle className="h-4 w-4" />
-          <span className="hidden sm:inline">Held</span>
+          <span className="hidden sm:inline">{t("pos.held")}</span>
         </button>
       </div>
 
@@ -142,34 +182,53 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
 
         {/* Desktop/tablet: persistent cart column */}
         <div className="hidden md:block md:w-80 lg:w-96 border-l border-border shrink-0">
-          <CartPanel onCheckout={() => setPaymentOpen(true)} onHold={() => holdCurrentBill()} />
+          <CartPanel
+            onQuickPrint={handleQuickPrint}
+            onCheckout={() => setPaymentOpen(true)}
+            onHold={() => holdCurrentBill()}
+            printing={quickPrinting}
+          />
         </div>
       </div>
 
-      {/* Mobile: sticky cart bar + full-screen bottom sheet cart */}
+      {/* Mobile: sticky "3 Items | ₹420 | PRINT BILL" bar */}
       {lines.length > 0 && (
-        <button
-          onClick={() => setCartOpenMobile(true)}
-          className="md:hidden flex items-center justify-between gap-3 border-t border-border bg-ink px-4 py-3 text-white touch-target"
-        >
-          <span className="flex items-center gap-2 text-sm font-semibold">
-            <ShoppingCart className="h-4 w-4" />
-            {itemCount} item{itemCount !== 1 ? "s" : ""}
-          </span>
-          <span className="text-base font-bold tabular">View Cart · {formatINR(estimatedTotal)}</span>
-        </button>
+        <div className="no-select md:hidden flex items-stretch border-t border-border bg-ink text-white shadow-lg">
+          <button
+            onClick={() => setCartOpenMobile(true)}
+            className="touch-target flex flex-1 items-center gap-2 px-4 text-left"
+          >
+            <span className="text-sm font-semibold opacity-90">
+              {itemCount} {t("pos.items")}
+            </span>
+            <span className="text-base font-bold tabular text-accent">{formatINR(estimatedTotal)}</span>
+          </button>
+          <button
+            onClick={handleQuickPrint}
+            disabled={quickPrinting}
+            className="touch-target flex items-center gap-1.5 bg-brand px-5 font-bold transition-colors active:bg-brand-dark disabled:opacity-60"
+          >
+            <Printer className="h-4 w-4" />
+            {quickPrinting ? t("pos.printing") : t("pos.printBill")}
+          </button>
+        </div>
       )}
 
       {cartOpenMobile && (
         <div className="fixed inset-0 z-40 flex flex-col bg-surface md:hidden">
           <div className="flex items-center justify-between border-b border-border p-3">
             <span className="font-bold text-ink">Your Cart</span>
-            <button onClick={() => setCartOpenMobile(false)} className="touch-target rounded-full px-3 text-sm font-semibold text-brand">
+            <button onClick={() => setCartOpenMobile(false)} className="no-select touch-target rounded-full px-3 text-sm font-semibold text-brand">
               Back to menu
             </button>
           </div>
           <div className="flex-1 overflow-hidden">
-            <CartPanel onCheckout={() => setPaymentOpen(true)} onHold={() => holdCurrentBill()} />
+            <CartPanel
+              onQuickPrint={handleQuickPrint}
+              onCheckout={() => setPaymentOpen(true)}
+              onHold={() => holdCurrentBill()}
+              printing={quickPrinting}
+            />
           </div>
         </div>
       )}
@@ -201,5 +260,6 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
     });
     clear();
     setCartOpenMobile(false);
+    toast.info(t("pos.holdBill"));
   }
 }

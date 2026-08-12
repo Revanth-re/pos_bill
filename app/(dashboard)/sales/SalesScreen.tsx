@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { formatINR, cn } from "@/lib/utils";
+import { Skeleton, SkeletonList } from "@/components/ui/Skeleton";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 type RangeKey = "today" | "yesterday" | "week" | "month";
 
@@ -16,19 +18,24 @@ interface ReportData {
   dailySeries: { date: string; sales: number }[];
 }
 
-const RANGE_LABEL: Record<RangeKey, string> = {
-  today: "Today",
-  yesterday: "Yesterday",
-  week: "This Week",
-  month: "This Month",
-};
-
-const PAYMENT_LABEL: Record<string, string> = { CASH: "Cash", UPI: "UPI", CARD: "Card", CREDIT: "Credit" };
-
 export function SalesScreen() {
+  const t = useT();
   const [range, setRange] = useState<RangeKey>("today");
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const RANGE_LABEL: Record<RangeKey, string> = {
+    today: t("sales.today"),
+    yesterday: t("sales.yesterday"),
+    week: t("sales.thisWeek"),
+    month: t("sales.thisMonth"),
+  };
+  const PAYMENT_LABEL: Record<string, string> = {
+    CASH: t("payment.cash"),
+    UPI: t("payment.upi"),
+    CARD: t("payment.card"),
+    CREDIT: t("payment.credit"),
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -50,8 +57,8 @@ export function SalesScreen() {
   return (
     <div className="p-4 lg:p-6 space-y-4">
       <div>
-        <h1 className="text-2xl font-extrabold text-ink">Sales</h1>
-        <p className="text-base text-muted">Daily, weekly, and monthly performance</p>
+        <h1 className="text-2xl font-extrabold text-ink">{t("sales.title")}</h1>
+        <p className="text-base text-muted">{t("sales.subtitle")}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -70,27 +77,35 @@ export function SalesScreen() {
       </div>
 
       {loading || !data ? (
-        <p className="text-base text-muted">Loading…</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <Skeleton className="h-20" />
+            <Skeleton className="h-20" />
+            <Skeleton className="h-20" />
+          </div>
+          <Skeleton className="h-56" />
+          <SkeletonList count={4} />
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-3 gap-3">
             <div className="border-2 border-border bg-surface p-4">
-              <p className="text-sm font-semibold text-muted">Sales</p>
+              <p className="text-sm font-semibold text-muted">{t("sales.sales")}</p>
               <p className="text-xl font-extrabold text-ink tabular">{formatINR(data.totalSales)}</p>
             </div>
             <div className="border-2 border-border bg-surface p-4">
-              <p className="text-sm font-semibold text-muted">Orders</p>
+              <p className="text-sm font-semibold text-muted">{t("sales.orders")}</p>
               <p className="text-xl font-extrabold text-ink tabular">{data.totalOrders}</p>
             </div>
             <div className="border-2 border-border bg-surface p-4">
-              <p className="text-sm font-semibold text-muted">Avg. Order</p>
+              <p className="text-sm font-semibold text-muted">{t("sales.avgOrder")}</p>
               <p className="text-xl font-extrabold text-ink tabular">{formatINR(data.avgOrderValue)}</p>
             </div>
           </div>
 
           {data.dailySeries.length > 1 && (
             <div className="border-2 border-border bg-surface p-4">
-              <p className="mb-2 text-sm font-bold text-ink-soft">Sales trend</p>
+              <p className="mb-2 text-sm font-bold text-ink-soft">{t("sales.trend")}</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={data.dailySeries}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -104,16 +119,16 @@ export function SalesScreen() {
           )}
 
           <div className="border-2 border-border bg-surface">
-            <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">Top Products</p>
+            <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">{t("sales.topProducts")}</p>
             {data.byProduct.length === 0 ? (
-              <p className="p-4 text-base text-muted">No sales in this range.</p>
+              <p className="p-4 text-base text-muted">{t("sales.noSales")}</p>
             ) : (
               <ul className="divide-y-2 divide-border">
                 {data.byProduct.slice(0, 10).map((p) => (
                   <li key={p.name} className="flex items-center justify-between p-3">
                     <div>
                       <p className="font-bold text-ink">{p.name}</p>
-                      <p className="text-sm text-muted tabular">{p.quantity} sold</p>
+                      <p className="text-sm text-muted tabular">{p.quantity} {t("sales.sold")}</p>
                     </div>
                     <p className="font-bold text-brand tabular">{formatINR(p.revenue)}</p>
                   </li>
@@ -124,9 +139,9 @@ export function SalesScreen() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="border-2 border-border bg-surface">
-              <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">Payment Breakdown</p>
+              <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">{t("sales.paymentBreakdown")}</p>
               {data.byPayment.length === 0 ? (
-                <p className="p-4 text-base text-muted">No payments yet.</p>
+                <p className="p-4 text-base text-muted">{t("sales.noPayments")}</p>
               ) : (
                 <ul className="divide-y-2 divide-border">
                   {data.byPayment.map((p) => (
@@ -140,16 +155,16 @@ export function SalesScreen() {
             </div>
 
             <div className="border-2 border-border bg-surface">
-              <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">Cashier-wise Sales</p>
+              <p className="border-b-2 border-border p-3 text-sm font-bold text-ink-soft">{t("sales.cashierWise")}</p>
               {data.byCashier.length === 0 ? (
-                <p className="p-4 text-base text-muted">No sales yet.</p>
+                <p className="p-4 text-base text-muted">{t("sales.noSalesYet")}</p>
               ) : (
                 <ul className="divide-y-2 divide-border">
                   {data.byCashier.map((c) => (
                     <li key={c.name} className="flex items-center justify-between p-3">
                       <div>
                         <p className="font-bold text-ink">{c.name}</p>
-                        <p className="text-sm text-muted tabular">{c.bills} bills</p>
+                        <p className="text-sm text-muted tabular">{c.bills} {t("sales.bills")}</p>
                       </div>
                       <p className="font-bold tabular">{formatINR(c.sales)}</p>
                     </li>

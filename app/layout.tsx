@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Toaster } from "@/components/ui/Toaster";
 
 export const metadata: Metadata = {
   title: "POS — Billing & Business Manager",
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-paper text-ink">
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   );

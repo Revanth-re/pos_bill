@@ -100,8 +100,8 @@ export function RecipeEditorSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md border-t-2 sm:border-2 border-ink bg-surface max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <div>
             <h2 className="text-lg font-bold text-ink flex items-center gap-2">
               <Utensils className="h-5 w-5" /> Recipe
@@ -157,7 +157,7 @@ export function RecipeEditorSheet({
                 )}
               </div>
 
-              <div className="border-2 border-border p-3 space-y-2">
+              <div className="rounded-xl border border-border p-3 space-y-2">
                 <p className="text-sm font-bold text-ink-soft">Add ingredient</p>
                 <select
                   value={addingIngredientId}
@@ -193,7 +193,7 @@ export function RecipeEditorSheet({
               </div>
             </div>
 
-            <div className="border-t-2 border-border p-4">
+            <div className="border-t border-border p-4">
               <Button className="w-full" size="lg" onClick={handleSave} disabled={saving}>
                 {saving ? "Saving…" : "Save Recipe"}
               </Button>

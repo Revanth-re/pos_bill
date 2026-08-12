@@ -97,3 +97,26 @@ remain. Suggested build order, matching spec section 26:
 - Camera barcode scanning (button present in `ProductSearch.tsx`, wired to
   nothing yet -- USB/Bluetooth HID scanners already work via the search
   input's Enter-key handler).
+
+## UI/UX + Speed + PWA + i18n pass (latest)
+
+- **Design**: reworked to an emerald + vibrant-yellow palette, rounded cards, soft shadows, smooth micro-interactions — replaces the earlier flat/square "steel-ledger" look per updated direction.
+- **Two-click billing**: the POS's primary action is now **PRINT BILL** — tap it and the sale checks out with a default cash payment and prints automatically, no payment-method prompt in the way. The full split-payment/credit flow is still there behind a secondary "Split / Credit" button — nothing was removed.
+- **Cloudinary**: product photo uploads go to Cloudinary (`lib/cloudinary.ts`), not local disk — this also fixes a real bug where local uploads didn't survive Vercel's ephemeral filesystem.
+- **Toasts, skeletons, spinners**: `stores/toastStore.ts` + `components/ui/Toaster.tsx`, `components/ui/Skeleton.tsx`, and `Button` now has a built-in `loading` state. Wired into checkout, printing, holding a bill, and product/expense saves as a starting set — extend the same pattern (`toast.success(...)` / `toast.error(...)`) to other flows as needed.
+- **PWA install prompt**: `hooks/usePwaInstall.ts` + `components/dashboard/InstallAppCard.tsx`, shown in Settings. Handles the native Chrome/Edge prompt, iOS Safari's manual "Add to Home Screen" steps, and shows "✓ App Installed" once installed.
+- **Touch behavior**: `.no-select` (see `globals.css`) applied to buttons, product tiles, category tabs, and nav so dragging across the POS doesn't accidentally highlight text — inputs/textareas explicitly keep normal selection.
+- **i18n**: `lib/i18n/` — a real translation dictionary + React context (`LanguageProvider`/`useT`), backed by `Business.language` in the database, switches instantly and persists across logins. **Coverage so far**: navigation, the POS/billing screen, common actions, auth, and toast messages, across all 10 required languages (English, Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi). Extending coverage to a given screen (Expenses, Reports, Staff, etc.) means replacing its hardcoded strings with `t("namespace.key")` calls and adding those keys to `lib/i18n/translations.ts` — the system supports it, it's just not done for every screen yet.
+
+### Not done in this pass
+- Full app-wide translation of every screen's every string (explicitly out of scope for one pass — flagged up front).
+- Deep speed/caching work (React Query-style caching of products/categories/settings, broader `"use client"` audit) — the two-click billing flow and existing debounced search cover the most user-visible speed win, but a systematic caching pass is still open.
+
+## Bug fixes + navigation/profile pass (latest)
+
+- **Fixed "stuck after billing"**: the previous auto-print tried to open a print window from a background effect with no direct user tap — mobile browsers silently block that (no error, just a frozen-feeling screen). Printing is now always one explicit tap, which is also what makes it reliable.
+- **Bluetooth is now actually asked for**: opening the receipt screen checks for a paired Bluetooth printer and, if none is paired, leads with "Connect your Bluetooth printer" before offering to print — with a "Print without Bluetooth" escape hatch for anyone using browser/A4 printing instead. Note: pairing lets you select a Bluetooth device, but actual print output still goes through the browser's print dialog (`window.print()`) — raw ESC/POS printing straight to a Bluetooth thermal printer's characteristic is hardware/model-specific and not something that can be built generically; that would be a real, separate follow-up per printer model if needed.
+- **Products page was missing from mobile** — it wasn't in the bottom nav or the "More" hub at all. Added, along with a full page-by-page audit of the More hub so every screen is reachable on mobile.
+- **Profile page** added (`/profile`) with a top navbar (mobile) and a clickable business/role header (desktop sidebar) linking to it — shows identity, business, role, and sign-out.
+- **Dashboard charts**: a 7-day sales trend bar chart and payment-method breakdown pie chart, both skeleton-loading while fetching.
+- **Products CRUD completed**: Edit was the missing piece (Create/Read/Delete already existed) — now a full edit sheet with image, price, GST, and stock fields.

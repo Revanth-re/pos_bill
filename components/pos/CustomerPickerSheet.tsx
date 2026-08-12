@@ -63,8 +63,8 @@ export function CustomerPickerSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm border-t-2 sm:border-2 border-ink bg-surface max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Select Customer</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />
@@ -93,7 +93,7 @@ export function CustomerPickerSheet({
               </span>
             </Button>
           )}
-          <ul className="divide-y-2 divide-border border-2 border-border mt-2">
+          <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden mt-2">
             {results.map((c) => (
               <li key={c.id}>
                 <button

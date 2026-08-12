@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { PrinterSettings } from "./PrinterSettings";
 import { BusinessSettingsForm } from "@/components/dashboard/BusinessSettingsForm";
 import { LanguageSettings } from "@/components/dashboard/LanguageSettings";
+import { InstallAppCard } from "@/components/dashboard/InstallAppCard";
 import { BluetoothSettings } from "@/components/dashboard/BluetoothSettings";
 
 export default async function SettingsPage() {
@@ -57,6 +58,12 @@ export default async function SettingsPage() {
         <h2 className="mb-1 text-lg font-bold text-ink">Language</h2>
         <p className="mb-4 text-sm text-muted">The language staff see across the app.</p>
         <LanguageSettings initialLanguage={business.language} />
+      </section>
+
+      <section className="border-2 border-border bg-surface p-4">
+        <h2 className="mb-1 text-lg font-bold text-ink">Install App</h2>
+        <p className="mb-4 text-sm text-muted">Use this on your counter like a real app — full screen, works offline, no browser bar.</p>
+        <InstallAppCard />
       </section>
     </div>
   );

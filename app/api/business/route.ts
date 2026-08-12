@@ -13,7 +13,7 @@ const businessSchema = z.object({
   sgstPercent: z.number().min(0).max(28).optional(),
   igstPercent: z.number().min(0).max(28).optional(),
   invoicePrefix: z.string().min(1).max(10).optional(),
-  language: z.enum(["en", "hi", "ta", "te", "kn", "ml", "mr", "bn"]).optional(),
+  language: z.enum(["en", "hi", "ta", "te", "kn", "ml", "mr", "bn", "gu", "pa"]).optional(),
 });
 
 export async function PATCH(req: Request) {

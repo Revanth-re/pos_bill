@@ -6,7 +6,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-paper p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center border-2 border-ink bg-brand text-xl font-black text-white">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-ink/20 bg-brand text-xl font-black text-white">
             ₹
           </div>
           <h1 className="text-xl font-extrabold text-ink">Sign in</h1>

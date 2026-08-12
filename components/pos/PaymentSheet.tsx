@@ -111,8 +111,8 @@ export function PaymentSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md border-t-2 sm:border-2 border-ink bg-surface max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Payment</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />
@@ -127,7 +127,7 @@ export function PaymentSheet({
 
           <button
             onClick={() => setCustomerPickerOpen(true)}
-            className="flex w-full items-center gap-3 border-2 border-border bg-surface p-3 text-left touch-target hover:border-brand/40"
+            className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm text-left touch-target hover:border-brand/40"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-paper text-ink-soft">
               <User className="h-4 w-4" />
@@ -212,7 +212,7 @@ export function PaymentSheet({
           )}
         </div>
 
-        <div className="border-t-2 border-border p-4">
+        <div className="border-t border-border p-4">
           <Button className="w-full" size="lg" disabled={submitting} onClick={handleSubmit}>
             {submitting ? "Processing…" : `Confirm ${formatINR(estimatedTotal)}`}
           </Button>

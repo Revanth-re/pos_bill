@@ -94,14 +94,14 @@ export function InventoryScreen({
       </div>
 
       {tab === "stock" ? (
-        <ul className="border-2 border-border bg-surface divide-y-2 divide-border">
+        <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
           {stockList.map((p) => {
             const low = p.currentStock <= p.minStock;
             return (
               <li key={p.id} className="flex items-center justify-between gap-3 p-3">
                 <div className="flex items-center gap-3 min-w-0">
                   {p.imageUrl ? (
-                    <Image src={p.imageUrl} alt="" width={44} height={44} unoptimized className="h-11 w-11 shrink-0 border-2 border-border object-cover" />
+                    <Image src={p.imageUrl} alt="" width={44} height={44} className="h-11 w-11 shrink-0 border-2 border-border object-cover" />
                   ) : (
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-paper text-muted">
                       <Package className="h-5 w-5" />
@@ -124,7 +124,7 @@ export function InventoryScreen({
           })}
         </ul>
       ) : (
-        <ul className="border-2 border-border bg-surface divide-y-2 divide-border">
+        <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
           {movements.length === 0 && <li className="p-4 text-base text-muted">No stock movements yet.</li>}
           {movements.map((m) => (
             <li key={m.id} className="p-3">
@@ -208,8 +208,8 @@ function AdjustSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm border-t-2 sm:border-2 border-ink bg-surface">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Adjust Stock</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />

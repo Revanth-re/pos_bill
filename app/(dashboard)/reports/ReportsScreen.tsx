@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatINR, cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type RangeKey = "today" | "week" | "month";
 
@@ -41,7 +42,7 @@ export function ReportsScreen({ canViewProfit }: { canViewProfit: boolean }) {
     return (
       <div className="p-4 lg:p-6">
         <h1 className="text-2xl font-extrabold text-ink mb-4">Reports</h1>
-        <div className="border-2 border-border bg-surface p-6 text-base text-muted">
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm text-base text-muted">
           Profit reports are visible to owners only. See Sales for order and revenue breakdowns.
         </div>
       </div>
@@ -71,9 +72,14 @@ export function ReportsScreen({ canViewProfit }: { canViewProfit: boolean }) {
       </div>
 
       {loading || !data ? (
-        <p className="text-base text-muted">Loading…</p>
+        <div className="space-y-2">
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
+          <Skeleton className="h-10" />
+        </div>
       ) : (
-        <div className="border-2 border-border bg-surface p-4 space-y-3">
+        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm space-y-3">
           <Row label="Sales" value={formatINR(data.sales)} />
           <Row label="Cost of Goods (COGS)" value={`-${formatINR(data.cogs)}`} muted />
           <div className="border-t-2 border-border pt-2">

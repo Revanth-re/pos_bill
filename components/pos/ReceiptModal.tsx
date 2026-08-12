@@ -5,9 +5,10 @@ import { CheckCircle2, Printer, X, WifiOff, Bluetooth } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { getPrinterAdapter } from "@/lib/printing/getPrinterAdapter";
 import { isBluetoothSupported, pairBluetoothPrinter } from "@/lib/printing/bluetoothPairing";
+import { toast } from "@/stores/toastStore";
 import type { PrinterType, ReceiptData } from "@/lib/printing/types";
 
-type PrintState = "idle" | "needs-bluetooth" | "printing" | "success" | "error";
+type PrintState = "loading" | "needs-bluetooth" | "ready" | "printing" | "success" | "error";
 
 export function ReceiptModal({
   open,
@@ -22,12 +23,18 @@ export function ReceiptModal({
 }) {
   const [printerType, setPrinterType] = useState<PrinterType>("THERMAL_80MM");
   const [bluetoothDeviceId, setBluetoothDeviceId] = useState<string | null>(null);
-  const [state, setState] = useState<PrintState>("idle");
+  const [state, setState] = useState<PrintState>("loading");
   const [error, setError] = useState<string | null>(null);
 
-  // Load the business's saved default printer whenever the receipt opens,
-  // so we know up front whether a thermal print needs a Bluetooth device
-  // that isn't paired yet.
+  // Load the business's saved printer/Bluetooth pairing whenever the
+  // receipt opens. IMPORTANT: this never triggers a print automatically —
+  // real thermal receipt printers are Bluetooth devices, and both pairing
+  // (navigator.bluetooth.requestDevice) and the browser print dialog
+  // (window.print) legally require a direct user tap to fire at all. Doing
+  // this from a background effect silently fails on mobile (the popup
+  // gets blocked with no error), which is exactly what looked like the
+  // app "getting stuck" after billing. So: load state here, then always
+  // wait for an explicit tap on Connect/Print below.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -35,21 +42,24 @@ export function ReceiptModal({
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
-        if (d.printer) {
-          setPrinterType(d.printer.type);
-          setBluetoothDeviceId(d.printer.bluetoothDeviceId ?? null);
-        }
+        const type: PrinterType = d.printer?.type ?? "THERMAL_80MM";
+        const btId: string | null = d.printer?.bluetoothDeviceId ?? null;
+        setPrinterType(type);
+        setBluetoothDeviceId(btId);
+        // Ask for a Bluetooth printer whenever one isn't paired yet and the
+        // browser can support it — a real POS counter is printing to a
+        // physical thermal printer, not this device's own browser dialog.
+        setState(!btId && isBluetoothSupported() ? "needs-bluetooth" : "ready");
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setState("ready");
+      });
     return () => {
       cancelled = true;
     };
   }, [open]);
 
   if (!open || !receipt) return null;
-
-  const isThermal = printerType === "THERMAL_58MM" || printerType === "THERMAL_80MM";
-  const needsBluetooth = isThermal && !bluetoothDeviceId && isBluetoothSupported();
 
   async function doPrint() {
     setState("printing");
@@ -58,18 +68,13 @@ export function ReceiptModal({
       const adapter = getPrinterAdapter(printerType);
       await adapter.print(receipt as ReceiptData);
       setState("success");
+      toast.success("Bill printed");
     } catch (e) {
       setState("error");
-      setError(e instanceof Error ? e.message : "Unable to print.");
+      const message = e instanceof Error ? e.message : "Unable to print.";
+      setError(message);
+      toast.error(message);
     }
-  }
-
-  async function handlePrintClick() {
-    if (needsBluetooth) {
-      setState("needs-bluetooth");
-      return;
-    }
-    await doPrint();
   }
 
   async function handleConnectAndPrint() {
@@ -83,15 +88,15 @@ export function ReceiptModal({
       if (err.name !== "NotFoundError") {
         setError(err.message || "Could not connect to the Bluetooth printer.");
         setState("error");
-      } else {
-        setState("idle");
       }
+      // NotFoundError = user closed the picker without choosing — stay put,
+      // they can tap Connect again or use "Print without Bluetooth" below.
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm border-t-2 sm:border-2 border-ink bg-surface">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2 text-success">
             <CheckCircle2 className="h-6 w-6" />
@@ -103,65 +108,78 @@ export function ReceiptModal({
         </div>
 
         {offline && (
-          <div className="mx-4 mb-3 flex items-center gap-2 border border-gold bg-gold-soft px-3 py-2 text-sm font-medium text-ink-soft">
+          <div className="mx-4 mb-3 flex items-center gap-2 rounded-xl border border-accent-dark/30 bg-accent-soft px-3 py-2 text-sm font-medium text-ink-soft">
             <WifiOff className="h-4 w-4 shrink-0" />
             Saved offline — will sync automatically when back online.
           </div>
         )}
 
-        {state === "needs-bluetooth" ? (
-          <div className="mx-4 mb-4 border-2 border-brand bg-brand-soft p-4 text-center">
+        {state === "loading" && (
+          <div className="px-4 pb-4 text-sm text-muted">Checking printer…</div>
+        )}
+
+        {state === "needs-bluetooth" && (
+          <div className="mx-4 mb-4 rounded-2xl border border-brand/30 bg-brand-soft p-4 text-center">
             <Bluetooth className="mx-auto mb-2 h-8 w-8 text-brand-dark" />
             <p className="text-base font-bold text-ink">Connect your Bluetooth printer</p>
             <p className="mt-1 text-sm text-ink-soft">
-              No printer is paired yet. Turn it on and tap connect to pair it.
+              Turn it on and tap connect to pair it — this is a one-time setup.
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button variant="secondary" onClick={() => setState("idle")}>
-                Cancel
-              </Button>
-              <Button onClick={handleConnectAndPrint}>Connect &amp; Print</Button>
-            </div>
+            <Button className="mt-3 w-full" onClick={handleConnectAndPrint}>
+              <span className="inline-flex items-center gap-2">
+                <Bluetooth className="h-4 w-4" /> Connect &amp; Print
+              </span>
+            </Button>
+            <button
+              onClick={() => setState("ready")}
+              className="mt-2 text-sm font-semibold text-muted underline"
+            >
+              Print without Bluetooth instead
+            </button>
           </div>
-        ) : state === "success" ? (
-          <div className="mx-4 mb-4 flex flex-col items-center border-2 border-success bg-success-soft p-4 text-center">
+        )}
+
+        {state === "success" ? (
+          <div className="mx-4 mb-4 flex flex-col items-center rounded-2xl border border-success/30 bg-success-soft p-4 text-center">
             <CheckCircle2 className="mb-2 h-8 w-8 text-success" />
             <p className="text-base font-bold text-ink">Sent to printer</p>
             <p className="mt-1 text-sm text-ink-soft">Reprint anytime from Sales history.</p>
           </div>
         ) : (
-          <div className="px-4 pb-2">
-            <p className="mb-1 field-label">Print as</p>
-            <div className="grid grid-cols-4 gap-2">
-              {(["THERMAL_58MM", "THERMAL_80MM", "A4", "BROWSER"] as PrinterType[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setPrinterType(t)}
-                  className={`touch-target rounded-md border-2 px-1 text-sm font-bold ${
-                    printerType === t ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
-                  }`}
-                >
-                  {t === "THERMAL_58MM" ? "58mm" : t === "THERMAL_80MM" ? "80mm" : t === "A4" ? "A4" : "Browser"}
-                </button>
-              ))}
+          (state === "ready" || state === "printing" || state === "error") && (
+            <div className="px-4 pb-2">
+              <p className="mb-1 field-label">Print as</p>
+              <div className="grid grid-cols-4 gap-2">
+                {(["THERMAL_58MM", "THERMAL_80MM", "A4", "BROWSER"] as PrinterType[]).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setPrinterType(t)}
+                    className={`touch-target rounded-xl border-2 px-1 text-sm font-bold transition-all ${
+                      printerType === t ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
+                    }`}
+                  >
+                    {t === "THERMAL_58MM" ? "58mm" : t === "THERMAL_80MM" ? "80mm" : t === "A4" ? "A4" : "Browser"}
+                  </button>
+                ))}
+              </div>
+              {bluetoothDeviceId && (
+                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-success">
+                  <Bluetooth className="h-4 w-4" /> Printer connected
+                </p>
+              )}
             </div>
-            {isThermal && bluetoothDeviceId && (
-              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-success">
-                <Bluetooth className="h-4 w-4" /> Printer connected
-              </p>
-            )}
-          </div>
+          )
         )}
 
         {error && state === "error" && (
-          <p className="mx-4 mb-3 border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+          <p className="mx-4 mb-3 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
             {error}
           </p>
         )}
 
-        {state !== "success" && state !== "needs-bluetooth" && (
+        {(state === "ready" || state === "printing" || state === "error") && (
           <div className="grid grid-cols-1 gap-2 p-4">
-            <Button size="lg" onClick={handlePrintClick} disabled={state === "printing"}>
+            <Button size="lg" onClick={doPrint} loading={state === "printing"}>
               <span className="inline-flex items-center gap-2">
                 <Printer className="h-4 w-4" /> {state === "printing" ? "Printing…" : "Print Receipt"}
               </span>
@@ -174,7 +192,7 @@ export function ReceiptModal({
 
         {state === "success" && (
           <div className="grid grid-cols-1 gap-2 p-4 pt-0">
-            <Button variant="secondary" onClick={() => setState("idle")}>
+            <Button variant="secondary" onClick={() => setState("ready")}>
               Print Again
             </Button>
             <Button size="lg" onClick={onClose}>

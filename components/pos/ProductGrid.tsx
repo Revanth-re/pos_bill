@@ -30,7 +30,7 @@ export function ProductGrid({ products }: { products: CartProduct[] }) {
             disabled={outOfStock}
             onClick={() => addProduct(product)}
             className={cn(
-              "relative flex flex-col items-start overflow-hidden rounded-md border-2 border-border bg-surface text-left transition-all touch-target",
+              "no-select relative flex flex-col items-start overflow-hidden rounded-2xl border border-border bg-surface text-left transition-all duration-150 touch-target shadow-sm",
               "hover:border-brand/50 hover:shadow-sm active:scale-[0.97]",
               outOfStock && "opacity-40 pointer-events-none",
               inCartQty > 0 && "border-brand ring-2 ring-brand"
@@ -48,7 +48,7 @@ export function ProductGrid({ products }: { products: CartProduct[] }) {
                 alt=""
                 width={200}
                 height={112}
-                unoptimized
+               
                 className="h-24 w-full border-b-2 border-border object-cover"
               />
             ) : (

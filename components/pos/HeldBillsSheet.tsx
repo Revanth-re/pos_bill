@@ -70,7 +70,7 @@ export function HeldBillsSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md border-t-2 sm:border-2 border-ink bg-surface max-h-[80vh] flex flex-col">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Held Bills</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">

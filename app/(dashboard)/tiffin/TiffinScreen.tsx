@@ -5,6 +5,7 @@ import { Plus, X, Check, SkipForward, PlusCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatINR, cn } from "@/lib/utils";
 import { CustomerPickerSheet } from "@/components/pos/CustomerPickerSheet";
+import { SkeletonList } from "@/components/ui/Skeleton";
 
 interface Plan {
   id: string;
@@ -114,9 +115,9 @@ export function TiffinScreen() {
       </div>
 
       {loading ? (
-        <p className="text-base text-muted">Loading…</p>
+        <SkeletonList count={3} />
       ) : subs.length === 0 ? (
-        <div className="border-2 border-border bg-surface p-8 text-center">
+        <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-base text-muted mb-3">No active tiffin subscriptions</p>
           {plans.length === 0 ? (
             <Button onClick={() => setPlanFormOpen(true)}>Create a Plan</Button>
@@ -125,7 +126,7 @@ export function TiffinScreen() {
           )}
         </div>
       ) : (
-        <ul className="border-2 border-border bg-surface divide-y-2 divide-border">
+        <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
           {subs.map((s) => {
             const remaining = s.totalMeals - s.mealsUsed;
             const expiringSoon = new Date(s.endDate).getTime() - now < 3 * 24 * 60 * 60 * 1000;
@@ -240,8 +241,8 @@ function NewPlanSheet({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm border-t-2 sm:border-2 border-ink bg-surface">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">New Meal Plan</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />
@@ -327,8 +328,8 @@ function AssignPlanFlow({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm border-t-2 sm:border-2 border-ink bg-surface">
-        <div className="flex items-center justify-between border-b-2 border-border p-4">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Assign Plan</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
             <X className="h-5 w-5" />

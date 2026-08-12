@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatINR, cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Summary {
   totalSales: number;
@@ -84,7 +85,13 @@ export function DayClosingScreen() {
   }
 
   if (loading) {
-    return <div className="p-4 lg:p-6 text-base text-muted">Loading…</div>;
+    return (
+      <div className="p-4 lg:p-6 space-y-4 max-w-lg">
+        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-40" />
+        <Skeleton className="h-40" />
+      </div>
+    );
   }
 
   const data = closed ? closing! : summary!;
@@ -105,7 +112,7 @@ export function DayClosingScreen() {
         </div>
       )}
 
-      <div className="border-2 border-border bg-surface p-4 space-y-2">
+      <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm space-y-2">
         <Row label="Total Sales" value={formatINR(data.totalSales)} bold />
         <Row label="Cash Sales" value={formatINR(data.cashSales)} />
         <Row label="UPI Sales" value={formatINR(data.upiSales)} />
@@ -115,7 +122,7 @@ export function DayClosingScreen() {
         <Row label="Expenses" value={formatINR(data.expensesTotal)} />
       </div>
 
-      <div className="border-2 border-border bg-surface p-4 space-y-2">
+      <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm space-y-2">
         <Row label="Opening Cash" value={formatINR(data.openingCash)} />
         <Row label="Expected Cash" value={formatINR(data.expectedCash)} bold />
         {closed ? (

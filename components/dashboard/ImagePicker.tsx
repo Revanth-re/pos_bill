@@ -70,7 +70,7 @@ export function ImagePicker({
           {/* Uploaded/gallery images are same-origin static files, so a plain
              <Image> with a fixed size is simplest and avoids remote-pattern
              config for what is, functionally, local storage. */}
-          <Image src={value} alt="Product" width={120} height={120} className="h-[120px] w-[120px] object-cover" unoptimized />
+          <Image src={value} alt="Product" width={120} height={120} className="h-[120px] w-[120px] object-cover" />
           <button
             type="button"
             onClick={() => onChange(null)}
@@ -117,8 +117,8 @@ export function ImagePicker({
 
       {galleryOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-          <div className="w-full sm:max-w-md border-t-2 sm:border-2 border-ink bg-surface max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between border-b-2 border-border p-4">
+          <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border p-4">
               <h3 className="text-lg font-bold text-ink">Choose a photo</h3>
               <button
                 onClick={() => setGalleryOpen(false)}
@@ -149,7 +149,7 @@ export function ImagePicker({
                       width={100}
                       height={100}
                       className="h-[100px] w-full object-cover"
-                      unoptimized
+                     
                     />
                   </button>
                 ))}
