@@ -1,5 +1,4 @@
-/* Runs before the app JS. Registers the SW and captures Chrome's install
- * event so Profile → Install can open the native dialog on one tap. */
+/* Runs before the app JS. Registers the SW and captures Chrome's install event. */
 (function () {
   try {
     window.__POS_PWA = window.__POS_PWA || { deferred: null, swReady: false };
@@ -21,7 +20,9 @@
         .then(function (reg) {
           window.__POS_PWA.swReady = true;
           window.dispatchEvent(new Event("pos-pwa-sw-ready"));
-          return reg.update();
+          return navigator.serviceWorker.ready.then(function () {
+            return reg.update();
+          });
         })
         .catch(function () {});
     }

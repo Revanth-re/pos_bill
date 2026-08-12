@@ -1,25 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { bootstrapPwaInstall } from "@/lib/pwaInstallStore";
+import { bootstrapPwaInstall, waitForInstallPrompt } from "@/lib/pwaInstallStore";
 
-/** Boots install listeners. SW is also registered in the early head script
- * so `beforeinstallprompt` can fire before the user opens Profile. */
+/** Starts SW + listens for install prompt as soon as the app loads (every page). */
 export function PwaInstallBoot() {
   useEffect(() => {
     bootstrapPwaInstall();
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js")
-        .then((reg) => {
-          // Force activate so Chrome marks the app installable ASAP.
+        .register("/sw.js", { scope: "/", updateViaCache: "none" })
+        .then(async (reg) => {
+          await navigator.serviceWorker.ready;
+          // Warm the install prompt in the background — don't block UI.
+          void waitForInstallPrompt(15000);
           void reg.update();
-          if (reg.waiting) reg.waiting.postMessage?.({ type: "SKIP_WAITING" });
         })
-        .catch((err) => {
-          console.warn("Service worker registration failed:", err);
-        });
+        .catch(() => {});
+    } else {
+      void waitForInstallPrompt(15000);
     }
   }, []);
 

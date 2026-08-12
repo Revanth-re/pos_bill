@@ -3,7 +3,7 @@
   "name": "POS - Billing & Business Manager",
   "short_name": "POS",
   "description": "Fast POS, billing, inventory and business intelligence for small Indian food businesses.",
-  "start_url": "/dashboard",
+  "start_url": "/login",
   "scope": "/",
   "display": "standalone",
   "prefer_related_applications": false,
