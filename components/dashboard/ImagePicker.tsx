@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
 import { Upload, ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 interface GalleryImage {
   imageUrl: string;
@@ -67,10 +67,13 @@ export function ImagePicker({
 
       {value ? (
         <div className="relative inline-block border-2 border-border">
-          {/* Uploaded/gallery images are same-origin static files, so a plain
-             <Image> with a fixed size is simplest and avoids remote-pattern
-             config for what is, functionally, local storage. */}
-          <Image src={value} alt="Product" width={120} height={120} className="h-[120px] w-[120px] object-cover" />
+          <ProductImage
+            src={value}
+            alt="Product"
+            width={120}
+            height={120}
+            className="h-[120px] w-[120px] object-cover"
+          />
           <button
             type="button"
             onClick={() => onChange(null)}
@@ -143,13 +146,12 @@ export function ImagePicker({
                     }}
                     className="border-2 border-border hover:border-brand touch-target"
                   >
-                    <Image
+                    <ProductImage
                       src={img.imageUrl}
                       alt={img.name}
                       width={100}
                       height={100}
                       className="h-[100px] w-full object-cover"
-                     
                     />
                   </button>
                 ))}

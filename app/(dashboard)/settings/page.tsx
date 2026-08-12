@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db/prisma";
 import { PrinterSettings } from "./PrinterSettings";
 import { BusinessSettingsForm } from "@/components/dashboard/BusinessSettingsForm";
 import { LanguageSettings } from "@/components/dashboard/LanguageSettings";
-import { InstallAppCard } from "@/components/dashboard/InstallAppCard";
 import { BluetoothSettings } from "@/components/dashboard/BluetoothSettings";
 import { T } from "@/components/i18n/T";
 
@@ -59,12 +58,6 @@ export default async function SettingsPage() {
         <h2 className="mb-1 text-lg font-bold text-ink"><T k="settings.languageTitle" /></h2>
         <p className="mb-4 text-sm text-muted"><T k="settings.languageSubtitle" /></p>
         <LanguageSettings initialLanguage={business.language} />
-      </section>
-
-      <section className="border-2 border-border bg-surface p-4">
-        <h2 className="mb-1 text-lg font-bold text-ink"><T k="settings.installTitle" /></h2>
-        <p className="mb-4 text-sm text-muted"><T k="settings.installSubtitle" /></p>
-        <InstallAppCard />
       </section>
     </div>
   );

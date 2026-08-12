@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export type DiscountType = "PERCENT" | "FIXED";
 
@@ -40,79 +41,95 @@ interface CartState {
   clear: () => void;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
-  lines: [],
-  orderType: "TAKEAWAY",
-  billDiscount: undefined,
-  customerId: undefined,
-  customerName: undefined,
-  heldBillId: undefined,
-
-  addProduct: (product) => {
-    const lines = get().lines;
-    const existing = lines.find((l) => l.product.id === product.id);
-    if (existing) {
-      set({
-        lines: lines.map((l) =>
-          l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l
-        ),
-      });
-    } else {
-      set({ lines: [...lines, { product, quantity: 1 }] });
-    }
-  },
-
-  incrementLine: (productId) => {
-    set({
-      lines: get().lines.map((l) =>
-        l.product.id === productId ? { ...l, quantity: l.quantity + 1 } : l
-      ),
-    });
-  },
-
-  decrementLine: (productId) => {
-    const lines = get().lines
-      .map((l) => (l.product.id === productId ? { ...l, quantity: l.quantity - 1 } : l))
-      .filter((l) => l.quantity > 0);
-    set({ lines });
-  },
-
-  setLineQuantity: (productId, quantity) => {
-    if (quantity <= 0) {
-      set({ lines: get().lines.filter((l) => l.product.id !== productId) });
-      return;
-    }
-    set({
-      lines: get().lines.map((l) => (l.product.id === productId ? { ...l, quantity } : l)),
-    });
-  },
-
-  removeLine: (productId) => {
-    set({ lines: get().lines.filter((l) => l.product.id !== productId) });
-  },
-
-  setLineDiscount: (productId, discount) => {
-    set({
-      lines: get().lines.map((l) => (l.product.id === productId ? { ...l, discount } : l)),
-    });
-  },
-
-  setBillDiscount: (discount) => set({ billDiscount: discount }),
-  setOrderType: (type) => set({ orderType: type }),
-  setCustomer: (id, name) => set({ customerId: id, customerName: name }),
-
-  loadHeldBill: (heldBillId, lines, orderType) => set({ heldBillId, lines, orderType }),
-
-  clear: () =>
-    set({
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
       lines: [],
+      orderType: "TAKEAWAY",
       billDiscount: undefined,
       customerId: undefined,
       customerName: undefined,
       heldBillId: undefined,
-      orderType: "TAKEAWAY",
+
+      addProduct: (product) => {
+        const lines = get().lines;
+        const existing = lines.find((l) => l.product.id === product.id);
+        if (existing) {
+          set({
+            lines: lines.map((l) =>
+              l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l
+            ),
+          });
+        } else {
+          set({ lines: [...lines, { product, quantity: 1 }] });
+        }
+      },
+
+      incrementLine: (productId) => {
+        set({
+          lines: get().lines.map((l) =>
+            l.product.id === productId ? { ...l, quantity: l.quantity + 1 } : l
+          ),
+        });
+      },
+
+      decrementLine: (productId) => {
+        const lines = get()
+          .lines.map((l) => (l.product.id === productId ? { ...l, quantity: l.quantity - 1 } : l))
+          .filter((l) => l.quantity > 0);
+        set({ lines });
+      },
+
+      setLineQuantity: (productId, quantity) => {
+        if (quantity <= 0) {
+          set({ lines: get().lines.filter((l) => l.product.id !== productId) });
+          return;
+        }
+        set({
+          lines: get().lines.map((l) => (l.product.id === productId ? { ...l, quantity } : l)),
+        });
+      },
+
+      removeLine: (productId) => {
+        set({ lines: get().lines.filter((l) => l.product.id !== productId) });
+      },
+
+      setLineDiscount: (productId, discount) => {
+        set({
+          lines: get().lines.map((l) => (l.product.id === productId ? { ...l, discount } : l)),
+        });
+      },
+
+      setBillDiscount: (discount) => set({ billDiscount: discount }),
+      setOrderType: (type) => set({ orderType: type }),
+      setCustomer: (id, name) => set({ customerId: id, customerName: name }),
+
+      loadHeldBill: (heldBillId, lines, orderType) => set({ heldBillId, lines, orderType }),
+
+      clear: () =>
+        set({
+          lines: [],
+          billDiscount: undefined,
+          customerId: undefined,
+          customerName: undefined,
+          heldBillId: undefined,
+          orderType: "TAKEAWAY",
+        }),
     }),
-}));
+    {
+      name: "pos-cart-v1",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (s) => ({
+        lines: s.lines,
+        orderType: s.orderType,
+        billDiscount: s.billDiscount,
+        customerId: s.customerId,
+        customerName: s.customerName,
+        heldBillId: s.heldBillId,
+      }),
+    }
+  )
+);
 
 /** Client-side estimate only, for display while typing — the server in
  * /api/billing/checkout recomputes this authoritatively before any money
@@ -123,8 +140,8 @@ export function estimateCartTotal(lines: CartLine[]): number {
     const discount = !l.discount
       ? 0
       : l.discount.type === "PERCENT"
-      ? (base * l.discount.value) / 100
-      : Math.min(l.discount.value, base);
+        ? (base * l.discount.value) / 100
+        : Math.min(l.discount.value, base);
     return sum + (base - discount);
   }, 0);
 }

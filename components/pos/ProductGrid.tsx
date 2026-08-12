@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { Package } from "lucide-react";
+import { ProductImage } from "@/components/ui/ProductImage";
 import { formatINR, cn } from "@/lib/utils";
 import { useCartStore, type CartProduct } from "@/stores/cartStore";
 
@@ -42,20 +41,13 @@ export function ProductGrid({ products }: { products: CartProduct[] }) {
               </span>
             )}
 
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt=""
-                width={200}
-                height={112}
-               
-                className="h-24 w-full border-b-2 border-border object-cover"
-              />
-            ) : (
-              <div className="flex h-24 w-full items-center justify-center border-b-2 border-border bg-paper text-muted">
-                <Package className="h-8 w-8" />
-              </div>
-            )}
+            <ProductImage
+              src={product.imageUrl}
+              width={200}
+              height={96}
+              sizes="(max-width: 640px) 50vw, 200px"
+              className="h-24 w-full border-b-2 border-border object-cover"
+            />
 
             <div className="flex w-full flex-col p-3">
               <span className="text-sm font-bold text-ink line-clamp-2 min-h-[2.5em]">

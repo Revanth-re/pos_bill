@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PauseCircle, Printer } from "lucide-react";
-import { CategoryTabs, type CategoryOption } from "./CategoryTabs";
+import { CategoryTabs } from "./CategoryTabs";
 import { ProductGrid } from "./ProductGrid";
 import { ProductSearch } from "./ProductSearch";
 import { CartPanel } from "./CartPanel";
@@ -11,21 +11,26 @@ import { HeldBillsSheet } from "./HeldBillsSheet";
 import { ReceiptModal } from "./ReceiptModal";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { useCartStore, estimateCartTotal, type CartProduct } from "@/stores/cartStore";
+import { useCatalogStore } from "@/stores/catalogStore";
 import { formatINR } from "@/lib/utils";
 import { submitBill } from "@/lib/billing/submitBill";
 import { toast } from "@/stores/toastStore";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ReceiptData } from "@/lib/printing/types";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface Props {
-  initialProducts: CartProduct[];
-  categories: CategoryOption[];
   businessName: string;
   cashierName: string;
 }
 
-export function BillingScreen({ initialProducts, categories, businessName, cashierName }: Props) {
-  const [products, setProducts] = useState(initialProducts);
+export function BillingScreen({ businessName, cashierName }: Props) {
+  const products = useCatalogStore((s) => s.products);
+  const categories = useCatalogStore((s) => s.categories);
+  const loadingProducts = useCatalogStore((s) => s.loadingProducts);
+  const ensurePosCatalog = useCatalogStore((s) => s.ensurePosCatalog);
+  const seedPosCatalog = useCatalogStore((s) => s.seedPosCatalog);
+
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [cartOpenMobile, setCartOpenMobile] = useState(false);
@@ -33,19 +38,32 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
   const [heldOpen, setHeldOpen] = useState(false);
   const [receipt, setReceipt] = useState<{ data: ReceiptData; offline: boolean } | null>(null);
   const [quickPrinting, setQuickPrinting] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const t = useT();
 
   const lines = useCartStore((s) => s.lines);
   const orderType = useCartStore((s) => s.orderType);
   const addProduct = useCartStore((s) => s.addProduct);
 
+  useEffect(() => {
+    const finish = () => setHydrated(true);
+    finish();
+    const unsub = useCatalogStore.persist.onFinishHydration(finish);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void ensurePosCatalog();
+  }, [hydrated, ensurePosCatalog]);
+
   const productsById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
   const filtered = useMemo(() => {
     let list = products;
     if (activeCategory) {
-      // Category filtering happens server-side normally; for the demo grid
-      // we filter client-side against whatever's loaded.
+      // Categories come from the catalog; product.categoryId isn't on CartProduct.
+      // Filtering by category is handled when searching via API below if needed.
       list = list;
     }
     if (query) {
@@ -57,37 +75,59 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
 
   async function handleSearch(q: string) {
     setQuery(q);
-    if (!q) return;
+    if (!q) {
+      void ensurePosCatalog({ force: true });
+      return;
+    }
     const res = await fetch(`/api/products?q=${encodeURIComponent(q)}`);
     if (res.ok) {
       const body = await res.json();
-      setProducts((prev) => {
-        const map = new Map(prev.map((p) => [p.id, p]));
-        for (const p of body.products) {
-          map.set(p.id, {
-            id: p.id,
-            name: p.name,
-            sellingPrice: Number(p.sellingPrice),
-            gstPercent: Number(p.gstPercent),
-            unit: p.unit,
-            currentStock: Number(p.currentStock),
-            trackInventory: p.trackInventory,
-            imageUrl: p.imageUrl,
-          });
-        }
-        return Array.from(map.values());
-      });
+      const mapped: CartProduct[] = body.products.map(
+        (p: {
+          id: string;
+          name: string;
+          sellingPrice: number;
+          gstPercent: number;
+          unit: string;
+          currentStock: number;
+          trackInventory: boolean;
+          imageUrl: string | null;
+        }) => ({
+          id: p.id,
+          name: p.name,
+          sellingPrice: Number(p.sellingPrice),
+          gstPercent: Number(p.gstPercent),
+          unit: p.unit,
+          currentStock: Number(p.currentStock),
+          trackInventory: p.trackInventory,
+          imageUrl: p.imageUrl,
+        })
+      );
+      // Merge search hits into the persisted catalog so images/names stick around.
+      const map = new Map(products.map((p) => [p.id, p]));
+      for (const p of mapped) map.set(p.id, p);
+      seedPosCatalog(Array.from(map.values()), categories);
     }
   }
 
   function handleBarcodeEnter(code: string) {
-    const match = products.find((p) => p.id === code) ?? products.find((p) => p.name.toLowerCase() === code.toLowerCase());
+    const match =
+      products.find((p) => p.id === code) ??
+      products.find((p) => p.name.toLowerCase() === code.toLowerCase());
     if (match) addProduct(match);
   }
 
   function buildReceiptData(invoice: unknown): ReceiptData {
     const inv = invoice as
-      | { invoiceNumber?: string; grandTotal?: number; subtotal?: number; discountTotal?: number; cgstTotal?: number; sgstTotal?: number; igstTotal?: number }
+      | {
+          invoiceNumber?: string;
+          grandTotal?: number;
+          subtotal?: number;
+          discountTotal?: number;
+          cgstTotal?: number;
+          sgstTotal?: number;
+          igstTotal?: number;
+        }
       | undefined;
 
     return {
@@ -119,19 +159,25 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
     setReceipt({ data: buildReceiptData(invoice), offline });
   }
 
-  // Two-click billing: tap product(s), tap PRINT BILL. Defaults to a full
-  // cash payment with no customer — the common case for a quick counter
-  // sale. "Split / Credit" (which opens the full PaymentSheet) is still
-  // right there for anything that needs a real payment-method choice.
   async function handleQuickPrint() {
-    const { lines: cartLines, orderType: cartOrderType, billDiscount, heldBillId, customerId } = useCartStore.getState();
+    const {
+      lines: cartLines,
+      orderType: cartOrderType,
+      billDiscount,
+      heldBillId,
+      customerId,
+    } = useCartStore.getState();
     if (cartLines.length === 0) return;
 
     setQuickPrinting(true);
     const total = estimateCartTotal(cartLines);
     const result = await submitBill({
       orderType: cartOrderType,
-      items: cartLines.map((l) => ({ productId: l.product.id, quantity: l.quantity, discount: l.discount })),
+      items: cartLines.map((l) => ({
+        productId: l.product.id,
+        quantity: l.quantity,
+        discount: l.discount,
+      })),
       billDiscount,
       customerId,
       payments: [{ method: "CASH", amount: Math.round(total * 100) / 100 }],
@@ -153,10 +199,10 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
 
   const estimatedTotal = estimateCartTotal(lines);
   const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
+  const showBootSpinner = (!hydrated || (products.length === 0 && loadingProducts));
 
   return (
-    <div className="flex h-[calc(100vh-56px)] flex-col lg:h-screen">
-      {/* Top bar: search + status + held bills, shared across breakpoints */}
+    <div className="flex h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] flex-col md:h-screen">
       <div className="flex items-center gap-2 border-b border-border bg-surface p-3">
         <div className="flex-1">
           <ProductSearch onSearch={handleSearch} onBarcodeEnter={handleBarcodeEnter} />
@@ -171,16 +217,24 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
         </button>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main product area: full width on mobile/tablet, flexes with sidebar cart on desktop */}
+      <div className={`flex flex-1 overflow-hidden ${lines.length > 0 ? "pb-14 md:pb-0" : ""}`}>
         <div className="flex-1 overflow-y-auto p-3 lg:p-4">
           <div className="mb-3">
-            <CategoryTabs categories={categories} activeId={activeCategory} onSelect={setActiveCategory} />
+            <CategoryTabs
+              categories={categories}
+              activeId={activeCategory}
+              onSelect={setActiveCategory}
+            />
           </div>
-          <ProductGrid products={filtered} />
+          {showBootSpinner ? (
+            <div className="flex justify-center py-16">
+              <Spinner />
+            </div>
+          ) : (
+            <ProductGrid products={filtered} />
+          )}
         </div>
 
-        {/* Desktop/tablet: persistent cart column */}
         <div className="hidden md:block md:w-80 lg:w-96 border-l border-border shrink-0">
           <CartPanel
             onQuickPrint={handleQuickPrint}
@@ -191,9 +245,9 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
         </div>
       </div>
 
-      {/* Mobile: sticky "3 Items | ₹420 | PRINT BILL" bar */}
+      {/* Sit above the fixed bottom navbar on every mobile viewport */}
       {lines.length > 0 && (
-        <div className="no-select md:hidden flex items-stretch border-t border-border bg-ink text-white shadow-lg">
+        <div className="no-select md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 flex items-stretch border-t border-border bg-ink text-white shadow-[0_-4px_16px_rgba(0,0,0,0.18)]">
           <button
             onClick={() => setCartOpenMobile(true)}
             className="touch-target flex flex-1 items-center gap-2 px-4 text-left"
@@ -201,7 +255,9 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
             <span className="text-sm font-semibold opacity-90">
               {itemCount} {t("pos.items")}
             </span>
-            <span className="text-base font-bold tabular text-accent">{formatINR(estimatedTotal)}</span>
+            <span className="text-base font-bold tabular text-accent">
+              {formatINR(estimatedTotal)}
+            </span>
           </button>
           <button
             onClick={handleQuickPrint}
@@ -218,7 +274,10 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
         <div className="fixed inset-0 z-40 flex flex-col bg-surface md:hidden">
           <div className="flex items-center justify-between border-b border-border p-3">
             <span className="font-bold text-ink">Your Cart</span>
-            <button onClick={() => setCartOpenMobile(false)} className="no-select touch-target rounded-full px-3 text-sm font-semibold text-brand">
+            <button
+              onClick={() => setCartOpenMobile(false)}
+              className="no-select touch-target rounded-full px-3 text-sm font-semibold text-brand"
+            >
               Back to menu
             </button>
           </div>
@@ -255,7 +314,11 @@ export function BillingScreen({ initialProducts, categories, businessName, cashi
         orderType,
         billDiscount,
         customerId,
-        items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity, discount: l.discount })),
+        items: lines.map((l) => ({
+          productId: l.product.id,
+          quantity: l.quantity,
+          discount: l.discount,
+        })),
       }),
     });
     clear();

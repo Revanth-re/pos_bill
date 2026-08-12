@@ -6,14 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, X, Search, User, IndianRupee } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/Spinner";
 import { formatINR, cn } from "@/lib/utils";
+import { useCatalogStore, type CustomerCacheRow } from "@/stores/catalogStore";
 
-interface CustomerRow {
-  id: string;
-  name: string;
-  phone: string | null;
-  outstandingBalance: number;
-}
+type CustomerRow = CustomerCacheRow;
 
 interface LedgerEntry {
   id: string;
@@ -34,18 +31,32 @@ const customerSchema = z.object({
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
 export function CustomersScreen({
-  initialCustomers,
   canManage,
   canRecordPayment,
 }: {
-  initialCustomers: CustomerRow[];
   canManage: boolean;
   canRecordPayment: boolean;
 }) {
-  const [customers, setCustomers] = useState(initialCustomers);
+  const customers = useCatalogStore((s) => s.customers);
+  const loading = useCatalogStore((s) => s.loadingCustomers);
+  const ensureCustomers = useCatalogStore((s) => s.ensureCustomers);
+  const seedCustomers = useCatalogStore((s) => s.seedCustomers);
+
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<CustomerRow | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const finish = () => setHydrated(true);
+    finish();
+    return useCatalogStore.persist.onFinishHydration(finish);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void ensureCustomers();
+  }, [hydrated, ensureCustomers]);
 
   const filtered = useMemo(
     () =>
@@ -58,9 +69,13 @@ export function CustomersScreen({
   const totalOutstanding = customers.reduce((sum, c) => sum + c.outstandingBalance, 0);
 
   function handleBalanceUpdated(customerId: string, newBalance: number) {
-    setCustomers((prev) => prev.map((c) => (c.id === customerId ? { ...c, outstandingBalance: newBalance } : c)));
+    seedCustomers(
+      customers.map((c) => (c.id === customerId ? { ...c, outstandingBalance: newBalance } : c))
+    );
     setSelected((s) => (s && s.id === customerId ? { ...s, outstandingBalance: newBalance } : s));
   }
+
+  const showBoot = !hydrated || (customers.length === 0 && loading);
 
   return (
     <div className="p-4 lg:p-6 space-y-4">
@@ -95,7 +110,11 @@ export function CustomersScreen({
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {showBoot ? (
+        <div className="flex justify-center py-16">
+          <Spinner className="h-6 w-6" />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-base text-muted mb-3">No customers yet</p>
           {canManage && <Button onClick={() => setFormOpen(true)}>Add Customer</Button>}
@@ -135,7 +154,7 @@ export function CustomersScreen({
         <AddCustomerSheet
           onClose={() => setFormOpen(false)}
           onCreated={(c) => {
-            setCustomers((prev) => [...prev, c]);
+            seedCustomers([...customers, c]);
             setFormOpen(false);
           }}
         />

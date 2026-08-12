@@ -1,6 +1,8 @@
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { SignOutButton } from "./SignOutButton";
+import { InstallAppCard } from "@/components/dashboard/InstallAppCard";
+import { T } from "@/components/i18n/T";
 import { User, Building2, ShieldCheck, Mail } from "lucide-react";
 
 export default async function ProfilePage() {
@@ -27,6 +29,16 @@ export default async function ProfilePage() {
         <InfoRow icon={Mail} label="Email" value={session.email} />
         <InfoRow icon={User} label="Staff ID" value={session.staffId} mono />
       </div>
+
+      <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+        <h2 className="mb-1 text-lg font-bold text-ink">
+          <T k="settings.installTitle" />
+        </h2>
+        <p className="mb-4 text-sm text-muted">
+          <T k="settings.installSubtitle" />
+        </p>
+        <InstallAppCard />
+      </section>
 
       <SignOutButton />
     </div>

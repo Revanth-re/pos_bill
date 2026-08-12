@@ -30,11 +30,14 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
     const categoryId = searchParams.get("categoryId") ?? undefined;
+    const statusAll = searchParams.get("status") === "all";
+    const limitParam = Number(searchParams.get("limit") ?? (statusAll ? 500 : 200));
+    const take = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 500) : 200;
 
     const products = await prisma.product.findMany({
       where: {
         businessId: session.businessId,
-        status: "ACTIVE",
+        ...(statusAll ? {} : { status: "ACTIVE" }),
         ...(categoryId ? { categoryId } : {}),
         ...(q
           ? {
@@ -47,8 +50,9 @@ export async function GET(req: Request) {
             }
           : {}),
       },
+      include: statusAll ? { category: { select: { name: true } } } : undefined,
       orderBy: { name: "asc" },
-      take: 100,
+      take,
     });
 
     return NextResponse.json({ products });

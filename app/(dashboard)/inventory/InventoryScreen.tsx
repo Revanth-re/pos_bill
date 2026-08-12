@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import { Package, Plus, Minus, X, History } from "lucide-react";
+import { Plus, Minus, X, History } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ProductImage } from "@/components/ui/ProductImage";
 import { cn } from "@/lib/utils";
+import { useCatalogStore } from "@/stores/catalogStore";
 
 interface ProductStock {
   id: string;
@@ -44,6 +45,7 @@ export function InventoryScreen({
   initialMovements: Movement[];
   canAdjust: boolean;
 }) {
+  const patchPosStock = useCatalogStore((s) => s.patchPosStock);
   const [stockList, setStockList] = useState(products);
   const [movements, setMovements] = useState(initialMovements);
   const [adjusting, setAdjusting] = useState<ProductStock | null>(null);
@@ -53,6 +55,7 @@ export function InventoryScreen({
 
   function handleAdjusted(productId: string, newStock: number, movement: Movement) {
     setStockList((prev) => prev.map((p) => (p.id === productId ? { ...p, currentStock: newStock } : p)));
+    patchPosStock(productId, newStock);
     setMovements((prev) => [movement, ...prev]);
     setAdjusting(null);
   }
@@ -100,13 +103,12 @@ export function InventoryScreen({
             return (
               <li key={p.id} className="flex items-center justify-between gap-3 p-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  {p.imageUrl ? (
-                    <Image src={p.imageUrl} alt="" width={44} height={44} className="h-11 w-11 shrink-0 border-2 border-border object-cover" />
-                  ) : (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-paper text-muted">
-                      <Package className="h-5 w-5" />
-                    </div>
-                  )}
+                  <ProductImage
+                    src={p.imageUrl}
+                    width={44}
+                    height={44}
+                    className="h-11 w-11 shrink-0 border-2 border-border object-cover"
+                  />
                   <div className="min-w-0">
                     <p className="font-bold text-ink truncate">{p.name}</p>
                     <p className={cn("text-sm tabular", low ? "text-danger font-bold" : "text-muted")}>

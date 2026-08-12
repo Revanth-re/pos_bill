@@ -95,8 +95,8 @@ export function ReceiptModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center sm:justify-center bg-black/40">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2 text-success">
             <CheckCircle2 className="h-6 w-6" />

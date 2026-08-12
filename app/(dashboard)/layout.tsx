@@ -15,7 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <LanguageProvider initialLanguage={business.language}>
       <div className="flex min-h-screen">
         <Sidebar role={session.role} businessName={business.name} />
-        <div className="flex-1 flex flex-col min-w-0 pb-14 md:pb-0">
+        <div className="flex-1 flex flex-col min-w-0 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
           <TopBar businessName={business.name} />
           {children}
         </div>

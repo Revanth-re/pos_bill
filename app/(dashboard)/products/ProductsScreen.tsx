@@ -1,33 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Image from "next/image";
-import { Plus, X, Search, Package, Utensils, Pencil } from "lucide-react";
+import { Plus, X, Search, Utensils, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ImagePicker } from "@/components/dashboard/ImagePicker";
 import { RecipeEditorSheet } from "@/components/dashboard/RecipeEditorSheet";
+import { ProductImage } from "@/components/ui/ProductImage";
+import { Spinner } from "@/components/ui/Spinner";
 import { formatINR, cn } from "@/lib/utils";
 import { toast } from "@/stores/toastStore";
+import { useCatalogStore, type ManagedProduct } from "@/stores/catalogStore";
 
-interface ProductRow {
-  id: string;
-  name: string;
-  sku: string | null;
-  barcode: string | null;
-  categoryId: string | null;
-  categoryName: string | null;
-  unit: string;
-  sellingPrice: number;
-  purchasePrice: number;
-  gstPercent: number;
-  currentStock: number;
-  minStock: number;
-  status: "ACTIVE" | "INACTIVE";
-  imageUrl: string | null;
-}
+type ProductRow = ManagedProduct;
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -46,44 +33,41 @@ type ProductFormInput = z.input<typeof productSchema>;
 type ProductFormValues = z.infer<typeof productSchema>;
 
 function Thumbnail({ url, size = 44 }: { url: string | null; size?: number }) {
-  if (!url) {
-    return (
-      <div
-        className="flex shrink-0 items-center justify-center border-2 border-border bg-paper text-muted"
-        style={{ width: size, height: size }}
-      >
-        <Package className="h-1/2 w-1/2" />
-      </div>
-    );
-  }
   return (
-    <Image
+    <ProductImage
       src={url}
-      alt=""
       width={size}
       height={size}
-     
       className="shrink-0 border-2 border-border object-cover"
-      style={{ width: size, height: size }}
     />
   );
 }
 
-export function ProductsScreen({
-  initialProducts,
-  categories,
-  canEdit,
-}: {
-  initialProducts: ProductRow[];
-  categories: { id: string; name: string }[];
-  canEdit: boolean;
-}) {
-  const [products, setProducts] = useState(initialProducts);
+export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
+  const products = useCatalogStore((s) => s.managedProducts);
+  const categories = useCatalogStore((s) => s.categories);
+  const loading = useCatalogStore((s) => s.loadingManaged);
+  const ensureManagedCatalog = useCatalogStore((s) => s.ensureManagedCatalog);
+  const upsertManagedProduct = useCatalogStore((s) => s.upsertManagedProduct);
+  const removeManagedProduct = useCatalogStore((s) => s.removeManagedProduct);
+
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [recipeProduct, setRecipeProduct] = useState<{ id: string; name: string } | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const finish = () => setHydrated(true);
+    finish();
+    return useCatalogStore.persist.onFinishHydration(finish);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void ensureManagedCatalog();
+  }, [hydrated, ensureManagedCatalog]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -98,10 +82,12 @@ export function ProductsScreen({
     if (!confirm("Remove this product from the menu?")) return;
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (res.ok) {
-      setProducts((p) => p.filter((row) => row.id !== id));
+      removeManagedProduct(id);
       toast.success("Product removed");
     }
   }
+
+  const showBoot = !hydrated || (products.length === 0 && loading);
 
   return (
     <div className="p-4 lg:p-6 space-y-4">
@@ -143,7 +129,11 @@ export function ProductsScreen({
         </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {showBoot ? (
+        <div className="flex justify-center py-16">
+          <Spinner className="h-6 w-6" />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-base text-muted mb-3">No products yet</p>
           {canEdit && <Button onClick={() => setFormOpen(true)}>Add Product</Button>}
@@ -217,25 +207,22 @@ export function ProductsScreen({
           categories={categories}
           onClose={() => setFormOpen(false)}
           onCreated={(p) => {
-            setProducts((prev) => [
-              ...prev,
-              {
-                id: p.id,
-                name: p.name,
-                sku: p.sku ?? null,
-                barcode: p.barcode ?? null,
-                categoryId: p.categoryId ?? null,
-                categoryName: categories.find((c) => c.id === p.categoryId)?.name ?? null,
-                unit: p.unit,
-                sellingPrice: p.sellingPrice,
-                purchasePrice: p.purchasePrice,
-                gstPercent: p.gstPercent,
-                currentStock: p.currentStock,
-                minStock: p.minStock,
-                status: "ACTIVE",
-                imageUrl: p.imageUrl ?? null,
-              },
-            ]);
+            upsertManagedProduct({
+              id: p.id,
+              name: p.name,
+              sku: p.sku ?? null,
+              barcode: p.barcode ?? null,
+              categoryId: p.categoryId ?? null,
+              categoryName: categories.find((c) => c.id === p.categoryId)?.name ?? null,
+              unit: p.unit,
+              sellingPrice: p.sellingPrice,
+              purchasePrice: p.purchasePrice,
+              gstPercent: p.gstPercent,
+              currentStock: p.currentStock,
+              minStock: p.minStock,
+              status: "ACTIVE",
+              imageUrl: p.imageUrl ?? null,
+            });
             setFormOpen(false);
           }}
         />
@@ -247,7 +234,7 @@ export function ProductsScreen({
           categories={categories}
           onClose={() => setEditingProduct(null)}
           onSaved={(updated) => {
-            setProducts((prev) => prev.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)));
+            upsertManagedProduct({ ...editingProduct, ...updated });
             setEditingProduct(null);
           }}
         />
