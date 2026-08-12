@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { edgeAuthConfig } from "@/lib/auth/edgeConfig";
+
+// Next.js middleware/proxy runs on the Edge runtime, which can't load
+// Node-native modules like the `pg` driver Prisma depends on. So this
+// creates its own lightweight NextAuth instance from the edge-safe config
+// (JWT decode only, no providers, no Prisma) instead of importing the
+// full auth() from lib/auth — see lib/auth/edgeConfig.ts for why.
+const { auth } = NextAuth(edgeAuthConfig);
 
 // Next.js 16 renamed the `middleware.ts` file convention to `proxy.ts`.
 // A default export is still valid here — only the filename changed.

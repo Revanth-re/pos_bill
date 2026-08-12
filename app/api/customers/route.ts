@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       where: {
         businessId: session.businessId,
         ...(q
-          ? { OR: [{ name: { contains: q } }, { phone: { contains: q } }] }
+          ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }] }
           : {}),
       },
       orderBy: { name: "asc" },

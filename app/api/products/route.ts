@@ -39,9 +39,9 @@ export async function GET(req: Request) {
         ...(q
           ? {
               OR: [
-                { name: { contains: q } },
-                { alias: { contains: q } },
-                { sku: { contains: q } },
+                { name: { contains: q, mode: "insensitive" } },
+                { alias: { contains: q, mode: "insensitive" } },
+                { sku: { contains: q, mode: "insensitive" } },
                 { barcode: { equals: q } },
               ],
             }

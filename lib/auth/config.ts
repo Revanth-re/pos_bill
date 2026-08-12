@@ -2,21 +2,25 @@ import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
+import { edgeAuthConfig } from "./edgeConfig";
 
 /**
- * Auth.js config. We use a Credentials provider (email + password) rather
- * than OAuth because most small Indian food-business owners will not have
- * a Google Workspace account tied to the shop — email/phone + password or
- * a staff PIN is the realistic login for a cashier on a shared tablet.
+ * Full Auth.js config for Node.js contexts only (the NextAuth API route,
+ * server components, server actions). Extends edgeAuthConfig with the
+ * Credentials provider, which imports Prisma — this file must NEVER be
+ * imported from proxy.ts (middleware runs on the Edge runtime and can't
+ * load the `pg` driver Prisma depends on). See lib/auth/edgeConfig.ts.
+ *
+ * We use email + password rather than OAuth because most small Indian
+ * food-business owners won't have a Google Workspace account tied to the
+ * shop — email/phone + password (or a staff PIN) is the realistic login
+ * for a cashier on a shared tablet.
  *
  * On successful login we attach the active Staff row (business + role) to
  * the session so every server action can authorize without another query.
  */
 export const authConfig: NextAuthConfig = {
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-  },
+  ...edgeAuthConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -59,24 +63,4 @@ export const authConfig: NextAuthConfig = {
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.staffId = (user as unknown as { staffId: string }).staffId;
-        token.businessId = (user as unknown as { businessId: string }).businessId;
-        token.businessName = (user as unknown as { businessName: string }).businessName;
-        token.role = (user as unknown as { role: string }).role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        (session.user as unknown as Record<string, unknown>).staffId = token.staffId;
-        (session.user as unknown as Record<string, unknown>).businessId = token.businessId;
-        (session.user as unknown as Record<string, unknown>).businessName = token.businessName;
-        (session.user as unknown as Record<string, unknown>).role = token.role;
-      }
-      return session;
-    },
-  },
 };

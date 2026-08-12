@@ -1,40 +1,33 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 /**
  * Prisma 7 requires every PrismaClient to be constructed with a driver
  * adapter — `new PrismaClient()` alone is no longer valid. We use
- * @prisma/adapter-mariadb (the officially supported adapter for both
- * MariaDB and plain MySQL, backed by the `mariadb` npm driver).
+ * @prisma/adapter-pg (the standard Postgres adapter, backed by the `pg`
+ * npm driver) since Supabase is Postgres under the hood.
  *
- * We parse DATABASE_URL ourselves into discrete fields (host/port/user/
- * password/database) rather than passing the raw string to PrismaMariaDb —
- * its connection-string parser only accepts a literal `mariadb://` scheme
- * and has known issues with special characters in credentials, so a plain
- * `mysql://...` URL (as used by Railway, PlanetScale-via-MySQL, etc.) is
- * safer to hand-parse. See prisma/prisma#27598 and #29097.
+ * Supabase gives you two connection strings:
+ *  - Direct connection (port 5432) — best for local dev and migrations.
+ *  - Transaction pooler / PgBouncer (port 6543) — required for serverless
+ *    environments like Vercel, where each function invocation would
+ *    otherwise open its own DB connection and quickly exhaust Postgres's
+ *    connection limit. Use the pooler URL for DATABASE_URL in production.
+ *
+ * The adapter just needs the connection string; it works the same either
+ * way, so nothing here needs to change based on which one you use.
  */
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
 function buildAdapter() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
-
-  const url = new URL(connectionString);
-
-  return new PrismaMariaDb({
-    host: url.hostname,
-    port: url.port ? Number(url.port) : 3306,
-    user: decodeURIComponent(url.username),
-    password: decodeURIComponent(url.password),
-    database: url.pathname.replace(/^\//, ""),
-    connectionLimit: 5,
-  });
+  return new PrismaPg({ connectionString });
 }
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
 
 export const prisma =
   globalForPrisma.prisma ??
@@ -44,4 +37,3 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
