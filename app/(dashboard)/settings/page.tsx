@@ -5,6 +5,7 @@ import { BusinessSettingsForm } from "@/components/dashboard/BusinessSettingsFor
 import { LanguageSettings } from "@/components/dashboard/LanguageSettings";
 import { InstallAppCard } from "@/components/dashboard/InstallAppCard";
 import { BluetoothSettings } from "@/components/dashboard/BluetoothSettings";
+import { T } from "@/components/i18n/T";
 
 export default async function SettingsPage() {
   const session = await requireSession();
@@ -16,13 +17,13 @@ export default async function SettingsPage() {
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-extrabold text-ink">Settings</h1>
+        <h1 className="text-2xl font-extrabold text-ink"><T k="settings.title" /></h1>
         <p className="text-base text-muted">{business.name}</p>
       </div>
 
       <section className="border-2 border-border bg-surface p-4">
-        <h2 className="mb-1 text-lg font-bold text-ink">Tax (GST)</h2>
-        <p className="mb-4 text-sm text-muted">This controls how GST is calculated on every bill.</p>
+        <h2 className="mb-1 text-lg font-bold text-ink"><T k="settings.taxTitle" /></h2>
+        <p className="mb-4 text-sm text-muted"><T k="settings.taxSubtitle" /></p>
         <BusinessSettingsForm
           initial={{
             gstEnabled: business.gstEnabled,
@@ -36,17 +37,17 @@ export default async function SettingsPage() {
       </section>
 
       <section className="border-2 border-border bg-surface p-4">
-        <h2 className="mb-1 text-lg font-bold text-ink">Receipt Printer</h2>
-        <p className="mb-4 text-sm text-muted">Choose how receipts print at checkout.</p>
+        <h2 className="mb-1 text-lg font-bold text-ink"><T k="settings.printerTitle" /></h2>
+        <p className="mb-4 text-sm text-muted"><T k="settings.printerSubtitle" /></p>
         <PrinterSettings
           initialType={printer?.type ?? "BROWSER"}
         />
       </section>
 
       <section className="border-2 border-border bg-surface p-4">
-        <h2 className="mb-1 text-lg font-bold text-ink">Bluetooth Devices</h2>
+        <h2 className="mb-1 text-lg font-bold text-ink"><T k="settings.bluetoothTitle" /></h2>
         <p className="mb-4 text-sm text-muted">
-          Pair a Bluetooth thermal printer or barcode scanner directly with this device.
+          <T k="settings.bluetoothSubtitle" />
         </p>
         <BluetoothSettings
           initialDeviceId={printer?.bluetoothDeviceId ?? null}
@@ -55,14 +56,14 @@ export default async function SettingsPage() {
       </section>
 
       <section className="border-2 border-border bg-surface p-4">
-        <h2 className="mb-1 text-lg font-bold text-ink">Language</h2>
-        <p className="mb-4 text-sm text-muted">The language staff see across the app.</p>
+        <h2 className="mb-1 text-lg font-bold text-ink"><T k="settings.languageTitle" /></h2>
+        <p className="mb-4 text-sm text-muted"><T k="settings.languageSubtitle" /></p>
         <LanguageSettings initialLanguage={business.language} />
       </section>
 
       <section className="border-2 border-border bg-surface p-4">
-        <h2 className="mb-1 text-lg font-bold text-ink">Install App</h2>
-        <p className="mb-4 text-sm text-muted">Use this on your counter like a real app — full screen, works offline, no browser bar.</p>
+        <h2 className="mb-1 text-lg font-bold text-ink"><T k="settings.installTitle" /></h2>
+        <p className="mb-4 text-sm text-muted"><T k="settings.installSubtitle" /></p>
         <InstallAppCard />
       </section>
     </div>

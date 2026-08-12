@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 interface BusinessSettings {
   gstEnabled: boolean;
@@ -13,6 +14,7 @@ interface BusinessSettings {
 }
 
 export function BusinessSettingsForm({ initial }: { initial: BusinessSettings }) {
+  const t = useT();
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -39,8 +41,8 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
           className="h-5 w-5 accent-brand"
         />
         <span>
-          <span className="block text-sm font-bold text-ink">Charge GST on bills</span>
-          <span className="block text-sm text-muted">Turn off if your shop is below the GST registration threshold</span>
+          <span className="block text-sm font-bold text-ink">{t("settings.chargeGst")}</span>
+          <span className="block text-sm text-muted">{t("settings.chargeGstHint")}</span>
         </span>
       </label>
 
@@ -49,8 +51,8 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
           <div className="flex gap-2">
             {(
               [
-                { value: true, label: "Prices include GST" },
-                { value: false, label: "GST added on top" },
+                { value: true, label: t("settings.pricesInclude") },
+                { value: false, label: t("settings.gstAddedOnTop") },
               ] as const
             ).map((opt) => (
               <button
@@ -69,7 +71,7 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="field-label">CGST %</label>
+              <label className="field-label">{t("settings.cgst")}</label>
               <input
                 type="number"
                 step="0.01"
@@ -79,7 +81,7 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
               />
             </div>
             <div>
-              <label className="field-label">SGST %</label>
+              <label className="field-label">{t("settings.sgst")}</label>
               <input
                 type="number"
                 step="0.01"
@@ -91,7 +93,7 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
           </div>
 
           <div>
-            <label className="field-label">GSTIN</label>
+            <label className="field-label">{t("settings.gstin")}</label>
             <input
               value={values.gstin}
               onChange={(e) => setValues((v) => ({ ...v, gstin: e.target.value }))}
@@ -103,7 +105,7 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
       )}
 
       <div>
-        <label className="field-label">Invoice number prefix</label>
+        <label className="field-label">{t("settings.invoicePrefix")}</label>
         <input
           value={values.invoicePrefix}
           onChange={(e) => setValues((v) => ({ ...v, invoicePrefix: e.target.value }))}
@@ -113,10 +115,10 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
       </div>
 
       <div className="flex items-center gap-3">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Saving…" : "Save Changes"}
+        <Button onClick={handleSave} loading={saving}>
+          {t("common.save")}
         </Button>
-        {saved && !saving && <span className="text-sm font-semibold text-success">Saved</span>}
+        {saved && !saving && <span className="text-sm font-semibold text-success">{t("toast.saved")}</span>}
       </div>
     </div>
   );

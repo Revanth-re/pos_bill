@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n/translations";
-import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useLanguage, useT } from "@/lib/i18n/LanguageProvider";
 
 export function LanguageSettings({ initialLanguage }: { initialLanguage: string }) {
   const { setLanguage: applyLanguage } = useLanguage();
+  const t = useT();
   const [language, setLanguage] = useState(initialLanguage);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -39,12 +40,11 @@ export function LanguageSettings({ initialLanguage }: { initialLanguage: string 
       </select>
       {language !== "en" && (
         <p className="mt-2 text-sm text-muted">
-          Navigation, billing, and common actions are translated. Some screens (Reports, detailed forms) are
-          still English-only — full coverage is in progress.
+          {LANGUAGES.find((l) => l.code === language)?.label} — {t("toast.saved")}
         </p>
       )}
-      {saving && <p className="mt-2 text-xs text-muted">Saving…</p>}
-      {saved && !saving && <p className="mt-2 text-xs text-success">Saved.</p>}
+      {saving && <p className="mt-2 text-xs text-muted">{t("common.loading")}</p>}
+      {saved && !saving && <p className="mt-2 text-xs text-success">{t("toast.saved")}</p>}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bluetooth, BluetoothConnected, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { isBluetoothSupported, pairBluetoothPrinter, type PairedBluetoothDevice } from "@/lib/printing/bluetoothPairing";
+import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function BluetoothSettings({
   initialDeviceId,
@@ -12,6 +13,7 @@ export function BluetoothSettings({
   initialDeviceId: string | null;
   initialDeviceName: string | null;
 }) {
+  const t = useT();
   const [device, setDevice] = useState<PairedBluetoothDevice | null>(
     initialDeviceId && initialDeviceName ? { id: initialDeviceId, name: initialDeviceName } : null
   );
@@ -48,11 +50,8 @@ export function BluetoothSettings({
   if (!supported) {
     return (
       <div className="border-2 border-border bg-paper p-4">
-        <p className="text-sm font-semibold text-ink">Bluetooth pairing isn&apos;t available in this browser</p>
-        <p className="mt-1 text-sm text-muted">
-          Open this page in Chrome or Edge on Android or a laptop to pair a Bluetooth receipt printer or
-          barcode scanner. Bluetooth pairing is not supported in Safari or Firefox.
-        </p>
+        <p className="text-sm font-semibold text-ink">{t("printer.notSupported")}</p>
+        <p className="mt-1 text-sm text-muted">{t("printer.notSupportedHint")}</p>
       </div>
     );
   }
@@ -65,21 +64,21 @@ export function BluetoothSettings({
             <BluetoothConnected className="h-5 w-5 text-success shrink-0" />
             <div>
               <p className="text-sm font-bold text-ink">{device.name}</p>
-              <p className="text-sm text-muted">Paired device</p>
+              <p className="text-sm text-muted">{t("settings.pairedDevice")}</p>
             </div>
           </div>
           <button
             onClick={handleForget}
             className="touch-target flex items-center gap-1 px-2 text-sm font-semibold text-danger"
           >
-            <X className="h-4 w-4" /> Forget
+            <X className="h-4 w-4" /> {t("settings.forget")}
           </button>
         </div>
       ) : (
         <Button variant="secondary" onClick={handlePair} disabled={connecting}>
           <span className="inline-flex items-center gap-2">
             <Bluetooth className="h-4 w-4" />
-            {connecting ? "Opening device picker…" : "Pair a Bluetooth device"}
+            {connecting ? t("printer.openingPicker") : t("settings.pairDevice")}
           </span>
         </Button>
       )}

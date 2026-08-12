@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/LanguageProvider";
 import type { PrinterType } from "@/lib/printing/types";
 
-const OPTIONS: { type: PrinterType; label: string; hint: string }[] = [
-  { type: "THERMAL_58MM", label: "58mm Thermal", hint: "Compact receipt printers" },
-  { type: "THERMAL_80MM", label: "80mm Thermal", hint: "Standard POS receipt printers" },
-  { type: "A4", label: "A4 Invoice", hint: "Full-page professional invoice" },
-  { type: "BROWSER", label: "Browser Print", hint: "Any printer via the browser dialog" },
-];
-
 export function PrinterSettings({ initialType }: { initialType: PrinterType }) {
+  const t = useT();
+  const OPTIONS: { type: PrinterType; label: string; hint: string }[] = [
+    { type: "THERMAL_58MM", label: t("printer.58mm"), hint: t("printer.58mmHint") },
+    { type: "THERMAL_80MM", label: t("printer.80mm"), hint: t("printer.80mmHint") },
+    { type: "A4", label: t("printer.a4"), hint: t("printer.a4Hint") },
+    { type: "BROWSER", label: t("printer.browser"), hint: t("printer.browserHint") },
+  ];
   const [selected, setSelected] = useState<PrinterType>(initialType);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -46,8 +47,8 @@ export function PrinterSettings({ initialType }: { initialType: PrinterType }) {
           </button>
         ))}
       </div>
-      {saving && <p className="mt-2 text-sm text-muted">Saving…</p>}
-      {saved && !saving && <p className="mt-2 text-sm font-semibold text-success">Default printer updated.</p>}
+      {saving && <p className="mt-2 text-sm text-muted">{t("common.loading")}</p>}
+      {saved && !saving && <p className="mt-2 text-sm font-semibold text-success">{t("printer.updated")}</p>}
     </div>
   );
 }
