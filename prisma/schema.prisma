@@ -1,29 +1,9 @@
-// ============================================================================
-// Indian POS & Business Management App — Prisma Schema
-// Covers all models from spec section 18. Organized by feature domain.
-// ============================================================================
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-// ============================================================================
-// AUTH / BUSINESS / STAFF
-// ============================================================================
-
-enum StaffRole {
-  OWNER
-  MANAGER
-  CASHIER
-}
-
-enum StaffStatus {
-  ACTIVE
-  DISABLED
 }
 
 /// A registered login. One User can belong to (own or work at) one Business
@@ -36,14 +16,8 @@ model User {
   passwordHash  String?
   emailVerified DateTime?
   image         String?
-
-  staff Staff[]
-
-  accounts Account[]
-  sessions Session[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@map("users")
 }
@@ -51,51 +25,29 @@ model User {
 /// The tenant. Every business-scoped model hangs off businessId so this app
 /// could serve multiple businesses per deployment without cross-tenant leaks.
 model Business {
-  id       String @id @default(cuid())
-  name     String
-  legalName String?
-  phone    String?
-  email    String?
-  address  String?
-  city     String?
-  state    String?
-  pincode  String?
-
-  gstin       String?
-  gstEnabled  Boolean @default(true)
-  taxInclusive Boolean @default(true)
-  cgstPercent Decimal @default(2.5) @db.Decimal(5, 2)
-  sgstPercent Decimal @default(2.5) @db.Decimal(5, 2)
-  igstPercent Decimal @default(5) @db.Decimal(5, 2)
-
-  currency    String @default("INR")
-  timezone    String @default("Asia/Kolkata")
-  language    String @default("en") // en, hi, ta, te, kn, ml, mr, bn — display language for this business's staff
-
-  invoicePrefix String @default("INV")
-  invoiceCounter Int   @default(0)
-
-  logoUrl String?
-
-  staff        Staff[]
-  categories   Category[]
-  products     Product[]
-  ingredients  Ingredient[]
-  customers    Customer[]
-  orders       Order[]
-  invoices     Invoice[]
-  expenses     Expense[]
-  expenseCategories ExpenseCategory[]
-  tiffinPlans  TiffinPlan[]
-  dayClosings  DayClosing[]
-  printers     Printer[]
-  notifications Notification[]
-  auditLogs    AuditLog[]
-  heldBills    HeldBill[]
-  offlineTransactions OfflineTransaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  legalName      String?
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  state          String?
+  pincode        String?
+  gstin          String?
+  gstEnabled     Boolean  @default(true)
+  taxInclusive   Boolean  @default(true)
+  cgstPercent    Decimal  @default(2.5) @db.Decimal(5, 2)
+  sgstPercent    Decimal  @default(2.5) @db.Decimal(5, 2)
+  igstPercent    Decimal  @default(5) @db.Decimal(5, 2)
+  currency       String   @default("INR")
+  timezone       String   @default("Asia/Kolkata")
+  language       String   @default("en")
+  invoicePrefix  String   @default("INV")
+  invoiceCounter Int      @default(0)
+  logoUrl        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("businesses")
 }
@@ -105,44 +57,29 @@ model Business {
 model Staff {
   id         String      @id @default(cuid())
   businessId String
-  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   userId     String
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   role       StaffRole
   status     StaffStatus @default(ACTIVE)
-  pin        String?     // optional quick-login PIN for shared POS terminals
-
-  orders        Order[]
-  invoices      Invoice[]
-  payments      Payment[]
-  auditLogs     AuditLog[]
-  dayClosingsClosed DayClosing[]
-  stockMovements InventoryMovement[]
-  heldBills     HeldBill[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  pin        String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   @@unique([businessId, userId])
   @@map("staff")
 }
 
-// --- Auth.js required models ---
-
 model Account {
   id                String  @id @default(cuid())
   userId            String
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   @@unique([provider, providerAccountId])
@@ -153,7 +90,6 @@ model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expires      DateTime
 
   @@map("sessions")
@@ -168,62 +104,38 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// ============================================================================
-// PRODUCTS / CATEGORIES / RECIPES (INGREDIENT-LEVEL PROFIT)
-// ============================================================================
-
-enum ProductStatus {
-  ACTIVE
-  INACTIVE
-}
-
 model Category {
   id         String   @id @default(cuid())
   businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   name       String
   sortOrder  Int      @default(0)
-  products   Product[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([businessId, name])
   @@map("categories")
 }
 
 model Product {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
-
-  name       String
-  alias      String?  // alternate search name, e.g. regional name
-  sku        String?
-  barcode    String?
-  unit       String   @default("pc") // pc, kg, L, plate, etc.
-
-  purchasePrice Decimal @default(0) @db.Decimal(10, 2)
-  sellingPrice  Decimal @db.Decimal(10, 2)
-  mrp           Decimal? @db.Decimal(10, 2)
-  gstPercent    Decimal @default(5) @db.Decimal(5, 2)
-
-  trackInventory Boolean @default(true)
-  currentStock   Decimal @default(0) @db.Decimal(10, 3)
-  minStock       Decimal @default(0) @db.Decimal(10, 3)
-
-  status ProductStatus @default(ACTIVE)
-  imageUrl String?
-
-  recipe            Recipe?
-  orderItems        OrderItem[]
-  invoiceItems      InvoiceItem[]
-  inventoryMovements InventoryMovement[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String        @id @default(cuid())
+  businessId     String
+  categoryId     String?
+  name           String
+  alias          String?
+  sku            String?
+  barcode        String?
+  unit           String        @default("pc")
+  purchasePrice  Decimal       @default(0) @db.Decimal(10, 2)
+  sellingPrice   Decimal       @db.Decimal(10, 2)
+  mrp            Decimal?      @db.Decimal(10, 2)
+  gstPercent     Decimal       @default(5) @db.Decimal(5, 2)
+  trackInventory Boolean       @default(true)
+  currentStock   Decimal       @default(0) @db.Decimal(10, 3)
+  minStock       Decimal       @default(0) @db.Decimal(10, 3)
+  status         ProductStatus @default(ACTIVE)
+  imageUrl       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([businessId, name])
   @@index([businessId, barcode])
@@ -234,21 +146,15 @@ model Product {
 /// Raw ingredient used in recipes. Distinct from Product because ingredients
 /// are purchased in bulk units (kg/L) and are not sold directly.
 model Ingredient {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  name          String
-  unit          String  // kg, L, pc, g, ml
-  purchaseCost  Decimal @db.Decimal(10, 2) // cost per unit
-  currentStock  Decimal @default(0) @db.Decimal(10, 3)
-  minStock      Decimal @default(0) @db.Decimal(10, 3)
-
-  recipeLines RecipeIngredient[]
-  movements   InventoryMovement[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  businessId   String
+  name         String
+  unit         String
+  purchaseCost Decimal  @db.Decimal(10, 2)
+  currentStock Decimal  @default(0) @db.Decimal(10, 3)
+  minStock     Decimal  @default(0) @db.Decimal(10, 3)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([businessId, name])
   @@map("ingredients")
@@ -257,12 +163,8 @@ model Ingredient {
 /// One-to-one with Product. If a Product has a Recipe, food cost & margin
 /// are computed from its RecipeIngredient lines instead of purchasePrice.
 model Recipe {
-  id        String  @id @default(cuid())
-  productId String  @unique
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  lines RecipeIngredient[]
-
+  id        String   @id @default(cuid())
+  productId String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -270,20 +172,321 @@ model Recipe {
 }
 
 model RecipeIngredient {
-  id           String     @id @default(cuid())
+  id           String  @id @default(cuid())
   recipeId     String
-  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   ingredientId String
-  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
-  quantity     Decimal    @db.Decimal(10, 3) // quantity of ingredient per 1 unit of product
+  quantity     Decimal @db.Decimal(10, 3)
 
   @@unique([recipeId, ingredientId])
   @@map("recipe_ingredients")
 }
 
-// ============================================================================
-// INVENTORY
-// ============================================================================
+/// Append-only ledger. currentStock on Product/Ingredient is a cached
+/// aggregate; this table is the source of truth / audit trail.
+model InventoryMovement {
+  id           String                @id @default(cuid())
+  businessId   String
+  productId    String?
+  ingredientId String?
+  type         InventoryMovementType
+  quantity     Decimal               @db.Decimal(10, 3)
+  reason       String?
+  reference    String?
+  staffId      String?
+  createdAt    DateTime              @default(now())
+
+  @@index([businessId, productId])
+  @@index([businessId, ingredientId])
+  @@map("inventory_movements")
+}
+
+model Customer {
+  id                 String   @id @default(cuid())
+  businessId         String
+  name               String
+  phone              String?
+  email              String?
+  address            String?
+  notes              String?
+  outstandingBalance Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([businessId, phone])
+  @@map("customers")
+}
+
+model CustomerLedger {
+  id           String          @id @default(cuid())
+  businessId   String
+  customerId   String
+  type         LedgerEntryType
+  amount       Decimal         @db.Decimal(10, 2)
+  balanceAfter Decimal         @db.Decimal(10, 2)
+  invoiceId    String?
+  note         String?
+  createdAt    DateTime        @default(now())
+
+  @@index([businessId, customerId])
+  @@map("customer_ledger")
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  businessId        String
+  staffId           String
+  customerId        String?
+  type              OrderType     @default(TAKEAWAY)
+  status            OrderStatus   @default(HELD)
+  billDiscountType  DiscountType?
+  billDiscountValue Decimal?      @db.Decimal(10, 2)
+  label             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([businessId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String        @id @default(cuid())
+  orderId       String
+  productId     String
+  quantity      Decimal       @db.Decimal(10, 3)
+  unitPrice     Decimal       @db.Decimal(10, 2)
+  discountType  DiscountType?
+  discountValue Decimal?      @db.Decimal(10, 2)
+
+  @@map("order_items")
+}
+
+/// Created only when an Order is completed (never for held orders).
+/// All monetary totals here are server-computed and authoritative.
+model Invoice {
+  id            String        @id @default(cuid())
+  businessId    String
+  invoiceNumber String
+  orderId       String        @unique
+  staffId       String
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discountTotal Decimal       @default(0) @db.Decimal(10, 2)
+  cgstTotal     Decimal       @default(0) @db.Decimal(10, 2)
+  sgstTotal     Decimal       @default(0) @db.Decimal(10, 2)
+  igstTotal     Decimal       @default(0) @db.Decimal(10, 2)
+  grandTotal    Decimal       @db.Decimal(10, 2)
+  status        InvoiceStatus @default(PAID)
+  syncedAt      DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  productId   String
+  productName String
+  quantity    Decimal @db.Decimal(10, 3)
+  unitPrice   Decimal @db.Decimal(10, 2)
+  discount    Decimal @default(0) @db.Decimal(10, 2)
+  gstPercent  Decimal @default(0) @db.Decimal(5, 2)
+  lineTotal   Decimal @db.Decimal(10, 2)
+
+  @@map("invoice_items")
+}
+
+/// One Invoice can have multiple Payment rows to support split payments
+/// (e.g. Cash 300 + UPI 550).
+model Payment {
+  id        String        @id @default(cuid())
+  invoiceId String
+  staffId   String
+  method    PaymentMethod
+  amount    Decimal       @db.Decimal(10, 2)
+  reference String?
+  createdAt DateTime      @default(now())
+
+  @@map("payments")
+}
+
+/// Bills parked mid-order ("customer waiting") — kept out of the Order model
+/// so a held bill never accidentally deducts inventory or counts as a sale.
+model HeldBill {
+  id         String   @id @default(cuid())
+  businessId String
+  staffId    String
+  label      String?
+  cartJson   Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("held_bills")
+}
+
+model ExpenseCategory {
+  id         String  @id @default(cuid())
+  businessId String
+  name       String
+  isDefault  Boolean @default(false)
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id            String        @id @default(cuid())
+  businessId    String
+  categoryId    String
+  amount        Decimal       @db.Decimal(10, 2)
+  date          DateTime      @default(now())
+  description   String?
+  paymentMethod PaymentMethod
+  createdAt     DateTime      @default(now())
+
+  @@map("expenses")
+}
+
+model TiffinPlan {
+  id           String   @id @default(cuid())
+  businessId   String
+  name         String
+  price        Decimal  @db.Decimal(10, 2)
+  totalMeals   Int
+  durationDays Int
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@map("tiffin_plans")
+}
+
+model TiffinSubscription {
+  id           String                   @id @default(cuid())
+  businessId   String
+  planId       String
+  customerId   String
+  startDate    DateTime                 @default(now())
+  endDate      DateTime
+  totalMeals   Int
+  mealsUsed    Int                      @default(0)
+  mealsSkipped Int                      @default(0)
+  extraMeals   Int                      @default(0)
+  amountPaid   Decimal                  @default(0) @db.Decimal(10, 2)
+  status       TiffinSubscriptionStatus @default(ACTIVE)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+
+  @@map("tiffin_subscriptions")
+}
+
+model TiffinMealUsage {
+  id             String          @id @default(cuid())
+  subscriptionId String
+  type           TiffinUsageType
+  date           DateTime        @default(now())
+  reason         String?
+  extraCharge    Decimal?        @db.Decimal(10, 2)
+  createdAt      DateTime        @default(now())
+
+  @@map("tiffin_meal_usage")
+}
+
+model DayClosing {
+  id              String   @id @default(cuid())
+  businessId      String
+  date            DateTime @db.Date
+  totalSales      Decimal  @db.Decimal(10, 2)
+  cashSales       Decimal  @db.Decimal(10, 2)
+  upiSales        Decimal  @db.Decimal(10, 2)
+  cardSales       Decimal  @db.Decimal(10, 2)
+  creditSales     Decimal  @db.Decimal(10, 2)
+  expensesTotal   Decimal  @db.Decimal(10, 2)
+  refundsTotal    Decimal  @default(0) @db.Decimal(10, 2)
+  discountsTotal  Decimal  @default(0) @db.Decimal(10, 2)
+  openingCash     Decimal  @db.Decimal(10, 2)
+  expectedCash    Decimal  @db.Decimal(10, 2)
+  actualCash      Decimal  @db.Decimal(10, 2)
+  cashDifference  Decimal  @db.Decimal(10, 2)
+  closedByStaffId String
+  closedAt        DateTime @default(now())
+  locked          Boolean  @default(true)
+
+  @@map("day_closings")
+}
+
+model Printer {
+  id                  String      @id @default(cuid())
+  businessId          String
+  name                String
+  type                PrinterType
+  isDefault           Boolean     @default(false)
+  config              Json?
+  bluetoothDeviceId   String?
+  bluetoothDeviceName String?
+  createdAt           DateTime    @default(now())
+
+  @@map("printers")
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  businessId  String
+  type        NotificationType
+  title       String
+  message     String
+  actionLabel String?
+  actionUrl   String?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  businessId String
+  staffId    String?
+  action     String
+  entity     String?
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+/// Server-side record of an offline-created bill once it reaches the server.
+/// The client id (generated in IndexedDB) is kept for idempotent dedupe.
+model OfflineTransaction {
+  id         String     @id @default(cuid())
+  businessId String
+  clientId   String
+  payload    Json
+  status     SyncStatus @default(PENDING)
+  invoiceId  String?
+  error      String?
+  attempts   Int        @default(0)
+  createdAt  DateTime   @default(now())
+  syncedAt   DateTime?
+
+  // Used by offline sync to safely deduplicate/retry the same client transaction.
+  @@unique([clientId])
+  @@map("offline_transactions")
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  CASHIER
+}
+
+enum StaffStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
 
 enum InventoryMovementType {
   OPENING
@@ -294,89 +497,11 @@ enum InventoryMovementType {
   RECIPE_DEDUCTION
 }
 
-/// Append-only ledger. currentStock on Product/Ingredient is a cached
-/// aggregate; this table is the source of truth / audit trail.
-model InventoryMovement {
-  id         String   @id @default(cuid())
-  businessId String
-
-  productId    String?
-  product      Product?    @relation(fields: [productId], references: [id])
-  ingredientId String?
-  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
-
-  type       InventoryMovementType
-  quantity   Decimal @db.Decimal(10, 3) // signed: negative = stock out
-  reason     String?
-  reference  String? // e.g. invoice number, adjustment id
-
-  staffId String?
-  staff   Staff? @relation(fields: [staffId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([businessId, productId])
-  @@index([businessId, ingredientId])
-  @@map("inventory_movements")
-}
-
-// ============================================================================
-// CUSTOMERS / UDHAARI (CREDIT LEDGER)
-// ============================================================================
-
-model Customer {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  name    String
-  phone   String?
-  email   String?
-  address String?
-  notes   String?
-
-  outstandingBalance Decimal @default(0) @db.Decimal(10, 2)
-
-  orders        Order[]
-  ledgerEntries CustomerLedger[]
-  subscriptions TiffinSubscription[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([businessId, phone])
-  @@map("customers")
-}
-
 enum LedgerEntryType {
-  CREDIT_SALE   // increases outstanding
-  PAYMENT       // decreases outstanding
+  CREDIT_SALE
+  PAYMENT
   ADJUSTMENT
 }
-
-model CustomerLedger {
-  id         String   @id @default(cuid())
-  businessId String
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  type    LedgerEntryType
-  amount  Decimal @db.Decimal(10, 2) // always positive; sign inferred from type
-  balanceAfter Decimal @db.Decimal(10, 2)
-
-  invoiceId String?
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
-  note      String?
-
-  createdAt DateTime @default(now())
-
-  @@index([businessId, customerId])
-  @@map("customer_ledger")
-}
-
-// ============================================================================
-// ORDERS / INVOICES / PAYMENTS
-// ============================================================================
 
 enum OrderType {
   DINE_IN
@@ -394,107 +519,11 @@ enum DiscountType {
   FIXED
 }
 
-model Order {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  staffId String
-  staff   Staff  @relation(fields: [staffId], references: [id])
-
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id])
-
-  type   OrderType   @default(TAKEAWAY)
-  status OrderStatus @default(HELD)
-
-  billDiscountType  DiscountType?
-  billDiscountValue Decimal?      @db.Decimal(10, 2)
-
-  label String? // e.g. "Table 4" or "Ramesh - held" for hold/resume UI
-
-  items    OrderItem[]
-  invoice  Invoice?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([businessId, status])
-  @@map("orders")
-}
-
-model OrderItem {
-  id      String  @id @default(cuid())
-  orderId String
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product Product @relation(fields: [productId], references: [id])
-
-  quantity Decimal @db.Decimal(10, 3)
-  unitPrice Decimal @db.Decimal(10, 2) // snapshot at add-to-cart time; re-validated server-side on checkout
-
-  discountType  DiscountType?
-  discountValue Decimal?      @db.Decimal(10, 2)
-
-  @@map("order_items")
-}
-
 enum InvoiceStatus {
   PAID
   PARTIALLY_PAID
   CANCELLED
   REFUNDED
-}
-
-/// Created only when an Order is completed (never for held orders).
-/// All monetary totals here are server-computed and authoritative.
-model Invoice {
-  id          String   @id @default(cuid())
-  businessId String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  invoiceNumber String  // e.g. INV-000123, unique per business
-  orderId     String   @unique
-  order       Order    @relation(fields: [orderId], references: [id])
-
-  staffId String
-  staff   Staff  @relation(fields: [staffId], references: [id])
-
-  subtotal      Decimal @db.Decimal(10, 2)
-  discountTotal Decimal @default(0) @db.Decimal(10, 2)
-  cgstTotal     Decimal @default(0) @db.Decimal(10, 2)
-  sgstTotal     Decimal @default(0) @db.Decimal(10, 2)
-  igstTotal     Decimal @default(0) @db.Decimal(10, 2)
-  grandTotal    Decimal @db.Decimal(10, 2)
-
-  status InvoiceStatus @default(PAID)
-
-  items    InvoiceItem[]
-  payments Payment[]
-  ledgerEntries CustomerLedger[]
-
-  syncedAt  DateTime? // set when synced from an offline transaction
-  createdAt DateTime  @default(now())
-
-  @@unique([businessId, invoiceNumber])
-  @@index([businessId, createdAt])
-  @@map("invoices")
-}
-
-model InvoiceItem {
-  id        String  @id @default(cuid())
-  invoiceId String
-  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
-  productName String  // snapshot, survives product renames/deletes
-  quantity    Decimal @db.Decimal(10, 3)
-  unitPrice   Decimal @db.Decimal(10, 2)
-  discount    Decimal @default(0) @db.Decimal(10, 2)
-  gstPercent  Decimal @default(0) @db.Decimal(5, 2)
-  lineTotal   Decimal @db.Decimal(10, 2)
-
-  @@map("invoice_items")
 }
 
 enum PaymentMethod {
@@ -504,131 +533,10 @@ enum PaymentMethod {
   CREDIT
 }
 
-/// One Invoice can have multiple Payment rows to support split payments
-/// (e.g. Cash 300 + UPI 550).
-model Payment {
-  id        String  @id @default(cuid())
-  invoiceId String
-  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  staffId String
-  staff   Staff  @relation(fields: [staffId], references: [id])
-
-  method PaymentMethod
-  amount Decimal       @db.Decimal(10, 2)
-  reference String?    // UPI txn id / card auth code, optional
-
-  createdAt DateTime @default(now())
-
-  @@map("payments")
-}
-
-/// Bills parked mid-order ("customer waiting") — kept out of the Order model
-/// so a held bill never accidentally deducts inventory or counts as a sale.
-model HeldBill {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  staffId    String
-  staff      Staff    @relation(fields: [staffId], references: [id])
-
-  label   String?
-  cartJson Json    // serialized cart snapshot (product ids, qty, discounts, order type)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("held_bills")
-}
-
-// ============================================================================
-// EXPENSES
-// ============================================================================
-
-model ExpenseCategory {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name       String
-  isDefault  Boolean  @default(false)
-
-  expenses Expense[]
-
-  @@unique([businessId, name])
-  @@map("expense_categories")
-}
-
-model Expense {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  categoryId String
-  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
-
-  amount      Decimal       @db.Decimal(10, 2)
-  date        DateTime      @default(now())
-  description String?
-  paymentMethod PaymentMethod
-
-  createdAt DateTime @default(now())
-
-  @@index([businessId, date])
-  @@map("expenses")
-}
-
-// ============================================================================
-// TIFFIN / MEAL SUBSCRIPTION
-// ============================================================================
-
-model TiffinPlan {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  name       String
-  price      Decimal  @db.Decimal(10, 2)
-  totalMeals Int
-  durationDays Int
-
-  subscriptions TiffinSubscription[]
-  active Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  @@map("tiffin_plans")
-}
-
 enum TiffinSubscriptionStatus {
   ACTIVE
   EXPIRED
   CANCELLED
-}
-
-model TiffinSubscription {
-  id         String   @id @default(cuid())
-  businessId String
-  planId     String
-  plan       TiffinPlan @relation(fields: [planId], references: [id])
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
-
-  startDate DateTime @default(now())
-  endDate   DateTime
-
-  totalMeals     Int
-  mealsUsed      Int      @default(0)
-  mealsSkipped   Int      @default(0)
-  extraMeals     Int      @default(0)
-
-  amountPaid Decimal @default(0) @db.Decimal(10, 2)
-  status     TiffinSubscriptionStatus @default(ACTIVE)
-
-  usageLog TiffinMealUsage[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("tiffin_subscriptions")
 }
 
 enum TiffinUsageType {
@@ -637,90 +545,12 @@ enum TiffinUsageType {
   EXTRA
 }
 
-model TiffinMealUsage {
-  id             String   @id @default(cuid())
-  subscriptionId String
-  subscription   TiffinSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-
-  type   TiffinUsageType
-  date   DateTime @default(now())
-  reason String?
-  extraCharge Decimal? @db.Decimal(10, 2)
-
-  createdAt DateTime @default(now())
-
-  @@map("tiffin_meal_usage")
-}
-
-// ============================================================================
-// DAY CLOSING
-// ============================================================================
-
-model DayClosing {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  date DateTime @db.Date
-
-  totalSales    Decimal @db.Decimal(10, 2)
-  cashSales     Decimal @db.Decimal(10, 2)
-  upiSales      Decimal @db.Decimal(10, 2)
-  cardSales     Decimal @db.Decimal(10, 2)
-  creditSales   Decimal @db.Decimal(10, 2)
-  expensesTotal Decimal @db.Decimal(10, 2)
-  refundsTotal  Decimal @default(0) @db.Decimal(10, 2)
-  discountsTotal Decimal @default(0) @db.Decimal(10, 2)
-
-  openingCash Decimal @db.Decimal(10, 2)
-  expectedCash Decimal @db.Decimal(10, 2)
-  actualCash   Decimal @db.Decimal(10, 2)
-  cashDifference Decimal @db.Decimal(10, 2)
-
-  closedByStaffId String
-  closedByStaff   Staff  @relation(fields: [closedByStaffId], references: [id])
-  closedAt        DateTime @default(now())
-  locked          Boolean  @default(true)
-
-  @@unique([businessId, date])
-  @@map("day_closings")
-}
-
-// ============================================================================
-// PRINTING
-// ============================================================================
-
 enum PrinterType {
   THERMAL_58MM
   THERMAL_80MM
   A4
   BROWSER
 }
-
-model Printer {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  name      String
-  type PrinterType
-  isDefault Boolean @default(false)
-  config    Json?   // vendor-specific connection info
-
-  // Web Bluetooth pairing (for Bluetooth thermal printers/scanners). Paired
-  // via navigator.bluetooth in the browser; we persist the device's public
-  // name/id here so Settings can show "Connected: <name>" on next visit.
-  bluetoothDeviceId   String?
-  bluetoothDeviceName String?
-
-  createdAt DateTime @default(now())
-
-  @@map("printers")
-}
-
-// ============================================================================
-// NOTIFICATIONS / BUSINESS ALERTS
-// ============================================================================
 
 enum NotificationType {
   LOW_STOCK
@@ -735,73 +565,9 @@ enum NotificationType {
   INFO
 }
 
-model Notification {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  type    NotificationType
-  title   String
-  message String
-  actionLabel String?
-  actionUrl   String?
-  read    Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  @@index([businessId, read])
-  @@map("notifications")
-}
-
-// ============================================================================
-// AUDIT LOG
-// ============================================================================
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  staffId    String?
-  staff      Staff?   @relation(fields: [staffId], references: [id])
-
-  action  String  // e.g. "BILL_CREATED", "PRODUCT_PRICE_CHANGED"
-  entity  String? // e.g. "Invoice"
-  entityId String?
-  metadata Json?
-
-  createdAt DateTime @default(now())
-
-  @@index([businessId, createdAt])
-  @@map("audit_logs")
-}
-
-// ============================================================================
-// OFFLINE SYNC
-// ============================================================================
-
 enum SyncStatus {
   PENDING
   SYNCING
   SYNCED
   FAILED
-}
-
-/// Server-side record of an offline-created bill once it reaches the server.
-/// The client id (generated in IndexedDB) is kept for idempotent dedupe.
-model OfflineTransaction {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  clientId String   @unique // uuid generated on-device at creation time
-  payload  Json      // full cart + payment payload as captured offline
-  status   SyncStatus @default(PENDING)
-  invoiceId String?   // set once successfully converted to an Invoice
-  error     String?
-  attempts  Int       @default(0)
-
-  createdAt DateTime @default(now())
-  syncedAt  DateTime?
-
-  @@map("offline_transactions")
 }
