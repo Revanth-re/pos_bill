@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Download, CheckCircle2, Share, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -8,12 +8,6 @@ import { usePwaInstall } from "@/hooks/usePwaInstall";
 import { toast } from "@/stores/toastStore";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
-/**
- * Instant install UX — no long spinner.
- * Opens a sheet immediately; if Chrome already captured beforeinstallprompt,
- * the Install tap shows the real system dialog. Otherwise shows the best
- * path for that browser (iOS Share / Add to Home Screen).
- */
 export function InstallAppCard({ compact = false }: { compact?: boolean }) {
   const t = useT();
   const { installed, canPromptNatively, platform, secureContext, promptInstall } = usePwaInstall();
@@ -29,31 +23,23 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
     );
   }
 
-  async function handleInstallTap() {
-    // Must call prompt() directly from this gesture when available.
-    if (canPromptNatively) {
-      setBusy(true);
-      try {
-        const outcome = await promptInstall();
-        if (outcome === "accepted") {
-          toast.success(t("install.installing"));
-          setOpen(false);
-          return;
-        }
-        if (outcome === "dismissed") {
-          setOpen(false);
-          return;
-        }
-      } finally {
-        setBusy(false);
+  async function handlePrimaryInstall() {
+    setBusy(true);
+    try {
+      const outcome = await promptInstall();
+      if (outcome === "accepted") {
+        toast.success(t("install.installing"));
+        setOpen(false);
+        return;
       }
-    }
-
-    // iOS / browsers without beforeinstallprompt — sheet already shows steps.
-    if (platform === "ios-safari") return;
-    if (!secureContext) {
-      toast.error("Open this app with https to install.");
-      return;
+      if (outcome === "dismissed") {
+        setOpen(false);
+        return;
+      }
+      // No native prompt yet — keep sheet open with platform help.
+      toast.info("Native install not ready on this tab yet. Use the steps below.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -63,7 +49,24 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
         variant="primary"
         size={compact ? "sm" : "md"}
         className={compact ? "w-full" : undefined}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // If Chrome already handed us the prompt, install immediately — no extra sheet.
+          if (canPromptNatively && platform !== "ios-safari") {
+            void (async () => {
+              setBusy(true);
+              try {
+                const outcome = await promptInstall();
+                if (outcome === "accepted") toast.success(t("install.installing"));
+                else if (outcome === "unavailable") setOpen(true);
+              } finally {
+                setBusy(false);
+              }
+            })();
+            return;
+          }
+          setOpen(true);
+        }}
+        loading={busy}
       >
         <span className="inline-flex items-center gap-2">
           <Download className="h-4 w-4" /> {t("settings.installTitle")}
@@ -100,7 +103,7 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
 
             {!secureContext && (
               <p className="mx-4 mb-3 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
-                This page is not on https, so the phone cannot install apps. Open your https link and try again.
+                Open the site with <strong>https</strong> (not http) to install.
               </p>
             )}
 
@@ -115,15 +118,14 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2 p-4">
-                <Button size="lg" onClick={handleInstallTap} loading={busy} disabled={!secureContext}>
+                <Button size="lg" onClick={handlePrimaryInstall} loading={busy} disabled={!secureContext}>
                   <span className="inline-flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    {canPromptNatively ? "Install" : "Add to Home Screen"}
+                    <Download className="h-4 w-4" /> Install
                   </span>
                 </Button>
-                {!canPromptNatively && secureContext && (
-                  <AndroidFallbackHint />
-                )}
+                <p className="text-center text-xs text-muted">
+                  Or tap the <strong>install icon</strong> in the Chrome address bar.
+                </p>
                 <Button variant="secondary" onClick={() => setOpen(false)}>
                   Not now
                 </Button>
@@ -133,13 +135,5 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
         </div>
       )}
     </div>
-  );
-}
-
-function AndroidFallbackHint() {
-  return (
-    <p className="text-center text-xs text-muted">
-      If the phone dialog doesn&apos;t open, tap your browser menu → <strong>Install app</strong>.
-    </p>
   );
 }

@@ -13,9 +13,9 @@ function todayDateOnly(): Date {
 async function computeTodaySummary(businessId: string) {
   const start = todayDateOnly();
 
-  const [invoices, expenses, lastClosing] = await Promise.all([
+  const [invoices, expenses, lastClosing, refundLogs] = await Promise.all([
     prisma.invoice.findMany({
-      where: { businessId, createdAt: { gte: start }, status: { not: "CANCELLED" } },
+      where: { businessId, createdAt: { gte: start }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
       include: { payments: true },
     }),
     prisma.expense.aggregate({
@@ -23,7 +23,20 @@ async function computeTodaySummary(businessId: string) {
       _sum: { amount: true },
     }),
     prisma.dayClosing.findFirst({ where: { businessId }, orderBy: { date: "desc" } }),
+    prisma.auditLog.findMany({
+      where: { businessId, action: { in: ["BILL_REFUNDED", "BILL_CANCELLED"] }, createdAt: { gte: start } },
+      select: { metadata: true },
+    }),
   ]);
+
+  // Today's bills that were refunded/cancelled are already excluded from sales,
+  // so only refunds of *earlier* days' bills take cash out of today's drawer.
+  let refundsTotal = 0, cashRefunds = 0;
+  for (const log of refundLogs) {
+    const m = (log.metadata ?? {}) as { amount?: number; cashAmount?: number; sameDay?: boolean };
+    refundsTotal += Number(m.amount ?? 0);
+    if (!m.sameDay) cashRefunds += Number(m.cashAmount ?? 0);
+  }
 
   let cashSales = 0, upiSales = 0, cardSales = 0, creditSales = 0, discountsTotal = 0;
   for (const inv of invoices) {
@@ -38,9 +51,9 @@ async function computeTodaySummary(businessId: string) {
   const totalSales = invoices.reduce((sum, i) => sum + Number(i.grandTotal), 0);
   const expensesTotal = Number(expenses._sum.amount ?? 0);
   const openingCash = lastClosing ? Number(lastClosing.actualCash) : 0;
-  const expectedCash = openingCash + cashSales - expensesTotal;
+  const expectedCash = openingCash + cashSales - expensesTotal - cashRefunds;
 
-  return { totalSales, cashSales, upiSales, cardSales, creditSales, expensesTotal, discountsTotal, openingCash, expectedCash };
+  return { totalSales, cashSales, upiSales, cardSales, creditSales, expensesTotal, discountsTotal, refundsTotal, cashRefunds, openingCash, expectedCash };
 }
 
 export async function GET() {
@@ -97,6 +110,7 @@ export async function POST(req: Request) {
         creditSales: summary.creditSales,
         expensesTotal: summary.expensesTotal,
         discountsTotal: summary.discountsTotal,
+        refundsTotal: summary.refundsTotal,
         openingCash: summary.openingCash,
         expectedCash: summary.expectedCash,
         actualCash: parsed.data.actualCash,

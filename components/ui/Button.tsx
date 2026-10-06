@@ -13,11 +13,11 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   secondary: "bg-surface text-ink border border-border-strong shadow-sm hover:bg-paper hover:border-brand/40 active:scale-[0.97]",
   ghost: "bg-transparent text-ink hover:bg-black/5 active:scale-[0.97]",
   danger: "bg-danger text-white shadow-md hover:opacity-90 active:scale-[0.97]",
-  gold: "bg-accent text-ink shadow-md hover:brightness-95 active:scale-[0.97]",
+  gold: "bg-accent text-brand-dark shadow-md hover:bg-accent-dark hover:text-white active:scale-[0.97]",
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "px-3 py-2 text-sm rounded-lg gap-1.5",
+  sm: "min-h-11 px-3 py-2 text-sm rounded-lg gap-1.5",
   md: "px-4 py-3 text-base rounded-xl gap-2",
   lg: "px-6 py-4 text-lg font-bold rounded-xl gap-2",
 };

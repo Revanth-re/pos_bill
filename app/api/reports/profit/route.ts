@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     const start = rangeStart(searchParams.get("range"));
 
     const invoices = await prisma.invoice.findMany({
-      where: { businessId: session.businessId, createdAt: { gte: start }, status: { not: "CANCELLED" } },
+      where: { businessId: session.businessId, createdAt: { gte: start }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
       include: { items: true },
     });
 

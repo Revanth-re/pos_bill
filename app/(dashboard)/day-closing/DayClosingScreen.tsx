@@ -14,6 +14,8 @@ interface Summary {
   creditSales: number;
   expensesTotal: number;
   discountsTotal: number;
+  refundsTotal?: number;
+  cashRefunds?: number;
   openingCash: number;
   expectedCash: number;
 }
@@ -76,6 +78,7 @@ export function DayClosingScreen() {
       creditSales: Number(body.closing.creditSales),
       expensesTotal: Number(body.closing.expensesTotal),
       discountsTotal: Number(body.closing.discountsTotal),
+      refundsTotal: Number(body.closing.refundsTotal ?? 0),
       openingCash: Number(body.closing.openingCash),
       expectedCash: Number(body.closing.expectedCash),
       actualCash: Number(body.closing.actualCash),
@@ -97,14 +100,14 @@ export function DayClosingScreen() {
   const data = closed ? closing! : summary!;
 
   return (
-    <div className="p-4 lg:p-6 space-y-4 max-w-lg">
+    <div className="p-4 lg:p-6 space-y-4 max-w-lg w-full mx-auto lg:mx-0">
       <div>
         <h1 className="text-2xl font-extrabold text-ink">Day Closing</h1>
         <p className="text-base text-muted">{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
 
       {closed && (
-        <div className="flex items-center gap-2 border-2 border-success bg-success-soft p-3">
+        <div className="flex items-center gap-2 rounded-xl border border-success/30 bg-success-soft p-3">
           <Lock className="h-5 w-5 text-success shrink-0" />
           <p className="text-sm font-bold text-ink">
             Day closed at {new Date(closing!.closedAt).toLocaleTimeString("en-IN")}. This summary is locked.
@@ -119,11 +122,15 @@ export function DayClosingScreen() {
         <Row label="Card Sales" value={formatINR(data.cardSales)} />
         <Row label="Credit Sales" value={formatINR(data.creditSales)} />
         <Row label="Discounts Given" value={formatINR(data.discountsTotal)} />
+        <Row label="Cancelled / Refunded" value={formatINR(Number(data.refundsTotal ?? 0))} />
         <Row label="Expenses" value={formatINR(data.expensesTotal)} />
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm space-y-2">
         <Row label="Opening Cash" value={formatINR(data.openingCash)} />
+        <Row label="+ Cash Sales" value={formatINR(data.cashSales)} />
+        <Row label="− Cash Expenses" value={formatINR(data.expensesTotal)} />
+        {!closed && <Row label="− Cash Refunds" value={formatINR(Number(data.cashRefunds ?? 0))} />}
         <Row label="Expected Cash" value={formatINR(data.expectedCash)} bold />
         {closed ? (
           <>
@@ -157,7 +164,7 @@ export function DayClosingScreen() {
       </div>
 
       {error && (
-        <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
+        <p className="rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
       )}
 
       {!closed && (

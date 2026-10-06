@@ -1,3 +1,4 @@
+import { getTokenNumber } from "@/lib/billing/token";
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
@@ -259,7 +260,10 @@ export async function POST(req: Request) {
 
     // 15. Printable invoice is generated client-side (see lib/printing) from
     // this response payload — no server-side rendering needed for receipts.
-    return NextResponse.json({ invoice: result.invoice, totals: result.totals });
+    // Daily token for the kitchen slip + payment split for the printed bill.
+    const tokenNumber = await getTokenNumber(session.businessId, result.invoice.createdAt);
+    const payments = input.payments.map((p) => ({ method: p.method, amount: p.amount }));
+    return NextResponse.json({ invoice: { ...result.invoice, tokenNumber, payments }, totals: result.totals });
   } catch (err) {
     if (err instanceof UnauthenticatedError) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

@@ -126,12 +126,15 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           cgstTotal?: number;
           sgstTotal?: number;
           igstTotal?: number;
+          tokenNumber?: number;
+          payments?: { method: string; amount: number }[];
         }
       | undefined;
 
     return {
       businessName,
       invoiceNumber: inv?.invoiceNumber ?? "OFFLINE-PENDING",
+      tokenNumber: inv?.tokenNumber,
       createdAt: new Date().toLocaleString("en-IN"),
       cashierName,
       orderType,
@@ -147,7 +150,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
       sgstTotal: Number(inv?.sgstTotal ?? 0),
       igstTotal: Number(inv?.igstTotal ?? 0),
       grandTotal: Number(inv?.grandTotal ?? estimateCartTotal(lines)),
-      payments: [],
+      payments: (inv?.payments ?? []).map((p) => ({ method: p.method, amount: Number(p.amount) })),
     };
   }
 

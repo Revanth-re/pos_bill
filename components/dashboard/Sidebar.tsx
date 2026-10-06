@@ -15,6 +15,9 @@ import {
   UserCog,
   Settings,
   Lock,
+  ReceiptText,
+  Clock,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { can, type Permission } from "@/lib/permissions";
@@ -24,6 +27,8 @@ import type { StaffRole } from "@prisma/client";
 const ITEMS: { href: string; labelKey: string; icon: typeof LayoutDashboard; permission?: Permission }[] = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   { href: "/billing", labelKey: "nav.billing", icon: Receipt, permission: "billing.create" },
+  { href: "/bills", labelKey: "nav.bills", icon: ReceiptText, permission: "billing.create" },
+  { href: "/shifts", labelKey: "nav.shifts", icon: Clock, permission: "shift.manage" },
   { href: "/sales", labelKey: "nav.sales", icon: LineChart, permission: "sales.view.own" },
   { href: "/products", labelKey: "nav.products", icon: ShoppingBag, permission: "products.view" },
   { href: "/inventory", labelKey: "nav.inventory", icon: Package, permission: "inventory.view" },
@@ -31,6 +36,7 @@ const ITEMS: { href: string; labelKey: string; icon: typeof LayoutDashboard; per
   { href: "/expenses", labelKey: "nav.expenses", icon: Wallet, permission: "expenses.view" },
   { href: "/tiffin", labelKey: "nav.tiffin", icon: Utensils, permission: "tiffin.manage" },
   { href: "/reports", labelKey: "nav.reports", icon: BarChart3, permission: "reports.view" },
+  { href: "/performance", labelKey: "nav.performance", icon: Trophy, permission: "reports.view" },
   { href: "/day-closing", labelKey: "nav.dayClosing", icon: Lock, permission: "dayClosing.perform" },
   { href: "/staff", labelKey: "nav.staff", icon: UserCog, permission: "staff.manage" },
   { href: "/settings", labelKey: "nav.settings", icon: Settings, permission: "settings.manage" },
@@ -42,30 +48,33 @@ export function Sidebar({ role, businessName }: { role: StaffRole; businessName:
   const visibleItems = ITEMS.filter((item) => !item.permission || can(role, item.permission));
 
   return (
-    <aside className="hidden md:flex md:w-56 lg:w-64 shrink-0 flex-col border-r border-border bg-surface">
-      <Link href="/profile" className="flex items-center gap-2 px-4 py-4 transition-colors hover:bg-paper">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-ink/20 bg-brand text-base font-black text-white">
+    <aside className="hidden md:flex md:w-[76px] lg:w-64 shrink-0 flex-col sticky top-0 h-screen overflow-y-auto bg-brand-dark text-white">
+      <Link href="/profile" className="flex items-center justify-center lg:justify-start gap-3 px-4 py-5 border-b border-white/10 transition-colors hover:bg-white/5">
+        <div className="flex h-9 w-9 items-center justify-center shrink-0 rounded-xl bg-accent text-base font-extrabold text-brand-dark shadow-sm">
           ₹
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-ink">{businessName}</p>
-          <p className="text-xs text-muted">{role.charAt(0) + role.slice(1).toLowerCase()}</p>
+        <div className="hidden lg:block min-w-0">
+          <p className="truncate text-sm font-bold text-white">{businessName}</p>
+          <p className="text-xs text-white/60">{role.charAt(0) + role.slice(1).toLowerCase()}</p>
         </div>
       </Link>
-      <nav className="no-select flex-1 space-y-0.5 px-2 py-2">
+      <nav className="no-select flex-1 space-y-1 px-3 py-4">
         {visibleItems.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
           return (
             <Link
               key={href}
               href={href}
+              title={t(labelKey)}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                active ? "bg-brand-soft text-brand-dark" : "text-ink-soft hover:bg-paper"
+                "relative flex min-h-11 items-center justify-center lg:justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                active
+                  ? "bg-white/10 text-white before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-accent"
+                  : "text-white/70 hover:bg-white/5 hover:text-white"
               )}
             >
-              <Icon className="h-4.5 w-4.5" />
-              {t(labelKey)}
+              <Icon className={cn("h-5 w-5 shrink-0", active && "text-accent")} />
+              <span className="hidden lg:inline truncate">{t(labelKey)}</span>
             </Link>
           );
         })}

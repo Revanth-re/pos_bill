@@ -71,11 +71,11 @@ export async function getBusinessInsights(businessId: string): Promise<Insight[]
 
   const [yesterdayInvoices, dayBeforeInvoices] = await Promise.all([
     prisma.invoice.findMany({
-      where: { businessId, createdAt: { gte: yesterdayStart, lte: yesterdayEnd }, status: { not: "CANCELLED" } },
+      where: { businessId, createdAt: { gte: yesterdayStart, lte: yesterdayEnd }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
       select: { grandTotal: true },
     }),
     prisma.invoice.findMany({
-      where: { businessId, createdAt: { gte: dayBeforeStart, lte: dayBeforeEnd }, status: { not: "CANCELLED" } },
+      where: { businessId, createdAt: { gte: dayBeforeStart, lte: dayBeforeEnd }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
       select: { grandTotal: true },
     }),
   ]);
@@ -141,4 +141,52 @@ export async function getBusinessInsights(businessId: string): Promise<Insight[]
   }
 
   return insights;
+}
+
+/**
+ * Three short, plain-English lines for the owner dashboard:
+ * vs-yesterday trend (same time of day), peak hour, best seller.
+ */
+export async function getQuickInsights(
+  businessId: string,
+  todayInvoices: { createdAt: Date; grandTotal: unknown; items: { productName: string; quantity: unknown }[] }[],
+  todaySales: number
+): Promise<string[]> {
+  const lines: string[] = [];
+  if (todayInvoices.length === 0) return ["No sales recorded today yet."];
+
+  // Compare with yesterday up to the same clock time, so the morning isn't compared to a full day.
+  const now = new Date();
+  const yStart = new Date(now);
+  yStart.setDate(yStart.getDate() - 1);
+  yStart.setHours(0, 0, 0, 0);
+  const ySameTime = new Date(now);
+  ySameTime.setDate(ySameTime.getDate() - 1);
+  const ySales = await prisma.invoice.aggregate({
+    where: { businessId, createdAt: { gte: yStart, lte: ySameTime }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
+    _sum: { grandTotal: true },
+  });
+  const y = Number(ySales._sum.grandTotal ?? 0);
+  if (y > 0) {
+    const pct = Math.round(((todaySales - y) / y) * 100);
+    lines.push(pct === 0 ? "Sales are level with yesterday." : `Sales are ${Math.abs(pct)}% ${pct > 0 ? "higher" : "lower"} than yesterday.`);
+  }
+
+  const byHour = new Map<number, number>();
+  for (const inv of todayInvoices) {
+    const h = inv.createdAt.getHours();
+    byHour.set(h, (byHour.get(h) ?? 0) + Number(inv.grandTotal));
+  }
+  const [peak] = Array.from(byHour.entries()).sort((a, b) => b[1] - a[1]);
+  if (peak) {
+    const fmt = (h: number) => `${((h + 11) % 12) + 1} ${h < 12 ? "AM" : "PM"}`;
+    lines.push(`Peak sales between ${fmt(peak[0])} – ${fmt((peak[0] + 1) % 24)}.`);
+  }
+
+  const byItem = new Map<string, number>();
+  for (const inv of todayInvoices) for (const it of inv.items) byItem.set(it.productName, (byItem.get(it.productName) ?? 0) + Number(it.quantity));
+  const [best] = Array.from(byItem.entries()).sort((a, b) => b[1] - a[1]);
+  if (best) lines.push(`${best[0]} is today's best-selling product.`);
+
+  return lines;
 }

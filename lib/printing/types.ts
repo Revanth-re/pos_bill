@@ -20,6 +20,10 @@ export interface ReceiptData {
   businessAddress?: string;
   gstin?: string;
   invoiceNumber: string;
+  /** Daily token the customer hands to the kitchen. */
+  tokenNumber?: number;
+  /** e.g. "DUPLICATE", "CANCELLED", "REFUNDED" — printed as a banner on reprints. */
+  copyLabel?: string;
   createdAt: string;
   cashierName: string;
   orderType: "DINE_IN" | "TAKEAWAY";

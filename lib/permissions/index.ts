@@ -26,7 +26,8 @@ export type Permission =
   | "staff.manage"
   | "settings.manage"
   | "dayClosing.perform"
-  | "tiffin.manage";
+  | "tiffin.manage"
+  | "shift.manage";
 
 const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
   OWNER: [
@@ -51,6 +52,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     "settings.manage",
     "dayClosing.perform",
     "tiffin.manage",
+    "shift.manage",
   ],
   MANAGER: [
     "billing.create",
@@ -70,6 +72,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     "reports.view",
     "dayClosing.perform",
     "tiffin.manage",
+    "shift.manage",
     // Deliberately excluded: profit.view, staff.manage, settings.manage
   ],
   CASHIER: [
@@ -80,6 +83,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     "payments.record",
     "sales.view.own",
     "tiffin.manage",
+    "shift.manage",
     // Deliberately excluded: everything destructive or owner-sensitive
   ],
 };

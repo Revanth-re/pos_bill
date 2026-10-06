@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Receipt, LineChart, Package, MoreHorizontal } from "lucide-react";
+import { Home, Receipt, LineChart, ReceiptText, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 const ITEMS = [
   { href: "/dashboard", labelKey: "nav.home", icon: Home },
   { href: "/billing", labelKey: "nav.billing", icon: Receipt },
+  { href: "/bills", labelKey: "nav.bills", icon: ReceiptText },
   { href: "/sales", labelKey: "nav.sales", icon: LineChart },
-  { href: "/inventory", labelKey: "nav.inventory", icon: Package },
   { href: "/more", labelKey: "nav.more", icon: MoreHorizontal },
 ];
 
@@ -28,7 +28,7 @@ export function BottomNav() {
             href={href}
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium touch-target transition-colors",
-              active ? "text-brand" : "text-muted"
+              active ? "text-brand font-semibold" : "text-muted"
             )}
           >
             <Icon className="h-5 w-5" />

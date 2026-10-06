@@ -11,7 +11,7 @@ interface ReportData {
   dailySeries: { date: string; sales: number }[];
 }
 
-const PAYMENT_COLORS = ["#059669", "#facc15", "#0ea5e9", "#e11d48"];
+const PAYMENT_COLORS = ["#075E63", "#F2D21B", "#5BA8A6", "#C9A900"];
 
 export function DashboardCharts() {
   const t = useT();

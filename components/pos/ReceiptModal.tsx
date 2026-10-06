@@ -1,14 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CheckCircle2, Printer, X, WifiOff, Bluetooth } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, Printer, X, WifiOff, Bluetooth, BluetoothOff, BluetoothSearching, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { getPrinterAdapter } from "@/lib/printing/getPrinterAdapter";
-import { isBluetoothSupported, pairBluetoothPrinter } from "@/lib/printing/bluetoothPairing";
+import {
+  choosePrinter,
+  getSavedPrinter,
+  onPrinterStatus,
+  reconnectSavedPrinter,
+  refreshPrinterStatus,
+  type PrinterStatus,
+} from "@/lib/printing/bluetoothPairing";
 import { toast } from "@/stores/toastStore";
-import type { PrinterType, ReceiptData } from "@/lib/printing/types";
+import { formatINR, cn } from "@/lib/utils";
+import type { ReceiptData } from "@/lib/printing/types";
 
-type PrintState = "loading" | "needs-bluetooth" | "ready" | "printing" | "success" | "error";
+type Paper = "THERMAL_58MM" | "THERMAL_80MM";
+type JobState = "idle" | "printing" | "printed" | "error";
+
+const PAPER_KEY = "pos-paper";
 
 export function ReceiptModal({
   open,
@@ -21,201 +32,273 @@ export function ReceiptModal({
   receipt: ReceiptData | null;
   offline: boolean;
 }) {
-  const [printerType, setPrinterType] = useState<PrinterType>("THERMAL_80MM");
-  const [bluetoothDeviceId, setBluetoothDeviceId] = useState<string | null>(null);
-  const [state, setState] = useState<PrintState>("loading");
+  const [status, setStatus] = useState<PrinterStatus>("connecting");
+  const [printerName, setPrinterName] = useState<string | null>(null);
+  const [paper, setPaper] = useState<Paper>(() => {
+    try {
+      return localStorage.getItem(PAPER_KEY) === "THERMAL_80MM" ? "THERMAL_80MM" : "THERMAL_58MM";
+    } catch {
+      return "THERMAL_58MM";
+    }
+  });
+  const [job, setJob] = useState<JobState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const autoPrinted = useRef(false);
 
-  // Load printer settings only — never auto-print (needs a user gesture).
+  useEffect(() => onPrinterStatus((s, name) => { setStatus(s); setPrinterName(name); }), []);
+
+  // On open: reconnect silently, and auto-print if the printer is ready.
+  useEffect(() => {
+    if (!open || !receipt) return;
+    autoPrinted.current = false;
+    let alive = true;
+    (async () => {
+      const s = await refreshPrinterStatus();
+      if (s === "disconnected") await reconnectSavedPrinter();
+      const now = await refreshPrinterStatus();
+      if (alive && now === "connected" && !autoPrinted.current) {
+        autoPrinted.current = true;
+        void doPrint();
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, receipt]);
+
   useEffect(() => {
     if (!open) return;
-    setState("loading");
-    setError(null);
-    let cancelled = false;
-    fetch("/api/printers/default")
-      .then((r) => r.json())
-      .then((d) => {
-        if (cancelled) return;
-        const type: PrinterType = d.printer?.type ?? "THERMAL_80MM";
-        const btId: string | null = d.printer?.bluetoothDeviceId ?? null;
-        setPrinterType(type);
-        setBluetoothDeviceId(btId);
-        setState(!btId && isBluetoothSupported() ? "needs-bluetooth" : "ready");
-      })
-      .catch(() => {
-        if (!cancelled) setState("ready");
-      });
-    return () => {
-      cancelled = true;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "Enter" && job === "printed") onClose();
     };
-  }, [open]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, job, onClose]);
 
   if (!open || !receipt) return null;
 
-  async function doPrint() {
-    setState("printing");
+  async function doPrint(paperOverride?: Paper) {
+    if (!receipt) return;
+    setJob("printing");
     setError(null);
     try {
-      const adapter = getPrinterAdapter(printerType);
-      await adapter.print(receipt as ReceiptData);
-      setState("success");
+      await getPrinterAdapter(paperOverride ?? paper).print(receipt);
+      setJob("printed");
       toast.success("Bill printed");
     } catch (e) {
-      setState("error");
-      const message = e instanceof Error ? e.message : "Unable to print.";
-      setError(message);
-      toast.error(message);
+      setJob("error");
+      setError(e instanceof Error ? e.message : "Couldn't print. Check the printer and try again.");
+      await refreshPrinterStatus();
     }
   }
 
-  async function handleConnectAndPrint() {
+  async function connectAndPrint(showAll = false) {
     setError(null);
     try {
-      const device = await pairBluetoothPrinter();
-      setBluetoothDeviceId(device.id);
+      // Try the remembered printer first — no picker needed.
+      const ok = !showAll && (await reconnectSavedPrinter());
+      if (!ok) await choosePrinter(showAll);
       await doPrint();
     } catch (e) {
       const err = e as { name?: string; message?: string };
-      if (err.name !== "NotFoundError") {
-        setError(err.message || "Could not connect to the Bluetooth printer.");
-        setState("error");
-      }
-      // NotFoundError = user closed the picker — stay on connect screen.
+      if (err.name === "NotFoundError") return; // picker closed — stay on this screen
+      setError(
+        err.name === "NetworkError"
+          ? "Couldn't connect. Make sure the printer is on and not connected to another phone."
+          : err.message || "Couldn't connect to the printer."
+      );
     }
   }
 
-  const printed = state === "success";
+  function changePaper(p: Paper) {
+    setPaper(p);
+    try {
+      localStorage.setItem(PAPER_KEY, p);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const saved = getSavedPrinter();
+  const connected = status === "connected";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="flex items-center justify-between p-4">
-          {printed ? (
-            <div className="flex items-center gap-2 text-success">
-              <CheckCircle2 className="h-6 w-6" />
-              <span className="font-bold text-ink">Bill completed</span>
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
+      <div className="toast-enter w-full rounded-t-3xl bg-surface shadow-lg sm:w-[calc(100%-24px)] sm:max-w-[420px] sm:rounded-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {/* Header: bill saved + token */}
+        <div className="flex items-start justify-between gap-3 p-4 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-success-soft">
+              <CheckCircle2 className="h-6 w-6 text-success" />
             </div>
-          ) : (
-            <div className="flex items-center gap-2 text-brand">
-              <Printer className="h-6 w-6" />
-              <span className="font-bold text-ink">Print receipt</span>
+            <div>
+              <p className="font-bold text-ink">Bill saved</p>
+              <p className="text-sm text-muted tabular">
+                {receipt.invoiceNumber} · {formatINR(receipt.grandTotal)}
+              </p>
             </div>
-          )}
-          <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper" aria-label="Close">
+          </div>
+          <button onClick={onClose} className="touch-target -mr-2 -mt-1 rounded-full p-2 hover:bg-paper" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
 
+        {receipt.tokenNumber ? (
+          <div className="mx-4 mb-3 flex items-center justify-between rounded-2xl bg-brand-dark px-4 py-3 text-white">
+            <span className="text-sm font-semibold text-white/70">TOKEN</span>
+            <span className="text-3xl font-extrabold leading-none text-accent tabular">{receipt.tokenNumber}</span>
+          </div>
+        ) : null}
+
         {offline && (
           <div className="mx-4 mb-3 flex items-center gap-2 rounded-xl border border-accent-dark/30 bg-accent-soft px-3 py-2 text-sm font-medium text-ink-soft">
             <WifiOff className="h-4 w-4 shrink-0" />
-            Sale saved offline — will sync when back online. Still print the receipt below.
+            Saved offline — will sync when back online.
           </div>
         )}
 
-        {!printed && !offline && state !== "loading" && (
-          <p className="mx-4 mb-3 text-sm text-ink-soft">
-            Sale is saved. Print the receipt to finish this bill.
-          </p>
-        )}
-
-        {state === "loading" && (
-          <div className="px-4 pb-4 text-sm text-muted">Checking printer…</div>
-        )}
-
-        {state === "needs-bluetooth" && (
-          <div className="mx-4 mb-4 rounded-2xl border border-brand/30 bg-brand-soft p-4 text-center">
-            <Bluetooth className="mx-auto mb-2 h-8 w-8 text-brand-dark" />
-            <p className="text-base font-bold text-ink">Connect your Bluetooth printer</p>
-            <p className="mt-1 text-sm text-ink-soft">
-              Turn it on and tap connect to pair it — this is a one-time setup.
-            </p>
-            <Button className="mt-3 w-full" onClick={handleConnectAndPrint}>
-              <span className="inline-flex items-center gap-2">
-                <Bluetooth className="h-4 w-4" /> Connect &amp; Print
-              </span>
-            </Button>
-            <button
-              onClick={() => setState("ready")}
-              className="mt-2 text-sm font-semibold text-muted underline"
-            >
-              Print without Bluetooth instead
-            </button>
-          </div>
-        )}
-
-        {printed ? (
-          <div className="mx-4 mb-4 flex flex-col items-center rounded-2xl border border-success/30 bg-success-soft p-4 text-center">
-            <CheckCircle2 className="mb-2 h-8 w-8 text-success" />
-            <p className="text-base font-bold text-ink">Printed successfully</p>
-            <p className="mt-1 text-sm text-ink-soft">Reprint anytime from Sales history.</p>
-          </div>
-        ) : (
-          (state === "ready" || state === "printing" || state === "error") && (
-            <div className="px-4 pb-2">
-              <p className="mb-1 field-label">Print as</p>
-              <div className="grid grid-cols-4 gap-2">
-                {(["THERMAL_58MM", "THERMAL_80MM", "A4", "BROWSER"] as PrinterType[]).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setPrinterType(t)}
-                    className={`touch-target rounded-xl border-2 px-1 text-sm font-bold transition-all ${
-                      printerType === t
-                        ? "border-brand bg-brand-soft text-brand-dark"
-                        : "border-border text-ink-soft"
-                    }`}
-                  >
-                    {t === "THERMAL_58MM" ? "58mm" : t === "THERMAL_80MM" ? "80mm" : t === "A4" ? "A4" : "Browser"}
-                  </button>
-                ))}
+        {/* Printer area */}
+        <div className="mx-4 mb-3">
+          {status === "unsupported" ? (
+            <Notice
+              icon={<BluetoothOff className="h-6 w-6 text-muted" />}
+              title="Bluetooth printing not available here"
+              text="Open the POS in Google Chrome on Android, Windows or Mac to print to a Bluetooth printer."
+            />
+          ) : status === "bluetooth-off" ? (
+            <Notice
+              icon={<BluetoothOff className="h-6 w-6 text-danger" />}
+              title="Bluetooth is off"
+              text="Turn on Bluetooth on this device, then tap Retry."
+              action={
+                <Button variant="secondary" className="mt-3 w-full" onClick={() => void refreshPrinterStatus()}>
+                  <RefreshCw className="h-4 w-4" /> Retry
+                </Button>
+              }
+            />
+          ) : connected || job === "printing" || job === "printed" ? (
+            <div className="rounded-2xl border border-border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-60", connected && "animate-ping bg-success")} />
+                    <span className={cn("relative inline-flex h-2.5 w-2.5 rounded-full", connected ? "bg-success" : "bg-muted")} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-ink">{printerName ?? "Printer"}</p>
+                    <p className="text-xs text-muted">{connected ? "Connected" : "Reconnecting…"}</p>
+                  </div>
+                </div>
+                <PaperToggle value={paper} onChange={changePaper} />
               </div>
-              {bluetoothDeviceId && (
-                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-success">
-                  <Bluetooth className="h-4 w-4" /> Printer connected
+              {job === "printing" && (
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-brand">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Printing…
+                </p>
+              )}
+              {job === "printed" && (
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-success">
+                  <CheckCircle2 className="h-4 w-4" /> Printed — hand the bill to the customer
                 </p>
               )}
             </div>
-          )
+          ) : (
+            // Not paired / disconnected: our clean connect screen, shown before the browser picker.
+            <div className="rounded-2xl border border-brand/20 bg-brand-soft/50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface shadow-sm">
+                  {status === "connecting" ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-brand" />
+                  ) : (
+                    <BluetoothSearching className="h-5 w-5 text-brand" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-ink">
+                    {status === "connecting" ? "Connecting…" : saved ? `Reconnect ${saved.name}` : "Connect your printer"}
+                  </p>
+                  <p className="text-xs text-ink-soft">One-time setup · remembered on this device</p>
+                </div>
+              </div>
+              {!saved && (
+                <ol className="mt-3 space-y-1.5 text-sm text-ink-soft">
+                  {["Switch on the thermal printer", "Keep it close to this device", "Tap Find printer and pick it from the list"].map((s, i) => (
+                    <li key={s} className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white">{i + 1}</span>
+                      {s}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted">Paper</span>
+                <PaperToggle value={paper} onChange={changePaper} />
+              </div>
+              <Button className="mt-3 w-full" size="lg" disabled={status === "connecting"} onClick={() => connectAndPrint(false)}>
+                <Bluetooth className="h-5 w-5" /> {saved ? "Reconnect & Print" : "Find printer"}
+              </Button>
+              <button onClick={() => connectAndPrint(true)} className="mt-2 w-full text-center text-xs font-semibold text-brand hover:underline">
+                Printer not in the list? Show all devices
+              </button>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <p className="mx-4 mb-3 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
         )}
 
-        {error && state === "error" && (
-          <p className="mx-4 mb-3 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
-            {error}
-          </p>
-        )}
-
-        {(state === "ready" || state === "printing" || state === "error") && (
-          <div className="grid grid-cols-1 gap-2 p-4">
-            <Button size="lg" onClick={doPrint} loading={state === "printing"}>
-              <span className="inline-flex items-center gap-2">
-                <Printer className="h-4 w-4" /> {state === "printing" ? "Printing…" : "Print Receipt"}
-              </span>
+        <div className="grid grid-cols-1 gap-2 px-4 min-[380px]:grid-cols-2">
+          {connected && job !== "printing" && (
+            <Button variant="secondary" onClick={() => doPrint()}>
+              <Printer className="h-4 w-4" /> {job === "printed" ? "Print again" : "Print"}
             </Button>
-            <Button variant="secondary" onClick={onClose}>
-              Skip print — New Bill
-            </Button>
-          </div>
-        )}
-
-        {printed && (
-          <div className="grid grid-cols-1 gap-2 p-4 pt-0">
-            <Button variant="secondary" onClick={() => setState("ready")}>
-              Print Again
-            </Button>
-            <Button size="lg" onClick={onClose}>
-              New Bill
-            </Button>
-          </div>
-        )}
-
-        {state === "needs-bluetooth" && (
-          <div className="px-4 pb-4">
-            <Button variant="secondary" className="w-full" onClick={onClose}>
-              Skip print — New Bill
-            </Button>
-          </div>
-        )}
+          )}
+          <Button
+            variant={job === "printed" ? "primary" : "secondary"}
+            className={cn(!(connected && job !== "printing") && "min-[380px]:col-span-2")}
+            onClick={onClose}
+          >
+            {job === "printed" ? "New Bill" : "Skip print — New Bill"}
+          </Button>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function PaperToggle({ value, onChange }: { value: Paper; onChange: (p: Paper) => void }) {
+  return (
+    <div className="flex shrink-0 rounded-lg bg-paper p-0.5">
+      {(["THERMAL_58MM", "THERMAL_80MM"] as Paper[]).map((p) => (
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          className={cn(
+            "min-h-9 rounded-md px-2.5 text-xs font-bold transition-colors",
+            value === p ? "bg-surface text-brand-dark shadow-sm" : "text-muted"
+          )}
+        >
+          {p === "THERMAL_58MM" ? "58mm" : "80mm"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Notice({ icon, title, text, action }: { icon: React.ReactNode; title: string; text: string; action?: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-border bg-paper p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface shadow-sm">{icon}</div>
+        <div>
+          <p className="font-bold text-ink">{title}</p>
+          <p className="text-sm text-ink-soft">{text}</p>
+        </div>
+      </div>
+      {action}
     </div>
   );
 }

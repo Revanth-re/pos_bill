@@ -47,7 +47,7 @@ export async function GET(req: Request) {
       where: {
         businessId: session.businessId,
         createdAt: { gte: start, lte: end },
-        status: { not: "CANCELLED" },
+        status: { notIn: ["CANCELLED", "REFUNDED"] },
       },
       include: {
         items: true,

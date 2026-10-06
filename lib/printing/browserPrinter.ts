@@ -62,7 +62,9 @@ export class BrowserPrinter implements ReceiptPrinter {
   ${data.businessAddress ? `<p class="muted">${escapeHtml(data.businessAddress)}</p>` : ""}
   ${data.gstin ? `<p class="muted">GSTIN: ${escapeHtml(data.gstin)}</p>` : ""}
   <div class="divider"></div>
-  <p>Invoice: ${escapeHtml(data.invoiceNumber)}<br/>
+  ${data.copyLabel ? `<p style="text-align:center;font-weight:bold;letter-spacing:2px">*** ${escapeHtml(data.copyLabel)} ***</p>` : ""}
+  ${data.tokenNumber ? `<p style="text-align:center;margin:4px 0"><span style="font-size:0.8em">TOKEN</span><br/><span style="font-size:2.2em;font-weight:bold;line-height:1.1">${data.tokenNumber}</span></p><div class="divider"></div>` : ""}
+  <p>Bill No: ${escapeHtml(data.invoiceNumber)}<br/>
      ${escapeHtml(data.createdAt)}<br/>
      Cashier: ${escapeHtml(data.cashierName)} &middot; ${data.orderType === "DINE_IN" ? "Dine-in" : "Takeaway"}
      ${data.customerName ? `<br/>Customer: ${escapeHtml(data.customerName)}` : ""}
@@ -83,6 +85,7 @@ export class BrowserPrinter implements ReceiptPrinter {
   </table>
   <div class="divider"></div>
   <table class="totals">
+    ${data.payments.length ? `<tr><td colspan="2"><b>Payment</b></td></tr>` : ""}
     ${data.payments.map((p) => `<tr><td>${escapeHtml(p.method)}</td><td style="text-align:right">${money(p.amount)}</td></tr>`).join("")}
   </table>
   <p class="muted" style="margin-top:10px">Thank you, visit again!</p>
