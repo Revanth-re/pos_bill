@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Download, Share, X, PlusSquare, CheckCircle2 } from "lucide-react";
 import { SITE } from "@/lib/marketing/site";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
+import { InstallHelpSheet } from "@/components/pwa/InstallHelpSheet";
 
 /**
  * "Get Billo" — the website and the billing app now live on the SAME address,
@@ -14,8 +15,8 @@ import { usePwaInstall } from "@/hooks/usePwaInstall";
  *  • Already installed / not installable here → opens the app
  */
 export function InstallButton({ className = "", label = "Get Billo", iconClass = "h-4 w-4" }: { className?: string; label?: string; iconClass?: string }) {
-  const { installed, platform, promptInstall } = usePwaInstall();
-  const [iosHelp, setIosHelp] = useState(false);
+  const { installed, canPromptNatively, promptInstall } = usePwaInstall();
+  const [help, setHelp] = useState(false);
   const [done, setDone] = useState(false);
 
   async function handleClick() {
@@ -23,20 +24,14 @@ export function InstallButton({ className = "", label = "Get Billo", iconClass =
       window.location.href = SITE.loginUrl;
       return;
     }
-    // Must be the first await in the click handler — browsers require a user gesture.
-    const outcome = await promptInstall();
-    if (outcome === "accepted") {
-      setDone(true);
-      return;
+    if (canPromptNatively) {
+      // Chrome already allowed install → native prompt on this very tap.
+      const outcome = await promptInstall();
+      if (outcome === "accepted") setDone(true);
+      if (outcome !== "unavailable") return;
     }
-    if (outcome === "dismissed") return;
-
-    if (platform === "ios-safari" || /iphone|ipad|ipod/i.test(navigator.userAgent)) {
-      setIosHelp(true);
-      return;
-    }
-    // Install not available in this browser (in-app browser, Firefox…) → app login with install help.
-    window.location.href = SITE.installUrl;
+    // Not allowed yet / iPhone / in-app browser → guided sheet (waits for Chrome + manual steps).
+    setHelp(true);
   }
 
   return (
@@ -45,8 +40,9 @@ export function InstallButton({ className = "", label = "Get Billo", iconClass =
         <Download className={iconClass} /> {label}
       </button>
 
-      {(iosHelp || done) && createPortal(
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={() => { setIosHelp(false); setDone(false); }}>
+      <InstallHelpSheet open={help} onClose={() => setHelp(false)} onInstalled={() => { setHelp(false); setDone(true); }} />
+      {done && createPortal(
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={() => setDone(false)}>
           <div onClick={(e) => e.stopPropagation()} className="rise w-full max-w-sm rounded-t-3xl bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-left shadow-2xl sm:rounded-3xl">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -56,7 +52,7 @@ export function InstallButton({ className = "", label = "Get Billo", iconClass =
                   <p className="text-sm text-muted">{done ? "Find it on your home screen" : "Add to your iPhone home screen"}</p>
                 </div>
               </div>
-              <button onClick={() => { setIosHelp(false); setDone(false); }} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-paper" aria-label="Close">
+              <button onClick={() => setDone(false)} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-paper" aria-label="Close">
                 <X className="h-5 w-5" />
               </button>
             </div>

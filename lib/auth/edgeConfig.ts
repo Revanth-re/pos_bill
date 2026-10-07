@@ -13,12 +13,26 @@ import type { NextAuthConfig } from "next-auth";
  * handler and server components/actions via requireSession().
  */
 export const edgeAuthConfig: NextAuthConfig = {
+  // Use whatever domain the request came in on (getbillo.vercel.app, a custom domain, …)
+  // instead of a hard-coded NEXTAUTH_URL — so login never jumps to an old domain.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
   },
   providers: [],
   callbacks: {
+    // Keep every post-login / logout redirect on the CURRENT site.
+    // (If NEXTAUTH_URL still points at an old domain, Auth.js would otherwise send users there.)
+    async redirect({ url }) {
+      if (url.startsWith("/")) return url;
+      try {
+        const u = new URL(url);
+        return `${u.pathname}${u.search}${u.hash}` || "/dashboard";
+      } catch {
+        return "/dashboard";
+      }
+    },
     async jwt({ token, user }) {
       if (user) {
         token.staffId = (user as unknown as { staffId: string }).staffId;
