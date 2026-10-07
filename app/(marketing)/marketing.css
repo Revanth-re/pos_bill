@@ -1,0 +1,25 @@
+/* Public website styles — scoped to the marketing pages via the .mkt wrapper. */
+html:has(.mkt) { scroll-behavior: smooth; }
+.mkt h1, .mkt h2, .mkt h3 { letter-spacing: -0.02em; }
+
+.container-x { width: 100%; max-width: 1180px; margin-inline: auto; padding-inline: 16px; }
+@media (min-width: 640px) { .container-x { padding-inline: 24px; } }
+
+.mkt .card { border-radius: 18px; box-shadow: 0 1px 2px rgba(6,72,76,.04), 0 4px 16px rgba(6,72,76,.04); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: 0 1.25rem; border-radius: 12px; font-weight: 700; transition: all .18s cubic-bezier(.2,.8,.2,1); }
+.btn-primary { background: var(--brand); color: #fff; box-shadow: 0 6px 18px rgba(7,94,99,.25); }
+.btn-primary:hover { background: var(--brand-dark); transform: translateY(-1px); }
+.btn-accent { background: var(--accent); color: var(--brand-deep); box-shadow: 0 6px 18px rgba(201,169,0,.3); }
+.btn-accent:hover { background: #f6dc3c; transform: translateY(-1px); }
+.btn-ghost { background: #fff; color: var(--brand-dark); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: rgba(7,94,99,.4); }
+.btn-ghost-dark { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.18); }
+.btn-ghost-dark:hover { background: rgba(255,255,255,.14); }
+
+.eyebrow { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+.grid-bg { background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px); background-size: 22px 22px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .6s cubic-bezier(.2,.8,.2,1) both; }
+.rise-2 { animation-delay: .1s; } .rise-3 { animation-delay: .2s; }

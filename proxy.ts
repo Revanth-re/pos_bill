@@ -11,7 +11,16 @@ const { auth } = NextAuth(edgeAuthConfig);
 
 // Next.js 16 renamed the `middleware.ts` file convention to `proxy.ts`.
 // A default export is still valid here — only the filename changed.
+// Public website pages (SEO) — open to everyone, logged in or not.
+const PUBLIC_EXACT = new Set(["/", "/pricing", "/features", "/hi", "/te", "/contact", "/privacy", "/terms"]);
+const PUBLIC_PREFIXES = ["/for/", "/billing-software/"];
+function isPublicPage(pathname: string) {
+  return PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+}
+
 export default auth((req) => {
+  if (isPublicPage(req.nextUrl.pathname)) return NextResponse.next();
+
   const isAuthed = !!req.auth;
   const isAuthRoute = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/register");
 
@@ -22,12 +31,18 @@ export default auth((req) => {
   }
 
   if (isAuthed && isAuthRoute) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+    // Keep ?install=1 (from the website's "Get Billo") so the dashboard can offer install too.
+    const dest = new URL("/dashboard", req.nextUrl.origin);
+    if (req.nextUrl.searchParams.get("install") === "1") dest.searchParams.set("install", "1");
+    return NextResponse.redirect(dest);
   }
 
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|pwa-boot.js|icons).*)"],
+  // Skip auth for API routes, Next internals and ANY static file (has a file extension:
+  // /brand/*.png logo, /food-library/*.jpg, /icons/*, icon.png, apple-icon.png, manifest, sw.js…).
+  // Previously only /icons was excluded, so the logo images redirected to /login when logged out.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.[a-zA-Z0-9]+$).*)"],
 };

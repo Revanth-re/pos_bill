@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Download, CheckCircle2, Share, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,15 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
   const { installed, canPromptNatively, platform, secureContext, promptInstall } = usePwaInstall();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // Arriving from usebillo.in "Get Billo" (…/login?install=1) → open the install sheet straight away.
+  // The visitor still taps "Install" once — browsers only allow installing from a user tap.
+  useEffect(() => {
+    if (installed) return;
+    if (new URLSearchParams(window.location.search).get("install") !== "1") return;
+    const timer = setTimeout(() => setOpen(true), 400);
+    return () => clearTimeout(timer);
+  }, [installed]);
 
   if (installed) {
     return (
