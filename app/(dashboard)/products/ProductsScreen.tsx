@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, X, Search, Utensils, Pencil } from "lucide-react";
@@ -310,6 +310,7 @@ function AddProductSheet({
     resolver: zodResolver(productSchema),
     defaultValues: { unit: "pc", gstPercent: 5, purchasePrice: 0, currentStock: 0, minStock: 0, imageUrl: null },
   });
+  const watchedName = useWatch({ control, name: "name" });
 
   async function onSubmit(values: ProductFormValues) {
     setSubmitting(true);
@@ -343,7 +344,7 @@ function AddProductSheet({
           <Controller
             name="imageUrl"
             control={control}
-            render={({ field }) => <ImagePicker value={field.value ?? null} onChange={field.onChange} />}
+            render={({ field }) => <ImagePicker value={field.value ?? null} onChange={field.onChange} productName={watchedName ?? ""} />}
           />
 
           <Field label="Product name" error={errors.name?.message}>
@@ -476,7 +477,7 @@ function EditProductSheet({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <ImagePicker value={imageUrl} onChange={setImageUrl} />
+          <ImagePicker value={imageUrl} onChange={setImageUrl} productName={name} />
 
           <Field label="Product name">
             <input value={name} onChange={(e) => setName(e.target.value)} className="field" />

@@ -14,9 +14,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     const ledger = await prisma.customerLedger.findMany({
       where: { customerId: id },
-      include: { invoice: { select: { invoiceNumber: true } } },
+      include: {
+        invoice: {
+          select: {
+            invoiceNumber: true,
+            status: true,
+            items: { select: { productName: true, quantity: true, lineTotal: true } },
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
-      take: 100,
+      take: 500,
     });
 
     return NextResponse.json({ customer, ledger });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus, Trash2, Percent, Tag, Printer } from "lucide-react";
+import { Minus, Plus, Trash2, Percent, Tag, Printer, Save } from "lucide-react";
 import { useCartStore, estimateCartTotal } from "@/stores/cartStore";
 import { formatINR, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -9,13 +9,17 @@ import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function CartPanel({
   onQuickPrint,
+  onSaveOnly,
   onCheckout,
   onHold,
+  onUdhaari,
   printing,
 }: {
   onQuickPrint: () => void;
+  onSaveOnly?: () => void;
   onCheckout: () => void;
   onHold: () => void;
+  onUdhaari?: () => void;
   printing?: boolean;
 }) {
   const lines = useCartStore((s) => s.lines);
@@ -155,18 +159,30 @@ export function CartPanel({
             <p className="mt-0.5 text-xs opacity-70">Includes GST · Cash by default, tap Split for other methods</p>
           </div>
 
-          <Button variant="primary" size="lg" className="w-full" onClick={onQuickPrint} loading={printing}>
-            <span className="inline-flex items-center gap-2">
-              <Printer className="h-5 w-5" />
-              {printing ? t("pos.printing") : t("pos.printBill")}
-            </span>
-          </Button>
+          <div className="flex gap-2">
+            {onSaveOnly && (
+              <Button variant="secondary" size="lg" className="px-5" onClick={onSaveOnly} disabled={printing}>
+                <Save className="h-5 w-5" /> Save
+              </Button>
+            )}
+            <Button variant="primary" size="lg" className="flex-1" onClick={onQuickPrint} loading={printing}>
+              <span className="inline-flex items-center gap-2">
+                <Printer className="h-5 w-5" />
+                {printing ? t("pos.printing") : t("pos.printBill")}
+              </span>
+            </Button>
+          </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button variant="secondary" size="sm" onClick={onHold}>
               {t("pos.holdBill")}
             </Button>
-            <Button variant="secondary" size="sm" onClick={onCheckout}>
+            {onUdhaari && (
+              <Button variant="secondary" size="sm" className="border-accent-dark/40 bg-accent-soft text-brand-dark hover:bg-accent-soft" onClick={onUdhaari} disabled={printing}>
+                Udhaari
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" className={onUdhaari ? "" : "col-span-2"} onClick={onCheckout}>
               {t("pos.splitCredit")}
             </Button>
           </div>

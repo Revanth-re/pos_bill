@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
+import { HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { can, type Permission } from "@/lib/permissions";
 
 const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Permission }[] = [
   { href: "/profile", label: "Profile", icon: User },
+  { href: "/udhaari", label: "Udhaari (credit khata)", icon: HandCoins, permission: "customers.view" },
   { href: "/shifts", label: "Cashier Shift", icon: Clock, permission: "shift.manage" },
   { href: "/inventory", label: "Inventory", icon: Package, permission: "inventory.view" },
   { href: "/performance", label: "Staff Performance", icon: Trophy, permission: "reports.view" },
   { href: "/products", label: "Products", icon: ShoppingBag, permission: "products.view" },
-  { href: "/customers", label: "Customers & Udhaari", icon: Users, permission: "customers.view" },
+  { href: "/customers", label: "Customers", icon: Users, permission: "customers.view" },
   { href: "/expenses", label: "Expenses", icon: Wallet, permission: "expenses.view" },
   { href: "/tiffin", label: "Tiffin / Meal Subscriptions", icon: Utensils, permission: "tiffin.manage" },
   { href: "/reports", label: "Reports", icon: BarChart3, permission: "reports.view" },

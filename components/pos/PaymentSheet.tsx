@@ -25,7 +25,7 @@ export function PaymentSheet({
 }: {
   open: boolean;
   onClose: () => void;
-  onSuccess: (result: { invoice?: unknown; offline: boolean }) => void;
+  onSuccess: (result: { invoice?: unknown; offline: boolean; creditOnly?: boolean }) => void;
 }) {
   const lines = useCartStore((s) => s.lines);
   const orderType = useCartStore((s) => s.orderType);
@@ -106,7 +106,9 @@ export function PaymentSheet({
     }
 
     clear();
-    onSuccess({ invoice: result.invoice, offline: result.offline });
+    // Udhaari = every rupee actually paid is on credit (ignore ₹0 rows left over from switching methods).
+    const paid = splits.filter((s) => (parseFloat(s.amount) || 0) > 0);
+    onSuccess({ invoice: result.invoice, offline: result.offline, creditOnly: paid.length > 0 && paid.every((s) => s.method === "CREDIT") });
   }
 
   return (

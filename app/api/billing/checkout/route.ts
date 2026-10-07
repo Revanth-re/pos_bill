@@ -147,7 +147,7 @@ export async function POST(req: Request) {
 
       // 9. Create payment(s) — one row per split-payment method.
       await tx.payment.createMany({
-        data: input.payments.map((p) => ({
+        data: input.payments.filter((p) => p.amount > 0).map((p) => ({
           invoiceId: invoice.id,
           staffId: session.staffId,
           method: p.method,
@@ -156,7 +156,11 @@ export async function POST(req: Request) {
         })),
       });
 
-      // 10. Deduct product inventory (only now — the sale is confirmed).
+      // 10–11. Deduct product stock + recipe ingredients (only now — the sale is confirmed).
+      // Movements are written in ONE createMany and ingredient deductions are merged per
+      // ingredient, so a big bill doesn't make dozens of round-trips to a remote database.
+      const movements: Prisma.InventoryMovementCreateManyInput[] = [];
+      const ingredientDeductions = new Map<string, number>();
       for (const item of input.items) {
         const product = productsById.get(item.productId)!;
         if (!product.trackInventory) continue;
@@ -165,38 +169,37 @@ export async function POST(req: Request) {
           where: { id: product.id },
           data: { currentStock: { decrement: item.quantity } },
         });
-        await tx.inventoryMovement.create({
-          data: {
-            businessId: session.businessId,
-            productId: product.id,
-            type: "SALE",
-            quantity: -item.quantity,
-            reference: invoiceNumber,
-            staffId: session.staffId,
-          },
+        movements.push({
+          businessId: session.businessId,
+          productId: product.id,
+          type: "SALE",
+          quantity: -item.quantity,
+          reference: invoiceNumber,
+          staffId: session.staffId,
         });
 
-        // 11. Deduct recipe ingredients if this product has a recipe.
         if (product.recipe) {
           for (const line of product.recipe.lines) {
             const deduction = Number(line.quantity) * item.quantity;
-            await tx.ingredient.update({
-              where: { id: line.ingredientId },
-              data: { currentStock: { decrement: deduction } },
-            });
-            await tx.inventoryMovement.create({
-              data: {
-                businessId: session.businessId,
-                ingredientId: line.ingredientId,
-                type: "RECIPE_DEDUCTION",
-                quantity: -deduction,
-                reference: invoiceNumber,
-                staffId: session.staffId,
-              },
-            });
+            ingredientDeductions.set(line.ingredientId, (ingredientDeductions.get(line.ingredientId) ?? 0) + deduction);
           }
         }
       }
+      for (const [ingredientId, deduction] of ingredientDeductions) {
+        await tx.ingredient.update({
+          where: { id: ingredientId },
+          data: { currentStock: { decrement: deduction } },
+        });
+        movements.push({
+          businessId: session.businessId,
+          ingredientId,
+          type: "RECIPE_DEDUCTION",
+          quantity: -deduction,
+          reference: invoiceNumber,
+          staffId: session.staffId,
+        });
+      }
+      if (movements.length) await tx.inventoryMovement.createMany({ data: movements });
 
       // 12. Update customer credit ledger if any portion was paid on Credit.
       const creditAmount = input.payments
@@ -256,7 +259,7 @@ export async function POST(req: Request) {
       }
 
       return { invoice, invoiceNumber, totals };
-    });
+    }, { maxWait: 10_000, timeout: 30_000 }); // remote DBs (Neon/Supabase) need more than the 5s default
 
     // 15. Printable invoice is generated client-side (see lib/printing) from
     // this response payload — no server-side rendering needed for receipts.

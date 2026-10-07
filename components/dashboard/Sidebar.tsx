@@ -18,6 +18,7 @@ import {
   ReceiptText,
   Clock,
   Trophy,
+  HandCoins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { can, type Permission } from "@/lib/permissions";
@@ -32,6 +33,7 @@ const ITEMS: { href: string; labelKey: string; icon: typeof LayoutDashboard; per
   { href: "/sales", labelKey: "nav.sales", icon: LineChart, permission: "sales.view.own" },
   { href: "/products", labelKey: "nav.products", icon: ShoppingBag, permission: "products.view" },
   { href: "/inventory", labelKey: "nav.inventory", icon: Package, permission: "inventory.view" },
+  { href: "/udhaari", labelKey: "nav.udhaari", icon: HandCoins, permission: "customers.view" },
   { href: "/customers", labelKey: "nav.customers", icon: Users, permission: "customers.view" },
   { href: "/expenses", labelKey: "nav.expenses", icon: Wallet, permission: "expenses.view" },
   { href: "/tiffin", labelKey: "nav.tiffin", icon: Utensils, permission: "tiffin.manage" },

@@ -42,6 +42,7 @@ export const translations: Record<string, Record<LanguageCode, string>> = {
   "nav.bills": { en: "Bills", hi: "बिल", ta: "பில்கள்", te: "బిల్లులు", kn: "ಬಿಲ್‌ಗಳು", ml: "ബില്ലുകൾ", mr: "बिले", bn: "বিল", gu: "બિલ", pa: "ਬਿੱਲ" },
   "nav.shifts": { en: "Shift", hi: "शिफ्ट", ta: "ஷிஃப்ட்", te: "షిఫ్ట్", kn: "ಶಿಫ್ಟ್", ml: "ഷിഫ്റ്റ്", mr: "शिफ्ट", bn: "শিফট", gu: "શિફ્ટ", pa: "ਸ਼ਿਫਟ" },
   "nav.performance": { en: "Performance", hi: "प्रदर्शन", ta: "செயல்திறன்", te: "పనితీరు", kn: "ಕಾರ್ಯಕ್ಷಮತೆ", ml: "പ്രകടനം", mr: "कामगिरी", bn: "পারফরম্যান্স", gu: "પ્રદર્શન", pa: "ਪ੍ਰਦਰਸ਼ਨ" },
+  "nav.udhaari": { en: "Udhaari", hi: "उधारी", ta: "கடன்", te: "అప్పు", kn: "ಸಾಲ", ml: "കടം", mr: "उधारी", bn: "বাকি", gu: "ઉધાર", pa: "ਉਧਾਰ" },
   "nav.more": { en: "More", hi: "अधिक", ta: "மேலும்", te: "మరిన్ని", kn: "ಇನ್ನಷ್ಟು", ml: "കൂടുതൽ", mr: "अधिक", bn: "আরও", gu: "વધુ", pa: "ਹੋਰ" },
   "nav.home": { en: "Home", hi: "होम", ta: "முகப்பு", te: "హోమ్", kn: "ಮುಖಪುಟ", ml: "ഹോം", mr: "मुख्यपृष्ठ", bn: "হোম", gu: "હોમ", pa: "ਘਰ" },
 

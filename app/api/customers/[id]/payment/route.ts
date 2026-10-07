@@ -7,6 +7,7 @@ import { assertPermission, PermissionError } from "@/lib/permissions";
 const paymentSchema = z.object({
   amount: z.number().positive(),
   note: z.string().max(200).optional(),
+  method: z.enum(["CASH", "UPI", "CARD"]).optional(),
 });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -41,7 +42,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           type: "PAYMENT",
           amount: parsed.data.amount,
           balanceAfter: newBalance,
-          note: parsed.data.note,
+          note: [parsed.data.method ? `Paid by ${parsed.data.method}` : null, parsed.data.note].filter(Boolean).join(" · ") || null,
         },
       });
       await tx.auditLog.create({
@@ -51,7 +52,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           action: "CREDIT_PAYMENT_RECEIVED",
           entity: "Customer",
           entityId: id,
-          metadata: { amount: parsed.data.amount },
+          metadata: { amount: parsed.data.amount, method: parsed.data.method ?? null },
         },
       });
       return { updated, entry };

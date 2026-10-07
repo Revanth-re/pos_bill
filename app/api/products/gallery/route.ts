@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
+import { FOOD_LIBRARY } from "@/lib/foodLibrary";
 
 // GET /api/products/gallery — every distinct image already attached to a
 // product in this business, newest first. Powers the "choose from gallery"
@@ -24,7 +25,8 @@ export async function GET() {
       return true;
     });
 
-    return NextResponse.json({ images });
+    // `library` = Billo's built-in food photos, available to every business.
+    return NextResponse.json({ images, library: FOOD_LIBRARY.map(({ imageUrl, name }) => ({ imageUrl, name })) });
   } catch (err) {
     if (err instanceof UnauthenticatedError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     console.error(err);

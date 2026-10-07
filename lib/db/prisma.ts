@@ -34,6 +34,9 @@ export const prisma =
   new PrismaClient({
     adapter: buildAdapter(),
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    // Supabase is remote (each query ~100–250ms from India/Vercel), so the 5s default
+    // transaction timeout is too tight for billing. Give every transaction more room.
+    transactionOptions: { maxWait: 10_000, timeout: 30_000 },
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

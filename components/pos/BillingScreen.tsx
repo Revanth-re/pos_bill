@@ -10,6 +10,7 @@ import { PaymentSheet } from "./PaymentSheet";
 import { HeldBillsSheet } from "./HeldBillsSheet";
 import { ReceiptModal } from "./ReceiptModal";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { CustomerPickerSheet } from "./CustomerPickerSheet";
 import { useCartStore, estimateCartTotal, type CartProduct } from "@/stores/cartStore";
 import { useCatalogStore } from "@/stores/catalogStore";
 import { formatINR } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
   const [cartOpenMobile, setCartOpenMobile] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
+  const [udhaariOpen, setUdhaariOpen] = useState(false);
   const [receipt, setReceipt] = useState<{ data: ReceiptData; offline: boolean } | null>(null);
   const [quickPrinting, setQuickPrinting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -154,16 +156,56 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     };
   }
 
-  function handleCheckoutSuccess({ invoice, offline }: { invoice?: unknown; offline: boolean }) {
+  function handleCheckoutSuccess({ invoice, offline, creditOnly }: { invoice?: unknown; offline: boolean; creditOnly?: boolean }) {
     setPaymentOpen(false);
     setCartOpenMobile(false);
     // Don't toast "completed" yet — that only happens after a successful print
     // in ReceiptModal. Offline still needs a heads-up that the sale was queued.
     if (offline) toast.info(t("toast.savedOffline"));
+    // Udhaari (credit) bills don't print — the amount just goes on the customer's khata.
+    const serverPayments = ((invoice as { payments?: { method: string; amount: number }[] } | undefined)?.payments ?? []).filter(
+      (p) => Number(p.amount) > 0
+    );
+    const isUdhaari = creditOnly || (serverPayments.length > 0 && serverPayments.every((p) => p.method === "CREDIT"));
+    if (isUdhaari) {
+      const total = Number((invoice as { grandTotal?: number } | undefined)?.grandTotal ?? estimateCartTotal(lines));
+      toast.success(`${formatINR(total)} added to udhaari`);
+      void useCatalogStore.getState().ensureCustomers({ force: true });
+      useCartStore.getState().clear();
+      return;
+    }
     setReceipt({ data: buildReceiptData(invoice), offline });
   }
 
-  async function handleQuickPrint() {
+  // Udhaari: pick the customer, bill goes straight onto their khata — no payment screen, no print.
+  async function handleUdhaari(customerId: string, customerName: string) {
+    setUdhaariOpen(false);
+    const { lines: cartLines, orderType: cartOrderType, billDiscount, heldBillId } = useCartStore.getState();
+    if (cartLines.length === 0) return;
+    setQuickPrinting(true);
+    const total = estimateCartTotal(cartLines);
+    const result = await submitBill({
+      orderType: cartOrderType,
+      items: cartLines.map((l) => ({ productId: l.product.id, quantity: l.quantity, discount: l.discount })),
+      billDiscount,
+      customerId,
+      payments: [{ method: "CREDIT", amount: Math.round(total * 100) / 100 }],
+      heldBillId,
+    });
+    setQuickPrinting(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setCartOpenMobile(false);
+    const billed = Number((result.invoice as { grandTotal?: number } | undefined)?.grandTotal ?? total);
+    toast.success(`${formatINR(billed)} added to ${customerName}'s udhaari`);
+    void useCatalogStore.getState().ensureCustomers({ force: true }); // refresh balances
+    if (result.offline) toast.info(t("toast.savedOffline"));
+    useCartStore.getState().clear();
+  }
+
+  async function handleQuickPrint(print = true) {
     const {
       lines: cartLines,
       orderType: cartOrderType,
@@ -197,8 +239,13 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     setCartOpenMobile(false);
     if (result.offline) toast.info(t("toast.savedOffline"));
     const data = buildReceiptData(result.invoice);
-    setReceipt({ data, offline: result.offline });
     useCartStore.getState().clear();
+    if (!print) {
+      // Saved without printing — reprint any time from Bills.
+      toast.success(`Bill saved${data.tokenNumber ? ` · Token ${data.tokenNumber}` : ""} · ${formatINR(data.grandTotal)}`);
+      return;
+    }
+    setReceipt({ data, offline: result.offline });
   }
 
   const estimatedTotal = estimateCartTotal(lines);
@@ -241,9 +288,11 @@ export function BillingScreen({ businessName, cashierName }: Props) {
 
         <div className="hidden md:block md:w-80 lg:w-96 border-l border-border shrink-0">
           <CartPanel
-            onQuickPrint={handleQuickPrint}
+            onQuickPrint={() => handleQuickPrint(true)}
+            onSaveOnly={() => handleQuickPrint(false)}
             onCheckout={() => setPaymentOpen(true)}
             onHold={() => holdCurrentBill()}
+            onUdhaari={() => setUdhaariOpen(true)}
             printing={quickPrinting}
           />
         </div>
@@ -265,7 +314,14 @@ export function BillingScreen({ businessName, cashierName }: Props) {
             </span>
           </button>
           <button
-            onClick={handleQuickPrint}
+            onClick={() => handleQuickPrint(false)}
+            disabled={quickPrinting}
+            className="flex min-h-14 items-center border-l border-white/10 px-4 text-sm font-semibold text-white/90 active:bg-white/5 disabled:opacity-60"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => handleQuickPrint(true)}
             disabled={quickPrinting}
             className="flex min-h-14 items-center gap-2 bg-accent px-5 font-bold text-brand-dark transition-colors active:bg-accent-dark disabled:opacity-60"
           >
@@ -288,9 +344,11 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           </div>
           <div className="flex-1 overflow-hidden">
             <CartPanel
-              onQuickPrint={handleQuickPrint}
+              onQuickPrint={() => handleQuickPrint(true)}
+            onSaveOnly={() => handleQuickPrint(false)}
               onCheckout={() => setPaymentOpen(true)}
               onHold={() => holdCurrentBill()}
+              onUdhaari={() => setUdhaariOpen(true)}
               printing={quickPrinting}
             />
           </div>
@@ -298,6 +356,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
       )}
 
       <PaymentSheet open={paymentOpen} onClose={() => setPaymentOpen(false)} onSuccess={handleCheckoutSuccess} />
+      <CustomerPickerSheet open={udhaariOpen} onClose={() => setUdhaariOpen(false)} onSelect={handleUdhaari} />
       <HeldBillsSheet open={heldOpen} onClose={() => setHeldOpen(false)} productsById={productsById} />
       <ReceiptModal
         key={receipt?.data.invoiceNumber ?? "closed"}

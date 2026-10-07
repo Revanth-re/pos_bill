@@ -190,7 +190,7 @@ export async function POST(req: Request, ctx: Ctx) {
           },
         },
       });
-    });
+    }, { maxWait: 10_000, timeout: 30_000 });
 
     return NextResponse.json({ ok: true, status: newStatus });
   } catch (err) {

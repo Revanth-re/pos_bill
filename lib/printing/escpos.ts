@@ -167,3 +167,9 @@ export function encodeReceipt(data: ReceiptData, format: BillFormat = DEFAULT_FO
   );
   return encodeRows(rows);
 }
+
+/** Any row list (e.g. a customer statement) → ESC/POS bytes at the given paper width. */
+export function rowsToBytes(rows: Row[], paper: "58" | "80"): Uint8Array {
+  const W = paperWidth(paper);
+  return encodeRows(rows.map<Row>((r) => (r.kind === "rule" ? { kind: "text", text: r.ch.repeat(W), align: "left" } : r)));
+}
