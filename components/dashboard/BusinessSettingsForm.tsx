@@ -33,7 +33,7 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
 
   return (
     <div className="space-y-4">
-      <label className="flex items-center gap-3 border-2 border-border p-3">
+      <label className="flex items-center gap-3 border border-border p-3">
         <input
           type="checkbox"
           checked={values.gstEnabled}
@@ -58,7 +58,7 @@ export function BusinessSettingsForm({ initial }: { initial: BusinessSettings })
               <button
                 key={String(opt.value)}
                 onClick={() => setValues((v) => ({ ...v, taxInclusive: opt.value }))}
-                className={`touch-target flex-1 border-2 px-3 text-sm font-semibold rounded-md ${
+                className={`touch-target flex-1 border px-3 text-sm font-semibold rounded-xl ${
                   values.taxInclusive === opt.value
                     ? "border-brand bg-brand-soft text-brand-dark"
                     : "border-border text-ink-soft"

@@ -66,7 +66,7 @@ export function ImagePicker({
       <label className="field-label">Product photo</label>
 
       {value ? (
-        <div className="relative inline-block border-2 border-border">
+        <div className="relative inline-block border border-border">
           <ProductImage
             src={value}
             alt="Product"
@@ -119,7 +119,7 @@ export function ImagePicker({
       <p className="mt-1 text-sm text-muted">JPG, PNG, or WEBP — up to 5MB. Optional, but helps cashiers pick the right item fast.</p>
 
       {galleryOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
           <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-border p-4">
               <h3 className="text-lg font-bold text-ink">Choose a photo</h3>
@@ -144,7 +144,7 @@ export function ImagePicker({
                       onChange(img.imageUrl);
                       setGalleryOpen(false);
                     }}
-                    className="border-2 border-border hover:border-brand touch-target"
+                    className="border border-border hover:border-brand touch-target"
                   >
                     <ProductImage
                       src={img.imageUrl}

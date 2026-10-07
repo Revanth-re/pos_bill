@@ -38,7 +38,7 @@ function Thumbnail({ url, size = 44 }: { url: string | null; size?: number }) {
       src={url}
       width={size}
       height={size}
-      className="shrink-0 border-2 border-border object-cover"
+      className="shrink-0 border border-border object-cover"
     />
   );
 }
@@ -92,11 +92,11 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
   const showBoot = products.length === 0 && (loading || !hydrated);
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 lg:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-ink">Products</h1>
-          <p className="text-base text-muted">{products.length} products</p>
+          <p className="text-sm text-muted">{products.length} products</p>
         </div>
         {canEdit && (
           <Button onClick={() => setFormOpen(true)}>
@@ -108,7 +108,7 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
-        <div className="flex flex-1 items-center gap-2 border-2 border-border bg-surface px-3 touch-target">
+        <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-surface px-3 touch-target transition-shadow focus-within:border-brand focus-within:ring-3 focus-within:ring-brand-soft">
           <Search className="h-5 w-5 text-muted shrink-0" />
           <input
             value={query}
@@ -120,7 +120,7 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
         <select
           value={categoryFilter ?? ""}
           onChange={(e) => setCategoryFilter(e.target.value || null)}
-          className="touch-target border-2 border-border bg-surface px-3 text-base"
+          className="touch-target rounded-xl border border-border bg-surface px-3 text-base"
         >
           <option value="">All categories</option>
           {categories.map((c) => (
@@ -141,15 +141,51 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
           {canEdit && <Button onClick={() => setFormOpen(true)}>Add Product</Button>}
         </div>
       ) : (
-        <div className="overflow-x-auto border-2 border-border bg-surface">
-          <table className="w-full text-base">
+        <>
+        <ul className="space-y-2 md:hidden">
+          {filtered.map((p) => {
+            const low = p.currentStock <= p.minStock;
+            return (
+              <li key={p.id} className="card p-3">
+                <div className="flex items-center gap-3">
+                  <Thumbnail url={p.imageUrl} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-ink">{p.name}</p>
+                    <p className="truncate text-xs text-muted">{p.categoryName ?? "No category"} · GST {p.gstPercent}%</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-extrabold text-ink tabular">{formatINR(p.sellingPrice)}</p>
+                    <p className={cn("text-xs tabular", low ? "font-semibold text-danger" : "text-muted")}>
+                      {p.currentStock} {p.unit}{low ? " · low" : ""}
+                    </p>
+                  </div>
+                </div>
+                {canEdit && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
+                    <button onClick={() => setEditingProduct(p)} className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-border text-sm font-semibold text-ink-soft hover:bg-paper">
+                      <Pencil className="h-4 w-4" /> Edit
+                    </button>
+                    <button onClick={() => setRecipeProduct({ id: p.id, name: p.name })} className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-border text-sm font-semibold text-brand hover:bg-brand-soft/60">
+                      <Utensils className="h-4 w-4" /> Recipe
+                    </button>
+                    <button onClick={() => handleDelete(p.id)} className="flex min-h-11 items-center justify-center rounded-xl border border-danger/30 text-sm font-semibold text-danger hover:bg-danger-soft">
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <div className="card hidden overflow-x-auto md:block">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-border text-left text-sm font-bold text-muted">
+              <tr className="border-b border-border bg-paper text-left text-xs font-semibold uppercase tracking-wide text-muted">
                 <th className="p-3">Product</th>
-                <th className="p-3">Category</th>
+                <th className="hidden p-3 lg:table-cell">Category</th>
                 <th className="p-3 text-right">Price</th>
                 <th className="p-3 text-right">Stock</th>
-                <th className="p-3 text-right">GST</th>
+                <th className="hidden p-3 text-right lg:table-cell">GST</th>
                 {canEdit && <th className="p-3" />}
               </tr>
             </thead>
@@ -157,7 +193,7 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
               {filtered.map((p) => {
                 const low = p.currentStock <= p.minStock;
                 return (
-                  <tr key={p.id} className="border-b border-border last:border-0">
+                  <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-brand-soft/30">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
                         <Thumbnail url={p.imageUrl} />
@@ -167,13 +203,13 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
                         </div>
                       </div>
                     </td>
-                    <td className="p-3 text-ink-soft">{p.categoryName ?? "—"}</td>
+                    <td className="hidden p-3 text-ink-soft lg:table-cell">{p.categoryName ?? "—"}</td>
                     <td className="p-3 text-right tabular font-bold">{formatINR(p.sellingPrice)}</td>
                     <td className={cn("p-3 text-right tabular", low && "text-danger font-bold")}>
                       {p.currentStock} {p.unit}
                       {low && " ⚠️"}
                     </td>
-                    <td className="p-3 text-right tabular text-ink-soft">{p.gstPercent}%</td>
+                    <td className="hidden p-3 text-right tabular text-ink-soft lg:table-cell">{p.gstPercent}%</td>
                     {canEdit && (
                       <td className="p-3 text-right whitespace-nowrap">
                         <button
@@ -202,6 +238,7 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {formOpen && (
@@ -294,7 +331,7 @@ function AddProductSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
       <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Add Product</h2>
@@ -354,7 +391,7 @@ function AddProductSheet({
           </Field>
 
           {serverError && (
-            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{serverError}</p>
+            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{serverError}</p>
           )}
 
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
@@ -430,7 +467,7 @@ function EditProductSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
       <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Edit Product</h2>

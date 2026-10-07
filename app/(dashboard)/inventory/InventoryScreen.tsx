@@ -140,14 +140,14 @@ export function InventoryScreen({ canAdjust }: { canAdjust: boolean }) {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 lg:p-6">
       <div>
         <h1 className="text-2xl font-extrabold text-ink">Inventory</h1>
-        <p className="text-base text-muted">{stockList.length} tracked items</p>
+        <p className="text-sm text-muted">{stockList.length} tracked items</p>
       </div>
 
       {lowStock.length > 0 && (
-        <div className="border-2 border-danger bg-danger-soft p-3">
+        <div className="border border-danger bg-danger-soft p-3 rounded-xl">
           <p className="text-sm font-bold text-danger">
             ⚠️ {lowStock.length} item{lowStock.length > 1 ? "s" : ""} at or below minimum stock
           </p>
@@ -158,7 +158,7 @@ export function InventoryScreen({ canAdjust }: { canAdjust: boolean }) {
         <button
           onClick={() => setTab("stock")}
           className={cn(
-            "touch-target rounded-md border-2 px-4 text-sm font-bold",
+            "touch-target rounded-xl border px-4 text-sm font-bold",
             tab === "stock" ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
           )}
         >
@@ -167,7 +167,7 @@ export function InventoryScreen({ canAdjust }: { canAdjust: boolean }) {
         <button
           onClick={() => setTab("history")}
           className={cn(
-            "touch-target rounded-md border-2 px-4 text-sm font-bold inline-flex items-center gap-1.5",
+            "touch-target rounded-xl border px-4 text-sm font-bold inline-flex items-center gap-1.5",
             tab === "history" ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
           )}
         >
@@ -190,7 +190,7 @@ export function InventoryScreen({ canAdjust }: { canAdjust: boolean }) {
                     src={p.imageUrl}
                     width={44}
                     height={44}
-                    className="h-11 w-11 shrink-0 border-2 border-border object-cover"
+                    className="h-11 w-11 shrink-0 border border-border object-cover"
                   />
                   <div className="min-w-0">
                     <p className="font-bold text-ink truncate">{p.name}</p>
@@ -299,8 +299,8 @@ function AdjustSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="toast-enter max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface shadow-lg pb-[env(safe-area-inset-bottom)] sm:w-[calc(100%-24px)] sm:max-w-[520px] sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Adjust Stock</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
@@ -317,7 +317,7 @@ function AdjustSheet({
             <button
               onClick={() => setDirection("add")}
               className={cn(
-                "touch-target rounded-md border-2 flex items-center justify-center gap-1.5 text-sm font-bold",
+                "touch-target rounded-xl border flex items-center justify-center gap-1.5 text-sm font-bold",
                 direction === "add" ? "border-success bg-success-soft text-success" : "border-border text-ink-soft"
               )}
             >
@@ -326,7 +326,7 @@ function AdjustSheet({
             <button
               onClick={() => setDirection("remove")}
               className={cn(
-                "touch-target rounded-md border-2 flex items-center justify-center gap-1.5 text-sm font-bold",
+                "touch-target rounded-xl border flex items-center justify-center gap-1.5 text-sm font-bold",
                 direction === "remove" ? "border-danger bg-danger-soft text-danger" : "border-border text-ink-soft"
               )}
             >
@@ -364,7 +364,7 @@ function AdjustSheet({
           </div>
 
           {error && (
-            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
+            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{error}</p>
           )}
 
           <Button className="w-full" size="lg" disabled={submitting} onClick={handleSubmit}>

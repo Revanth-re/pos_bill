@@ -89,7 +89,7 @@ export function DayClosingScreen() {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-6 space-y-4 max-w-lg">
+      <div className="mx-auto w-full max-w-lg space-y-4 p-4 lg:p-6">
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-40" />
         <Skeleton className="h-40" />
@@ -103,7 +103,7 @@ export function DayClosingScreen() {
     <div className="p-4 lg:p-6 space-y-4 max-w-lg w-full mx-auto lg:mx-0">
       <div>
         <h1 className="text-2xl font-extrabold text-ink">Day Closing</h1>
-        <p className="text-base text-muted">{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p>
+        <p className="text-sm text-muted">{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
 
       {closed && (
@@ -137,8 +137,8 @@ export function DayClosingScreen() {
             <Row label="Actual Cash" value={formatINR(closing!.actualCash)} bold />
             <div
               className={cn(
-                "flex items-center justify-between pt-2 border-t-2 border-border font-extrabold text-lg",
-                closing!.cashDifference === 0 ? "text-success" : closing!.cashDifference > 0 ? "text-gold" : "text-danger"
+                "flex items-center justify-between pt-2 border-t border-border font-extrabold text-lg",
+                closing!.cashDifference === 0 ? "text-success" : closing!.cashDifference > 0 ? "text-accent-dark" : "text-danger"
               )}
             >
               <span>Difference</span>

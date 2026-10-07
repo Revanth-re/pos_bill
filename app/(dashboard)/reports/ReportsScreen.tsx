@@ -50,10 +50,10 @@ export function ReportsScreen({ canViewProfit }: { canViewProfit: boolean }) {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4 max-w-lg">
+    <div className="mx-auto w-full max-w-lg space-y-4 p-4 lg:p-6">
       <div>
         <h1 className="text-2xl font-extrabold text-ink">Reports</h1>
-        <p className="text-base text-muted">Sales, cost of goods, and profit</p>
+        <p className="text-sm text-muted">Sales, cost of goods, and profit</p>
       </div>
 
       <div className="flex gap-2">
@@ -62,7 +62,7 @@ export function ReportsScreen({ canViewProfit }: { canViewProfit: boolean }) {
             key={r}
             onClick={() => setRange(r)}
             className={cn(
-              "touch-target rounded-md border-2 px-4 text-sm font-bold",
+              "touch-target rounded-xl border px-4 text-sm font-bold",
               range === r ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
             )}
           >
@@ -82,11 +82,11 @@ export function ReportsScreen({ canViewProfit }: { canViewProfit: boolean }) {
         <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm space-y-3">
           <Row label="Sales" value={formatINR(data.sales)} />
           <Row label="Cost of Goods (COGS)" value={`-${formatINR(data.cogs)}`} muted />
-          <div className="border-t-2 border-border pt-2">
+          <div className="border-t border-border pt-2">
             <Row label="Gross Profit" value={formatINR(data.grossProfit)} bold />
           </div>
           <Row label="Expenses" value={`-${formatINR(data.expenses)}`} muted />
-          <div className="border-t-2 border-border pt-2">
+          <div className="border-t border-border pt-2">
             <Row
               label="Net Profit"
               value={formatINR(data.netProfit)}

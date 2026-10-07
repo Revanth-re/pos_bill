@@ -49,7 +49,7 @@ export function BluetoothSettings({
 
   if (!supported) {
     return (
-      <div className="border-2 border-border bg-paper p-4">
+      <div className="border border-border bg-paper p-4">
         <p className="text-sm font-semibold text-ink">{t("printer.notSupported")}</p>
         <p className="mt-1 text-sm text-muted">{t("printer.notSupportedHint")}</p>
       </div>
@@ -59,7 +59,7 @@ export function BluetoothSettings({
   return (
     <div>
       {device ? (
-        <div className="flex items-center justify-between border-2 border-success bg-success-soft p-3">
+        <div className="flex items-center justify-between border border-success bg-success-soft p-3 rounded-xl">
           <div className="flex items-center gap-2">
             <BluetoothConnected className="h-5 w-5 text-success shrink-0" />
             <div>

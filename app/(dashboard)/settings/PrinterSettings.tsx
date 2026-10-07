@@ -32,14 +32,14 @@ export function PrinterSettings({ initialType }: { initialType: PrinterType }) {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
         {OPTIONS.map((opt) => (
           <button
             key={opt.type}
             onClick={() => handleSelect(opt.type)}
             className={cn(
-              "touch-target rounded-md border-2 p-3 text-left transition-colors",
-              selected === opt.type ? "border-brand bg-brand-soft" : "border-border hover:border-brand/40"
+              "touch-target rounded-xl border p-3 text-left transition-colors duration-150",
+              selected === opt.type ? "border-brand bg-brand-soft/70 ring-1 ring-brand" : "border-border hover:border-brand/40"
             )}
           >
             <p className="text-sm font-bold text-ink">{opt.label}</p>

@@ -110,8 +110,8 @@ export function PaymentSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[92dvh] flex flex-col toast-enter">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Payment</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
@@ -120,7 +120,7 @@ export function PaymentSheet({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="border-2 border-gold bg-gold-soft px-4 py-3 text-center">
+          <div className="border border-accent-dark/30 bg-accent-soft px-4 py-3 text-center rounded-xl">
             <p className="text-sm font-medium text-ink-soft">Amount due</p>
             <p className="text-3xl font-extrabold text-ink tabular">{formatINR(estimatedTotal)}</p>
           </div>
@@ -129,7 +129,7 @@ export function PaymentSheet({
             onClick={() => setCustomerPickerOpen(true)}
             className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm text-left touch-target hover:border-brand/40"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-paper text-ink-soft">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-border bg-paper text-ink-soft">
               <User className="h-4 w-4" />
             </div>
             <div className="flex-1">
@@ -157,7 +157,7 @@ export function PaymentSheet({
                   key={id}
                   onClick={() => toggleMethod(id)}
                   className={cn(
-                    "touch-target flex flex-col items-center justify-center gap-1 rounded-md border-2 p-3 text-sm font-bold transition-colors",
+                    "touch-target flex flex-col items-center justify-center gap-1 rounded-xl border p-3 text-sm font-bold transition-colors",
                     active
                       ? "border-brand bg-brand-soft text-brand-dark"
                       : "border-border text-ink-soft hover:border-brand/40"
@@ -185,7 +185,7 @@ export function PaymentSheet({
                     inputMode="decimal"
                     value={row.amount}
                     onChange={(e) => setMethodAmount(i, e.target.value)}
-                    className="flex-1 border-2 border-border px-3 py-3 text-right text-base tabular"
+                    className="flex-1 border border-border px-3 py-3 text-right text-base tabular"
                   />
                 </div>
               ))}
@@ -202,13 +202,13 @@ export function PaymentSheet({
           )}
 
           {needsCustomer && (
-            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">
               Select a customer before charging to credit.
             </p>
           )}
 
           {error && (
-            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
+            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{error}</p>
           )}
         </div>
 

@@ -54,11 +54,9 @@ export function InstallBanner() {
   return (
     <div className="fixed left-3 right-3 z-[70] md:left-auto md:right-4 md:w-80 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-4">
       <div className="flex items-center gap-3 rounded-2xl border border-brand/30 bg-surface p-3 shadow-lg">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-sm font-black text-white">
-          ₹
-        </div>
+        <img src="/brand/billo-icon.png" alt="" className="h-10 w-10 shrink-0 object-contain" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-ink">Install POS</p>
+          <p className="text-sm font-bold text-ink">Install Billo</p>
           <p className="text-xs text-muted">Add to your phone like an app</p>
         </div>
         <button

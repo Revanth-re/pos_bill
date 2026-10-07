@@ -80,11 +80,11 @@ export function CustomersScreen({
   const showBoot = customers.length === 0 && (loading || !hydrated);
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 lg:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-ink">Customers &amp; Udhaari</h1>
-          <p className="text-base text-muted">{customers.length} customers</p>
+          <p className="text-sm text-muted">{customers.length} customers</p>
         </div>
         {canManage && (
           <Button onClick={() => setFormOpen(true)}>
@@ -96,13 +96,13 @@ export function CustomersScreen({
       </div>
 
       {totalOutstanding > 0 && (
-        <div className="border-2 border-border bg-ink p-4 text-white">
+        <div className="rounded-2xl bg-brand-dark p-4 text-white shadow-md">
           <p className="text-sm font-semibold opacity-80">Total outstanding credit</p>
           <p className="text-3xl font-extrabold tabular">{formatINR(totalOutstanding)}</p>
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-2 border-border bg-surface px-3 touch-target">
+      <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 touch-target transition-shadow focus-within:border-brand focus-within:ring-3 focus-within:ring-brand-soft">
         <Search className="h-5 w-5 text-muted shrink-0" />
         <input
           value={query}
@@ -130,7 +130,7 @@ export function CustomersScreen({
                 className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-paper"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-paper text-ink-soft">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-border bg-paper text-ink-soft">
                     <User className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
@@ -208,8 +208,8 @@ function AddCustomerSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="toast-enter max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface shadow-lg pb-[env(safe-area-inset-bottom)] sm:w-[calc(100%-24px)] sm:max-w-[520px] sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Add Customer</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
@@ -231,7 +231,7 @@ function AddCustomerSheet({
             <input {...register("address")} className="field" />
           </div>
           {serverError && (
-            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{serverError}</p>
+            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{serverError}</p>
           )}
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
             {submitting ? "Saving…" : "Save Customer"}
@@ -308,7 +308,7 @@ function CustomerDetailSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
       <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-border p-4">
           <div>

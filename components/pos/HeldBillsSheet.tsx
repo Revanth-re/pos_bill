@@ -69,8 +69,8 @@ export function HeldBillsSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[85dvh] flex flex-col toast-enter">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Held Bills</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
@@ -93,7 +93,7 @@ export function HeldBillsSheet({
               return (
                 <li
                   key={bill.id}
-                  className="flex items-center justify-between border-2 border-border p-3"
+                  className="flex items-center justify-between border border-border p-3"
                 >
                   <div>
                     <p className="text-sm font-semibold text-ink">

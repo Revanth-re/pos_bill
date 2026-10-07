@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, Printer, X, WifiOff, Bluetooth, BluetoothOff, BluetoothSearching, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, Printer, X, WifiOff, Eye, EyeOff, Bluetooth, BluetoothOff, BluetoothSearching, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { getPrinterAdapter } from "@/lib/printing/getPrinterAdapter";
 import {
@@ -15,6 +15,8 @@ import {
 import { toast } from "@/stores/toastStore";
 import { formatINR, cn } from "@/lib/utils";
 import type { ReceiptData } from "@/lib/printing/types";
+import { getCachedBillFormat, loadBillFormat, type BillFormat } from "@/lib/printing/billFormat";
+import { ReceiptPreview } from "./ReceiptPreview";
 
 type Paper = "THERMAL_58MM" | "THERMAL_80MM";
 type JobState = "idle" | "printing" | "printed" | "error";
@@ -36,12 +38,16 @@ export function ReceiptModal({
   const [printerName, setPrinterName] = useState<string | null>(null);
   const [paper, setPaper] = useState<Paper>(() => {
     try {
-      return localStorage.getItem(PAPER_KEY) === "THERMAL_80MM" ? "THERMAL_80MM" : "THERMAL_58MM";
+      const pref = localStorage.getItem(PAPER_KEY);
+      if (pref === "THERMAL_58MM" || pref === "THERMAL_80MM") return pref;
+      return getCachedBillFormat().paper === "80" ? "THERMAL_80MM" : "THERMAL_58MM";
     } catch {
       return "THERMAL_58MM";
     }
   });
   const [job, setJob] = useState<JobState>("idle");
+  const [format, setFormat] = useState<BillFormat>(() => getCachedBillFormat());
+  const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const autoPrinted = useRef(false);
 
@@ -53,6 +59,9 @@ export function ReceiptModal({
     autoPrinted.current = false;
     let alive = true;
     (async () => {
+      // Latest bill format from the owner's settings (cached for offline).
+      const f = await loadBillFormat();
+      if (alive) setFormat(f);
       const s = await refreshPrinterStatus();
       if (s === "disconnected") await reconnectSavedPrinter();
       const now = await refreshPrinterStatus();
@@ -126,7 +135,7 @@ export function ReceiptModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
-      <div className="toast-enter w-full rounded-t-3xl bg-surface shadow-lg sm:w-[calc(100%-24px)] sm:max-w-[420px] sm:rounded-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="toast-enter max-h-[94dvh] w-full overflow-y-auto rounded-t-3xl bg-surface shadow-lg sm:w-[calc(100%-24px)] sm:max-w-[420px] sm:rounded-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
         {/* Header: bill saved + token */}
         <div className="flex items-start justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-3">
@@ -246,6 +255,22 @@ export function ReceiptModal({
           )}
         </div>
 
+        {/* Bill preview — exactly what the printer will print */}
+        <div className="mx-4 mb-3">
+          <button
+            onClick={() => setShowPreview((v) => !v)}
+            className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-brand transition-colors hover:bg-brand-soft/60"
+          >
+            {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPreview ? "Hide preview" : "Preview bill"}
+          </button>
+          {showPreview && (
+            <div className="mt-2 max-h-[45dvh] overflow-y-auto rounded-2xl bg-paper p-3 ring-1 ring-border">
+              <ReceiptPreview data={receipt} format={{ ...format, paper: paper === "THERMAL_80MM" ? "80" : "58" }} />
+            </div>
+          )}
+        </div>
+
         {error && (
           <p className="mx-4 mb-3 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
         )}
@@ -277,7 +302,7 @@ function PaperToggle({ value, onChange }: { value: Paper; onChange: (p: Paper) =
           key={p}
           onClick={() => onChange(p)}
           className={cn(
-            "min-h-9 rounded-md px-2.5 text-xs font-bold transition-colors",
+            "min-h-9 rounded-xl px-2.5 text-xs font-bold transition-colors",
             value === p ? "bg-surface text-brand-dark shadow-sm" : "text-muted"
           )}
         >

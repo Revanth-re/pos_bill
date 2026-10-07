@@ -17,14 +17,14 @@ export function CategoryTabs({
   onSelect: (id: string | null) => void;
 }) {
   return (
-    <div className="no-select flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+    <div className="no-select flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none snap-x">
       <button
         onClick={() => onSelect(null)}
         className={cn(
-          "touch-target shrink-0 rounded-full px-4 text-sm font-semibold border transition-colors",
+          "touch-target shrink-0 snap-start rounded-xl px-4 text-sm font-semibold border transition-all duration-150",
           activeId === null
-            ? "bg-ink text-white border-ink"
-            : "bg-surface text-ink-soft border-border hover:border-ink/30"
+            ? "bg-brand text-white border-brand shadow-sm"
+            : "bg-surface text-ink-soft border-border hover:border-brand/40 hover:text-ink"
         )}
       >
         All
@@ -34,10 +34,10 @@ export function CategoryTabs({
           key={c.id}
           onClick={() => onSelect(c.id)}
           className={cn(
-            "touch-target shrink-0 rounded-full px-4 text-sm font-semibold border transition-colors",
+            "touch-target shrink-0 snap-start rounded-xl px-4 text-sm font-semibold border transition-all duration-150",
             activeId === c.id
-              ? "bg-brand text-white border-brand"
-              : "bg-surface text-ink-soft border-border hover:border-brand/40"
+              ? "bg-brand text-white border-brand shadow-sm"
+              : "bg-surface text-ink-soft border-border hover:border-brand/40 hover:text-ink"
           )}
         >
           {c.name}

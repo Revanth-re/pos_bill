@@ -54,32 +54,36 @@ export function DashboardCharts() {
   const paymentData = data.byPayment.map((p) => ({ name: PAYMENT_LABEL[p.method] ?? p.method, value: p.amount }));
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-        <p className="mb-2 text-sm font-bold text-ink-soft">{t("dashboard.last7Days")}</p>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={data.dailySeries}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(d) => d.slice(5)} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(v) => formatINR(Number(v ?? 0))} />
-            <Bar dataKey="sales" fill="var(--brand)" radius={[6, 6, 0, 0]} />
+        <p className="mb-3 text-base font-bold text-ink">{t("dashboard.last7Days")}</p>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={data.dailySeries} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="var(--border)" />
+            <XAxis dataKey="date" tick={{ fontSize: 12, fill: "var(--muted)" }} tickLine={false} axisLine={false} tickFormatter={(d) => d.slice(5)} />
+            <YAxis tick={{ fontSize: 12, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={48} />
+            <Tooltip
+              cursor={{ fill: "var(--brand-soft)", opacity: 0.6 }}
+              contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", boxShadow: "var(--shadow-md)", fontFamily: "inherit" }}
+              formatter={(v) => [formatINR(Number(v ?? 0)), "Sales"]}
+            />
+            <Bar dataKey="sales" fill="var(--brand)" radius={[6, 6, 0, 0]} maxBarSize={44} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {paymentData.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-          <p className="mb-2 text-sm font-bold text-ink-soft">{t("dashboard.paymentBreakdown")}</p>
-          <ResponsiveContainer width="100%" height={200}>
+          <p className="mb-3 text-base font-bold text-ink">{t("dashboard.paymentBreakdown")}</p>
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={paymentData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}>
+              <Pie data={paymentData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={2} stroke="none">
                 {paymentData.map((_, i) => (
                   <Cell key={i} fill={PAYMENT_COLORS[i % PAYMENT_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatINR(Number(v ?? 0))} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontFamily: "inherit" }} formatter={(v) => formatINR(Number(v ?? 0))} />
+              <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
         </div>

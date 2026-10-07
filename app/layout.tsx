@@ -7,16 +7,17 @@ import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/Toaster";
 
 export const metadata: Metadata = {
-  title: "POS — Billing & Business Manager",
-  description: "Fast POS, billing, inventory and business intelligence for small Indian food businesses.",
+  title: "Billo — Restaurant Billing",
+  description: "Fast billing, bills, staff, cash and reports for Indian restaurants.",
+  applicationName: "Billo",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "POS",
+    title: "Billo",
   },
   icons: {
-    apple: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 

@@ -74,10 +74,10 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
       </Button>
 
       {open && (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center sm:justify-center bg-black/40">
-          <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+          <div className="toast-enter max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface shadow-lg pb-[max(1rem,env(safe-area-inset-bottom))] sm:w-[calc(100%-24px)] sm:max-w-[520px] sm:rounded-2xl">
             <div className="flex items-center justify-between p-4">
-              <p className="font-bold text-ink">Install POS</p>
+              <p className="font-bold text-ink">Install Billo</p>
               <button
                 onClick={() => setOpen(false)}
                 className="touch-target rounded-full p-2 hover:bg-paper"
@@ -90,12 +90,12 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
             <div className="flex flex-col items-center px-6 pb-2 text-center">
               <Image
                 src="/icons/icon-192.png"
-                alt="POS"
+                alt="Billo"
                 width={72}
                 height={72}
-                className="rounded-2xl border border-border"
+                className="rounded-2xl"
               />
-              <p className="mt-3 text-lg font-extrabold text-ink">POS</p>
+              <p className="mt-3 text-lg font-extrabold text-ink">Billo</p>
               <p className="mt-1 text-sm text-muted">
                 Install on this phone for faster billing — full screen, works offline.
               </p>

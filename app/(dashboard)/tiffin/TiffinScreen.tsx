@@ -79,11 +79,11 @@ export function TiffinScreen() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 lg:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-ink">Tiffin / Meal Subscriptions</h1>
-          <p className="text-base text-muted">{subs.length} active plans</p>
+          <p className="text-sm text-muted">{subs.length} active plans</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setPlanFormOpen(true)}>
@@ -100,15 +100,15 @@ export function TiffinScreen() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="border-2 border-border bg-surface p-3">
+        <div className="border border-border bg-surface rounded-2xl shadow-sm p-3">
           <p className="text-sm font-semibold text-muted">Active Plans</p>
           <p className="text-xl font-extrabold tabular">{subs.length}</p>
         </div>
-        <div className="border-2 border-border bg-surface p-3">
+        <div className="border border-border bg-surface rounded-2xl shadow-sm p-3">
           <p className="text-sm font-semibold text-muted">Meals Today</p>
           <p className="text-xl font-extrabold tabular">{mealsUsedToday}</p>
         </div>
-        <div className="border-2 border-danger bg-danger-soft p-3">
+        <div className="border border-danger bg-danger-soft p-3 rounded-xl">
           <p className="text-sm font-semibold text-danger">Expiring Soon</p>
           <p className="text-xl font-extrabold tabular text-danger">{expiring.length}</p>
         </div>
@@ -134,7 +134,7 @@ export function TiffinScreen() {
               <li key={s.id} className="p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-paper text-ink-soft">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-border bg-paper text-ink-soft">
                       <User className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
@@ -155,19 +155,19 @@ export function TiffinScreen() {
                   <button
                     onClick={() => recordUsage(s.id, "USED")}
                     disabled={remaining <= 0}
-                    className="touch-target rounded-md border-2 border-success text-success flex items-center justify-center gap-1 text-sm font-bold disabled:opacity-40"
+                    className="touch-target rounded-xl border border-success text-success flex items-center justify-center gap-1 text-sm font-bold disabled:opacity-40"
                   >
                     <Check className="h-4 w-4" /> Meal Used
                   </button>
                   <button
                     onClick={() => recordUsage(s.id, "SKIPPED")}
-                    className="touch-target rounded-md border-2 border-border text-ink-soft flex items-center justify-center gap-1 text-sm font-bold"
+                    className="touch-target rounded-xl border border-border text-ink-soft flex items-center justify-center gap-1 text-sm font-bold"
                   >
                     <SkipForward className="h-4 w-4" /> Skip
                   </button>
                   <button
                     onClick={() => recordUsage(s.id, "EXTRA")}
-                    className="touch-target rounded-md border-2 border-gold text-gold flex items-center justify-center gap-1 text-sm font-bold"
+                    className="touch-target rounded-xl border border-accent-dark/40 bg-accent-soft text-brand-dark flex items-center justify-center gap-1 text-sm font-bold"
                   >
                     <PlusCircle className="h-4 w-4" /> Extra
                   </button>
@@ -240,8 +240,8 @@ function NewPlanSheet({ onClose, onCreated }: { onClose: () => void; onCreated: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="toast-enter max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface shadow-lg pb-[env(safe-area-inset-bottom)] sm:w-[calc(100%-24px)] sm:max-w-[520px] sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">New Meal Plan</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
@@ -327,8 +327,8 @@ function AssignPlanFlow({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="toast-enter max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface shadow-lg pb-[env(safe-area-inset-bottom)] sm:w-[calc(100%-24px)] sm:max-w-[520px] sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Assign Plan</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">

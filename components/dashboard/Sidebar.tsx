@@ -49,14 +49,24 @@ export function Sidebar({ role, businessName }: { role: StaffRole; businessName:
 
   return (
     <aside className="hidden md:flex md:w-[76px] lg:w-64 shrink-0 flex-col sticky top-0 h-screen overflow-y-auto bg-brand-dark text-white">
-      <Link href="/profile" className="flex items-center justify-center lg:justify-start gap-3 px-4 py-5 border-b border-white/10 transition-colors hover:bg-white/5">
-        <div className="flex h-9 w-9 items-center justify-center shrink-0 rounded-xl bg-accent text-base font-extrabold text-brand-dark shadow-sm">
-          ₹
-        </div>
-        <div className="hidden lg:block min-w-0">
-          <p className="truncate text-sm font-bold text-white">{businessName}</p>
-          <p className="text-xs text-white/60">{role.charAt(0) + role.slice(1).toLowerCase()}</p>
-        </div>
+      <div className="flex h-16 items-center justify-center px-3 lg:justify-start lg:px-5">
+        <Link href="/dashboard" aria-label="Billo home" className="flex items-center">
+          <img src="/brand/billo-icon.png" alt="Billo" className="h-10 w-10 object-contain drop-shadow-sm lg:hidden" />
+          <img src="/brand/billo-logo-light.png" alt="Billo" className="hidden h-9 w-auto lg:block" />
+        </Link>
+      </div>
+      <Link
+        href="/profile"
+        title={businessName}
+        className="mx-3 mb-1 flex items-center justify-center gap-3 rounded-xl bg-white/5 p-2 transition-colors duration-200 hover:bg-white/10 lg:justify-start lg:px-3"
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-extrabold text-brand-dark">
+          {businessName.charAt(0).toUpperCase()}
+        </span>
+        <span className="hidden min-w-0 lg:block">
+          <span className="block truncate text-sm font-semibold text-white">{businessName}</span>
+          <span className="block text-xs text-white/60">{role.charAt(0) + role.slice(1).toLowerCase()}</span>
+        </span>
       </Link>
       <nav className="no-select flex-1 space-y-1 px-3 py-4">
         {visibleItems.map(({ href, labelKey, icon: Icon }) => {

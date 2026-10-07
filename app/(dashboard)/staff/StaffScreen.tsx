@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, X, UserCog } from "lucide-react";
+import Link from "next/link";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,12 @@ interface StaffRow {
   status: Status;
   billCount: number;
 }
+
+const ROLE_CAN: Record<string, string> = {
+  OWNER: "Full access",
+  MANAGER: "Discounts, refunds, cancellations, reports",
+  CASHIER: "Create bills, take payments, reprint",
+};
 
 const ROLE_LABEL: Record<Role, string> = { OWNER: "Owner", MANAGER: "Manager", CASHIER: "Cashier" };
 
@@ -73,11 +80,11 @@ export function StaffScreen({
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 lg:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-ink">Staff</h1>
-          <p className="text-base text-muted">{staff.length} people</p>
+          <p className="text-sm text-muted">{staff.length} people</p>
         </div>
         <Button onClick={() => setFormOpen(true)}>
           <span className="inline-flex items-center gap-1.5">
@@ -87,39 +94,58 @@ export function StaffScreen({
       </div>
 
       {error && (
-        <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>
+        <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{error}</p>
       )}
 
-      <ul className="rounded-2xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {staff.map((s) => (
-          <li key={s.id} className="p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-paper text-ink-soft">
-                  <UserCog className="h-5 w-5" />
+          <div key={s.id} className={cn("card flex flex-col p-4 hover:shadow-md", s.status !== "ACTIVE" && "opacity-75")}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-base font-extrabold text-brand-dark">
+                  {s.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-ink truncate">
-                    {s.name} {s.id === currentStaffId && <span className="text-sm text-muted">(you)</span>}
+                  <p className="truncate font-bold text-ink">
+                    {s.name} {s.id === currentStaffId && <span className="text-sm font-medium text-muted">(you)</span>}
                   </p>
-                  <p className="text-sm text-muted truncate">{s.email} · {s.billCount} bills</p>
+                  <p className="truncate text-sm text-muted">{s.email}</p>
                 </div>
               </div>
               <span
                 className={cn(
-                  "shrink-0 border px-2 py-1 text-sm font-bold",
-                  s.status === "ACTIVE" ? "border-success text-success" : "border-danger text-danger"
+                  "shrink-0 rounded-lg px-2 py-0.5 text-xs font-semibold",
+                  s.status === "ACTIVE" ? "bg-success-soft text-success" : "bg-danger-soft text-danger"
                 )}
               >
                 {s.status === "ACTIVE" ? "Active" : "Disabled"}
               </span>
             </div>
-            <div className="mt-2 flex items-center gap-2">
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "rounded-lg px-2 py-0.5 text-xs font-bold",
+                  s.role === "OWNER" ? "bg-brand-dark text-accent" : s.role === "MANAGER" ? "bg-brand text-white" : "bg-brand-soft text-brand-dark"
+                )}
+              >
+                {ROLE_LABEL[s.role]}
+              </span>
+              <span className="text-xs text-muted">{ROLE_CAN[s.role]}</span>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-paper px-3 py-2">
+              <span className="text-xs font-medium text-muted">Bills created</span>
+              <span className="text-base font-extrabold text-ink tabular">{s.billCount}</span>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
               <select
                 value={s.role}
                 onChange={(e) => updateRole(s.id, e.target.value as Role)}
                 disabled={s.id === currentStaffId}
-                className="field max-w-[10rem] py-2 text-sm"
+                aria-label="Role"
+                className="field min-h-11 flex-1 py-2 text-sm"
               >
                 {(["OWNER", "MANAGER", "CASHIER"] as Role[]).map((r) => (
                   <option key={r} value={r}>
@@ -130,15 +156,26 @@ export function StaffScreen({
               {s.id !== currentStaffId && (
                 <button
                   onClick={() => toggleStatus(s)}
-                  className="text-sm font-bold text-danger hover:underline"
+                  className={cn(
+                    "min-h-11 rounded-xl border px-3 text-sm font-semibold transition-colors duration-150",
+                    s.status === "ACTIVE" ? "border-danger/30 text-danger hover:bg-danger-soft" : "border-success/30 text-success hover:bg-success-soft"
+                  )}
                 >
                   {s.status === "ACTIVE" ? "Disable" : "Re-enable"}
                 </button>
               )}
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
+
+      <Link href="/performance" className="card flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-md">
+        <div>
+          <p className="font-bold text-ink">Staff performance</p>
+          <p className="text-sm text-muted">Sales, discounts, cancellations and cash accuracy per person</p>
+        </div>
+        <span className="shrink-0 text-sm font-semibold text-brand">Open →</span>
+      </Link>
 
       {formOpen && (
         <AddStaffSheet
@@ -195,8 +232,8 @@ function AddStaffSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="toast-enter max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface shadow-lg pb-[env(safe-area-inset-bottom)] sm:w-[calc(100%-24px)] sm:max-w-[520px] sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Add Staff</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
@@ -232,7 +269,7 @@ function AddStaffSheet({
                       type="button"
                       onClick={() => field.onChange(r)}
                       className={cn(
-                        "touch-target rounded-md border-2 text-sm font-bold",
+                        "touch-target rounded-xl border text-sm font-bold",
                         field.value === r ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
                       )}
                     >
@@ -244,7 +281,7 @@ function AddStaffSheet({
             />
           </div>
           {serverError && (
-            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{serverError}</p>
+            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{serverError}</p>
           )}
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
             {submitting ? "Adding…" : "Add Staff Member"}

@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   const session = await requireSession();
   const since = startOfToday();
 
-  const [todayInvoices, lowStockProducts, outstandingCredit, activeSubs, insights] = await Promise.all([
+  const [todayInvoices, lowStockProducts, outstandingCredit, activeSubs, insights, todayExpenses] = await Promise.all([
     prisma.invoice.findMany({
       where: { businessId: session.businessId, createdAt: { gte: since }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
       include: { payments: { select: { method: true, amount: true } }, items: { select: { productName: true, quantity: true } } },
@@ -31,6 +31,7 @@ export default async function DashboardPage() {
     }),
     prisma.tiffinSubscription.count({ where: { businessId: session.businessId, status: "ACTIVE" } }),
     getBusinessInsights(session.businessId),
+    prisma.expense.aggregate({ where: { businessId: session.businessId, date: { gte: since } }, _sum: { amount: true } }),
   ]);
   const lowStockCount = lowStockProducts.filter((p) => Number(p.currentStock) <= Number(p.minStock)).length;
 
@@ -49,7 +50,7 @@ export default async function DashboardPage() {
   const quickInsights = await getQuickInsights(session.businessId, todayInvoices, todaySales);
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 lg:p-6">
       <DashboardText
         firstName={session.name.split(" ")[0]}
         todaySales={formatINR(todaySales)}
@@ -63,6 +64,7 @@ export default async function DashboardPage() {
         avgBill={formatINR(todayOrders ? todaySales / todayOrders : 0)}
         payments={payments}
         quickInsights={quickInsights}
+        todayExpenses={formatINR(Number(todayExpenses._sum.amount ?? 0))}
       />
 
       <DashboardCharts />

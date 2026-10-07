@@ -33,7 +33,7 @@ export function ProductSearch({
   }, [value]);
 
   return (
-    <div className="flex items-center gap-2 border-2 border-border bg-surface px-3 touch-target">
+    <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 touch-target transition-shadow focus-within:border-brand focus-within:ring-3 focus-within:ring-brand-soft">
       <Search className="h-4 w-4 text-muted shrink-0" />
       <input
         autoFocus

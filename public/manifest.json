@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "POS - Billing & Business Manager",
-  "short_name": "POS",
-  "description": "Fast POS, billing, inventory and business intelligence for small Indian food businesses.",
+  "name": "Billo — Restaurant Billing",
+  "short_name": "Billo",
+  "description": "Fast billing, bills, staff, cash and reports for Indian restaurants, tiffin centres, cafes and bakeries.",
   "start_url": "/login",
   "scope": "/",
   "display": "standalone",
@@ -22,6 +22,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512-maskable.png",

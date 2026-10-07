@@ -35,7 +35,7 @@ export default async function ProfilePage() {
         <InfoRow icon={User} label="Staff ID" value={session.staffId} mono />
       </div>
 
-      <section className="rounded-2xl border-2 border-brand/30 bg-surface p-4 shadow-sm">
+      <section className="rounded-2xl border border-brand/30 bg-surface p-4 shadow-sm">
         <h2 className="mb-1 text-lg font-bold text-ink">
           <T k="settings.installTitle" />
         </h2>

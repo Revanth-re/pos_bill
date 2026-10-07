@@ -25,6 +25,7 @@ export function DashboardText({
   avgBill,
   payments,
   quickInsights = [],
+  todayExpenses,
 }: {
   firstName: string;
   todaySales: string;
@@ -38,13 +39,14 @@ export function DashboardText({
   avgBill?: string;
   payments?: { label: string; value: string; share: number }[];
   quickInsights?: string[];
+  todayExpenses?: string;
 }) {
   const t = useT();
 
   return (
     <>
       <div>
-        <h1 className="text-xl font-extrabold text-ink">
+        <h1 className="text-2xl font-extrabold text-ink">
           {t("dashboard.greeting")}, {firstName} 👋
         </h1>
         <p className="text-sm text-muted">{t("dashboard.subtitle")}</p>
@@ -93,7 +95,8 @@ export function DashboardText({
         </ul>
       )}
 
-      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3">
+        {todayExpenses && <Kpi label="Today's expenses" value={todayExpenses} />}
         <Kpi label={t("dashboard.lowStock")} value={lowStockCount} accent={lowStockDanger ? "danger" : undefined} />
         <Kpi label={t("dashboard.outstandingCredit")} value={outstandingCredit} />
         <Kpi label={t("dashboard.activeTiffin")} value={activeSubs} />

@@ -207,7 +207,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] flex-col md:h-screen">
-      <div className="flex items-center gap-2 border-b border-border bg-surface p-3">
+      <div className="flex items-center gap-2 border-b border-border bg-surface px-3 py-2.5">
         <div className="flex-1">
           <ProductSearch onSearch={handleSearch} onBarcodeEnter={handleBarcodeEnter} />
         </div>
@@ -221,9 +221,9 @@ export function BillingScreen({ businessName, cashierName }: Props) {
         </button>
       </div>
 
-      <div className={`flex flex-1 overflow-hidden ${lines.length > 0 ? "pb-14 md:pb-0" : ""}`}>
-        <div className="flex-1 overflow-y-auto p-3 lg:p-4">
-          <div className="mb-3">
+      <div className={`flex flex-1 overflow-hidden ${lines.length > 0 ? "pb-20 md:pb-0" : ""}`}>
+        <div className="flex-1 overflow-y-auto px-3 pb-3 lg:px-4 lg:pb-4">
+          <div className="sticky top-0 z-10 -mx-3 mb-3 bg-paper/95 px-3 pt-3 pb-1 backdrop-blur lg:-mx-4 lg:px-4">
             <CategoryTabs
               categories={categories}
               activeId={activeCategory}
@@ -249,26 +249,27 @@ export function BillingScreen({ businessName, cashierName }: Props) {
         </div>
       </div>
 
-      {/* Sit above the fixed bottom navbar on every mobile viewport */}
+      {/* Floating cart bar — sits above the bottom nav, right under the thumb */}
       {lines.length > 0 && (
-        <div className="no-select md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 flex items-stretch border-t border-border bg-ink text-white shadow-[0_-4px_16px_rgba(0,0,0,0.18)]">
+        <div className="no-select toast-enter md:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 flex items-stretch overflow-hidden rounded-2xl bg-brand-dark text-white shadow-lg">
           <button
             onClick={() => setCartOpenMobile(true)}
-            className="touch-target flex flex-1 items-center gap-2 px-4 text-left"
+            className="touch-target flex min-w-0 flex-1 items-center gap-3 px-4 text-left active:bg-white/5"
           >
-            <span className="text-sm font-semibold opacity-90">
-              {itemCount} {t("pos.items")}
+            <span className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-white/10 px-1.5 text-sm font-bold tabular">
+              {itemCount}
             </span>
-            <span className="text-base font-bold tabular text-accent">
-              {formatINR(estimatedTotal)}
+            <span className="min-w-0">
+              <span className="block text-lg font-extrabold leading-tight tabular text-accent">{formatINR(estimatedTotal)}</span>
+              <span className="block text-xs text-white/70">View cart · {t("pos.items")}</span>
             </span>
           </button>
           <button
             onClick={handleQuickPrint}
             disabled={quickPrinting}
-            className="touch-target flex items-center gap-1.5 bg-brand px-5 font-bold transition-colors active:bg-brand-dark disabled:opacity-60"
+            className="flex min-h-14 items-center gap-2 bg-accent px-5 font-bold text-brand-dark transition-colors active:bg-accent-dark disabled:opacity-60"
           >
-            <Printer className="h-4 w-4" />
+            <Printer className="h-5 w-5" />
             {quickPrinting ? t("pos.printing") : t("pos.printBill")}
           </button>
         </div>
@@ -276,14 +277,14 @@ export function BillingScreen({ businessName, cashierName }: Props) {
 
       {cartOpenMobile && (
         <div className="fixed inset-0 z-40 flex flex-col bg-surface md:hidden">
-          <div className="flex items-center justify-between border-b border-border p-3">
-            <span className="font-bold text-ink">Your Cart</span>
+          <div className="flex h-14 items-center justify-between border-b border-border px-2 pt-[env(safe-area-inset-top)]">
             <button
               onClick={() => setCartOpenMobile(false)}
-              className="no-select touch-target rounded-full px-3 text-sm font-semibold text-brand"
+              className="no-select touch-target flex items-center gap-1 rounded-xl px-3 text-sm font-semibold text-brand hover:bg-brand-soft/60"
             >
-              Back to menu
+              ← Menu
             </button>
+            <span className="pr-3 text-base font-bold text-ink">Current bill</span>
           </div>
           <div className="flex-1 overflow-hidden">
             <CartPanel

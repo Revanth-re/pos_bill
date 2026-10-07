@@ -39,14 +39,14 @@ export function CartPanel({
     <div className="flex h-full flex-col bg-surface">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="font-bold text-ink">{t("pos.cart")} {itemCount > 0 && `(${itemCount})`}</h2>
-        <div className="flex rounded-full border border-border p-0.5 text-xs font-semibold">
+        <div className="flex rounded-xl border border-border bg-paper p-0.5 text-xs font-semibold">
           {(["TAKEAWAY", "DINE_IN"] as const).map((ot) => (
             <button
               key={ot}
               onClick={() => setOrderType(ot)}
               className={cn(
-                "rounded-full px-3 py-1.5 transition-colors",
-                orderType === ot ? "bg-ink text-white" : "text-ink-soft"
+                "min-h-9 rounded-lg px-3 py-1.5 transition-all duration-150",
+                orderType === ot ? "bg-brand text-white shadow-sm" : "text-ink-soft hover:text-ink"
               )}
             >
               {ot === "TAKEAWAY" ? t("pos.takeaway") : t("pos.dineIn")}
@@ -58,8 +58,8 @@ export function CartPanel({
       <div className="flex-1 overflow-y-auto px-4 py-2">
         {lines.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted py-12">
-            <p className="text-sm">Cart is empty</p>
-            <p className="text-xs">Tap a product to add it</p>
+            <p className="text-base font-semibold text-ink">Cart is empty</p>
+            <p className="text-sm">Tap a product to add it</p>
           </div>
         ) : (
           <ul className="divide-y divide-border">
@@ -89,21 +89,21 @@ export function CartPanel({
                   </div>
 
                   <div className="mt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-1 rounded-full border border-border">
+                    <div className="flex items-center gap-0.5 rounded-xl border border-border bg-paper">
                       <button
                         onClick={() => decrementLine(line.product.id)}
-                        className="touch-target rounded-full p-2 hover:bg-paper"
+                        className="touch-target flex w-11 items-center justify-center rounded-xl text-brand-dark hover:bg-brand-soft active:scale-95 transition-transform"
                         aria-label="Decrease quantity"
                       >
-                        <Minus className="h-3.5 w-3.5" />
+                        <Minus className="h-4 w-4" />
                       </button>
-                      <span className="w-6 text-center text-sm font-semibold tabular">{line.quantity}</span>
+                      <span className="w-7 text-center text-base font-bold tabular">{line.quantity}</span>
                       <button
                         onClick={() => incrementLine(line.product.id)}
-                        className="touch-target rounded-full p-2 hover:bg-paper"
+                        className="touch-target flex w-11 items-center justify-center rounded-xl text-brand-dark hover:bg-brand-soft active:scale-95 transition-transform"
                         aria-label="Increase quantity"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <Plus className="h-4 w-4" />
                       </button>
                     </div>
 
@@ -147,12 +147,12 @@ export function CartPanel({
         <div className="border-t border-border p-4 space-y-3">
           <BillDiscountRow value={billDiscount} onChange={setBillDiscount} />
 
-          <div className="receipt-edge bg-ink px-4 pt-3 pb-5 text-white">
+          <div className="receipt-edge rounded-t-xl bg-brand-dark px-4 pt-3 pb-5 text-white">
             <div className="flex items-center justify-between text-sm opacity-80">
               <span>{t("pos.total")}</span>
-              <span className="tabular text-lg font-bold text-accent">{formatINR(estimatedTotal)}</span>
+              <span className="tabular text-2xl font-extrabold text-accent">{formatINR(estimatedTotal)}</span>
             </div>
-            <p className="mt-0.5 text-[11px] opacity-60">Includes GST · Cash by default, tap Split for other methods</p>
+            <p className="mt-0.5 text-xs opacity-70">Includes GST · Cash by default, tap Split for other methods</p>
           </div>
 
           <Button variant="primary" size="lg" className="w-full" onClick={onQuickPrint} loading={printing}>
@@ -187,10 +187,10 @@ function LineDiscountEditor({
   const [amount, setAmount] = useState(value?.value?.toString() ?? "");
 
   return (
-    <div className="mt-2 flex items-center gap-2 border-2 border-border bg-paper p-2">
+    <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-paper p-2">
       <button
         onClick={() => setType(type === "PERCENT" ? "FIXED" : "PERCENT")}
-        className="touch-target flex items-center gap-1 rounded-md border border-border bg-surface px-2 text-xs font-semibold"
+        className="touch-target flex items-center gap-1 rounded-xl border border-border bg-surface px-2 text-xs font-semibold"
       >
         {type === "PERCENT" ? <Percent className="h-3 w-3" /> : "₹"}
         {type === "PERCENT" ? "%" : "Fixed"}
@@ -201,7 +201,7 @@ function LineDiscountEditor({
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         placeholder="0"
-        className="w-20 border-2 border-border bg-surface px-2 py-2 text-sm tabular"
+        className="w-20 rounded-xl border border-border bg-surface px-2 py-2 focus:border-brand focus:outline-none text-sm tabular"
       />
       <Button
         size="sm"
@@ -240,7 +240,7 @@ function BillDiscountRow({
         <div className="mt-2 flex items-center gap-2">
           <button
             onClick={() => setType(type === "PERCENT" ? "FIXED" : "PERCENT")}
-            className="touch-target rounded-md border border-border bg-surface px-2 text-xs font-semibold"
+            className="touch-target rounded-xl border border-border bg-surface px-2 text-xs font-semibold"
           >
             {type === "PERCENT" ? "%" : "₹ Fixed"}
           </button>
@@ -250,7 +250,7 @@ function BillDiscountRow({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="w-20 border-2 border-border bg-surface px-2 py-2 text-sm tabular"
+            className="w-20 rounded-xl border border-border bg-surface px-2 py-2 focus:border-brand focus:outline-none text-sm tabular"
           />
           <Button
             size="sm"

@@ -67,11 +67,11 @@ export function ExpensesScreen({
   const total = filtered.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 lg:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-ink">Expenses</h1>
-          <p className="text-base text-muted">{filtered.length} entries</p>
+          <p className="text-sm text-muted">{filtered.length} entries</p>
         </div>
         {canManage && (
           <Button onClick={() => setFormOpen(true)}>
@@ -82,7 +82,7 @@ export function ExpensesScreen({
         )}
       </div>
 
-      <div className="border-2 border-border bg-ink p-4 text-white">
+      <div className="rounded-2xl bg-brand-dark p-4 text-white shadow-md">
         <p className="text-sm font-semibold opacity-80">
           Total {range === "today" ? "today" : range === "week" ? "this week" : range === "month" ? "this month" : "(all time)"}
         </p>
@@ -95,7 +95,7 @@ export function ExpensesScreen({
             key={r}
             onClick={() => setRange(r)}
             className={cn(
-              "touch-target rounded-md border-2 px-4 text-sm font-bold",
+              "touch-target rounded-xl border px-4 text-sm font-bold",
               range === r ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
             )}
           >
@@ -105,7 +105,7 @@ export function ExpensesScreen({
         <select
           value={categoryFilter ?? ""}
           onChange={(e) => setCategoryFilter(e.target.value || null)}
-          className="touch-target border-2 border-border bg-surface px-3 text-sm font-semibold"
+          className="touch-target rounded-xl border border-border bg-surface px-3 text-sm font-semibold"
         >
           <option value="">All categories</option>
           {categories.map((c) => (
@@ -201,7 +201,7 @@ function AddExpenseSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
       <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Add Expense</h2>
@@ -242,7 +242,7 @@ function AddExpenseSheet({
                       type="button"
                       onClick={() => field.onChange(m)}
                       className={cn(
-                        "touch-target rounded-md border-2 px-1 text-sm font-bold",
+                        "touch-target rounded-xl border px-1 text-sm font-bold",
                         field.value === m ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
                       )}
                     >
@@ -260,7 +260,7 @@ function AddExpenseSheet({
           </div>
 
           {serverError && (
-            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{serverError}</p>
+            <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{serverError}</p>
           )}
 
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>

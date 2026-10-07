@@ -62,12 +62,12 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 border-2 border-border bg-surface p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 border border-border bg-surface rounded-2xl shadow-sm p-5">
       <div>
         <label className="mb-1 block text-xs font-semibold text-ink-soft">Business name</label>
         <input
           {...register("businessName")}
-          className="w-full touch-target border-2 border-border px-3 py-3 text-base outline-none focus:border-brand"
+          className="w-full touch-target border border-border px-3 py-3 text-base outline-none focus:border-brand"
           placeholder="Sri Balaji Tiffin Center"
         />
         {errors.businessName && <p className="mt-1 text-xs text-danger">{errors.businessName.message}</p>}
@@ -76,7 +76,7 @@ export function RegisterForm() {
         <label className="mb-1 block text-xs font-semibold text-ink-soft">Your name</label>
         <input
           {...register("ownerName")}
-          className="w-full touch-target border-2 border-border px-3 py-3 text-base outline-none focus:border-brand"
+          className="w-full touch-target border border-border px-3 py-3 text-base outline-none focus:border-brand"
           placeholder="Ramesh Kumar"
         />
         {errors.ownerName && <p className="mt-1 text-xs text-danger">{errors.ownerName.message}</p>}
@@ -86,7 +86,7 @@ export function RegisterForm() {
         <input
           type="email"
           {...register("email")}
-          className="w-full touch-target border-2 border-border px-3 py-3 text-base outline-none focus:border-brand"
+          className="w-full touch-target border border-border px-3 py-3 text-base outline-none focus:border-brand"
           placeholder="owner@shop.com"
         />
         {errors.email && <p className="mt-1 text-xs text-danger">{errors.email.message}</p>}
@@ -95,7 +95,7 @@ export function RegisterForm() {
         <label className="mb-1 block text-xs font-semibold text-ink-soft">Phone (optional)</label>
         <input
           {...register("phone")}
-          className="w-full touch-target border-2 border-border px-3 py-3 text-base outline-none focus:border-brand"
+          className="w-full touch-target border border-border px-3 py-3 text-base outline-none focus:border-brand"
           placeholder="98765 43210"
         />
       </div>
@@ -104,14 +104,14 @@ export function RegisterForm() {
         <input
           type="password"
           {...register("password")}
-          className="w-full touch-target border-2 border-border px-3 py-3 text-base outline-none focus:border-brand"
+          className="w-full touch-target border border-border px-3 py-3 text-base outline-none focus:border-brand"
           placeholder="At least 6 characters"
         />
         {errors.password && <p className="mt-1 text-xs text-danger">{errors.password.message}</p>}
       </div>
 
       {serverError && (
-        <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{serverError}</p>
+        <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{serverError}</p>
       )}
 
       <Button type="submit" className="w-full" size="lg" disabled={submitting}>

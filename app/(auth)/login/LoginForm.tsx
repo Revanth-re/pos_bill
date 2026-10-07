@@ -45,13 +45,13 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 border-2 border-border bg-surface p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 border border-border bg-surface rounded-2xl shadow-sm p-5">
       <div>
         <label className="mb-1 block text-xs font-semibold text-ink-soft">Email</label>
         <input
           type="email"
           {...register("email")}
-          className="w-full touch-target border-2 border-border px-3 py-3 text-base outline-none focus:border-brand"
+          className="w-full touch-target border border-border px-3 py-3 text-base outline-none focus:border-brand"
           placeholder="owner@shop.com"
         />
         {errors.email && <p className="mt-1 text-xs text-danger">{errors.email.message}</p>}
@@ -61,14 +61,14 @@ export function LoginForm() {
         <input
           type="password"
           {...register("password")}
-          className="w-full touch-target border-2 border-border px-3 py-3 text-base outline-none focus:border-brand"
+          className="w-full touch-target border border-border px-3 py-3 text-base outline-none focus:border-brand"
           placeholder="••••••••"
         />
         {errors.password && <p className="mt-1 text-xs text-danger">{errors.password.message}</p>}
       </div>
 
       {serverError && (
-        <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{serverError}</p>
+        <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{serverError}</p>
       )}
 
       <Button type="submit" className="w-full" size="lg" disabled={submitting}>

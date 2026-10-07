@@ -99,7 +99,7 @@ export function RecipeEditorSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
       <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-border p-4">
           <div>
@@ -119,7 +119,7 @@ export function RecipeEditorSheet({
           <>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {live && (
-                <div className="border-2 border-border bg-paper p-3 grid grid-cols-2 gap-3">
+                <div className="border border-border bg-paper p-3 grid grid-cols-2 gap-3">
                   <Stat label="Food Cost" value={formatINR(live.foodCost)} />
                   <Stat label="Food Cost %" value={`${live.foodCostPercent.toFixed(0)}%`} />
                   <Stat
@@ -136,7 +136,7 @@ export function RecipeEditorSheet({
                 {lines.length === 0 ? (
                   <p className="text-sm text-muted">No ingredients added yet.</p>
                 ) : (
-                  <ul className="border-2 border-border divide-y-2 divide-border">
+                  <ul className="border border-border divide-y divide-border">
                     {lines.map((l) => (
                       <li key={l.ingredientId} className="flex items-center justify-between p-2.5">
                         <div>
@@ -269,7 +269,7 @@ function QuickAddIngredient({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-xs border-2 border-ink bg-surface p-4 space-y-3">
+      <div className="w-full max-w-xs rounded-2xl border border-border bg-surface p-4 space-y-3 shadow-lg">
         <h3 className="text-lg font-bold text-ink">New Ingredient</h3>
         <div>
           <label className="field-label">Name</label>

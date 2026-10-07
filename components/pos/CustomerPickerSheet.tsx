@@ -62,8 +62,8 @@ export function CustomerPickerSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40">
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-surface shadow-lg max-h-[85dvh] flex flex-col toast-enter">
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold text-ink">Select Customer</h2>
           <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper">
@@ -71,7 +71,7 @@ export function CustomerPickerSheet({
           </button>
         </div>
         <div className="p-4 pb-2">
-          <div className="flex items-center gap-2 border-2 border-border bg-surface px-3 touch-target">
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 touch-target transition-shadow focus-within:border-brand focus-within:ring-3 focus-within:ring-brand-soft">
             <Search className="h-5 w-5 text-muted shrink-0" />
             <input
               autoFocus
@@ -100,7 +100,7 @@ export function CustomerPickerSheet({
                   onClick={() => onSelect(c.id, c.name)}
                   className="flex w-full items-center gap-3 p-3 text-left hover:bg-paper"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-paper text-ink-soft">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-border bg-paper text-ink-soft">
                     <User className="h-4 w-4" />
                   </div>
                   <div>
