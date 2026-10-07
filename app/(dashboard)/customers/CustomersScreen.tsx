@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, X, Search, IndianRupee, Printer, MessageCircle } from "lucide-react";
+import { Plus, X, Search, IndianRupee, Pencil, Trash2, Printer, MessageCircle } from "lucide-react";
 import { toast } from "@/stores/toastStore";
 import { buildStatementRows, buildStatementText, type StatementData } from "@/lib/printing/statement";
 import { rowsToBytes } from "@/lib/printing/escpos";
@@ -42,11 +42,13 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 export function CustomersScreen({
   canManage,
   canRecordPayment,
+  canDelete = false,
   businessName = "",
   mode = "customers",
 }: {
   canManage: boolean;
   canRecordPayment: boolean;
+  canDelete?: boolean;
   businessName?: string;
   mode?: "customers" | "udhaari";
 }) {
@@ -199,6 +201,16 @@ export function CustomersScreen({
           customer={selected}
           businessName={businessName}
           canRecordPayment={canRecordPayment}
+          canManage={canManage}
+          canDelete={canDelete}
+          onUpdated={(u) => {
+            seedCustomers(customers.map((c) => (c.id === u.id ? { ...c, name: u.name, phone: u.phone } : c)));
+            setSelected((sel) => (sel && sel.id === u.id ? { ...sel, name: u.name, phone: u.phone } : sel));
+          }}
+          onDeleted={(id) => {
+            seedCustomers(customers.filter((c) => c.id !== id));
+            setSelected(null);
+          }}
           onClose={() => setSelected(null)}
           onBalanceUpdated={handleBalanceUpdated}
         />
@@ -279,15 +291,64 @@ function CustomerDetailSheet({
   customer,
   businessName,
   canRecordPayment,
+  canManage,
+  canDelete,
   onClose,
   onBalanceUpdated,
+  onUpdated,
+  onDeleted,
 }: {
   customer: CustomerRow;
   businessName: string;
   canRecordPayment: boolean;
+  canManage: boolean;
+  canDelete: boolean;
   onClose: () => void;
   onBalanceUpdated: (id: string, balance: number) => void;
+  onUpdated: (c: { id: string; name: string; phone: string | null }) => void;
+  onDeleted: (id: string) => void;
 }) {
+  const [mode, setMode] = useState<"view" | "edit" | "delete">("view");
+  const [details, setDetails] = useState({ name: customer.name, phone: customer.phone ?? "", address: "", notes: "" });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  async function saveDetails() {
+    if (!details.name.trim()) {
+      setFormError("Name is required");
+      return;
+    }
+    setSaving(true);
+    setFormError(null);
+    const res = await fetch(`/api/customers/${customer.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(details),
+    });
+    const body = await res.json().catch(() => ({}));
+    setSaving(false);
+    if (!res.ok) {
+      setFormError(body.error ?? "Couldn't save.");
+      return;
+    }
+    onUpdated({ id: customer.id, name: body.customer.name, phone: body.customer.phone ?? null });
+    setMode("view");
+    toast.success("Customer updated");
+  }
+
+  async function deleteCustomer() {
+    setSaving(true);
+    setFormError(null);
+    const res = await fetch(`/api/customers/${customer.id}`, { method: "DELETE" });
+    const body = await res.json().catch(() => ({}));
+    setSaving(false);
+    if (!res.ok) {
+      setFormError(body.error ?? "Couldn't delete.");
+      return;
+    }
+    toast.success(`${customer.name} deleted`);
+    onDeleted(customer.id);
+  }
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(customer.outstandingBalance);
@@ -312,6 +373,12 @@ function CustomerDetailSheet({
           }))
         );
         if (d.customer) {
+          setDetails({
+            name: d.customer.name ?? customer.name,
+            phone: d.customer.phone ?? "",
+            address: d.customer.address ?? "",
+            notes: d.customer.notes ?? "",
+          });
           const fresh = Number(d.customer.outstandingBalance);
           setBalance(fresh);
           if (fresh !== customer.outstandingBalance) onBalanceUpdated(customer.id, fresh);
@@ -434,7 +501,7 @@ function CustomerDetailSheet({
               {customer.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-bold text-ink">{customer.name}</h2>
+              <h2 className="truncate text-lg font-bold text-ink">{details.name || customer.name}</h2>
               {customer.phone && (
                 <a href={`tel:${customer.phone}`} className="text-sm font-medium text-brand">
                   {customer.phone}
@@ -442,12 +509,70 @@ function CustomerDetailSheet({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="touch-target rounded-full p-2 hover:bg-paper" aria-label="Close">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            {canManage && (
+              <button onClick={() => { setMode(mode === "edit" ? "view" : "edit"); setFormError(null); }} className="touch-target flex w-11 items-center justify-center rounded-xl text-ink-soft hover:bg-paper" aria-label="Edit customer" title="Edit">
+                <Pencil className="h-[18px] w-[18px]" />
+              </button>
+            )}
+            {canDelete && (
+              <button onClick={() => { setMode(mode === "delete" ? "view" : "delete"); setFormError(null); }} className="touch-target flex w-11 items-center justify-center rounded-xl text-danger hover:bg-danger-soft" aria-label="Delete customer" title="Delete">
+                <Trash2 className="h-[18px] w-[18px]" />
+              </button>
+            )}
+            <button onClick={onClose} className="touch-target flex w-11 items-center justify-center rounded-xl hover:bg-paper" aria-label="Close">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {mode === "edit" && (
+            <div className="space-y-3 border-b border-border bg-paper/60 p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="field-label">Name</label>
+                  <input className="field" value={details.name} onChange={(e) => setDetails({ ...details, name: e.target.value })} autoFocus />
+                </div>
+                <div>
+                  <label className="field-label">Phone</label>
+                  <input className="field" inputMode="tel" value={details.phone} onChange={(e) => setDetails({ ...details, phone: e.target.value })} placeholder="10-digit mobile" />
+                </div>
+              </div>
+              <div>
+                <label className="field-label">Address</label>
+                <input className="field" value={details.address} onChange={(e) => setDetails({ ...details, address: e.target.value })} placeholder="Optional" />
+              </div>
+              <div>
+                <label className="field-label">Notes</label>
+                <input className="field" value={details.notes} onChange={(e) => setDetails({ ...details, notes: e.target.value })} placeholder="e.g. Pays every Saturday" />
+              </div>
+              {formError && <p className="text-sm font-medium text-danger">{formError}</p>}
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" onClick={() => setMode("view")}>Cancel</Button>
+                <Button loading={saving} onClick={saveDetails}>Save</Button>
+              </div>
+            </div>
+          )}
+
+          {mode === "delete" && (
+            <div className="space-y-3 border-b border-danger/20 bg-danger-soft/60 p-4">
+              <p className="font-bold text-ink">Delete {customer.name}?</p>
+              <p className="text-sm text-ink-soft">
+                {balance > 0
+                  ? `${customer.name} still owes ${formatINR(balance)}. Receive the payment first — customers with pending udhaari can't be deleted.`
+                  : "Their khata history will be removed. Past bills stay in Bills without the customer name. This can't be undone."}
+              </p>
+              {formError && <p className="text-sm font-medium text-danger">{formError}</p>}
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" onClick={() => setMode("view")}>Keep</Button>
+                <Button variant="danger" loading={saving} disabled={balance > 0 || loading} onClick={deleteCustomer}>
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Balance card */}
           <div className="p-4">
             <div className="rounded-2xl bg-brand-dark p-4 text-white">

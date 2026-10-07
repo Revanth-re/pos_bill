@@ -13,6 +13,7 @@ export default async function UdhaariPage() {
       businessName={business.name}
       canManage={can(session.role, "customers.manage")}
       canRecordPayment={can(session.role, "payments.record")}
+      canDelete={can(session.role, "billing.void")}
     />
   );
 }
