@@ -11,7 +11,7 @@ export async function GET() {
   try {
     const session = await requireSession();
     const printer = await prisma.printer.findFirst({ where: { businessId: session.businessId, isDefault: true } });
-    const config = (printer?.config ?? {}) as { billFormat?: unknown };
+    const config = (printer?.config ?? {}) as unknown as { billFormat?: unknown };
     return NextResponse.json({ format: normalizeFormat(config.billFormat) });
   } catch (err) {
     if (err instanceof UnauthenticatedError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -27,7 +27,7 @@ export async function PUT(req: Request) {
     const format = normalizeFormat((await req.json()).format);
 
     const existing = await prisma.printer.findFirst({ where: { businessId: session.businessId, isDefault: true } });
-    const config = { ...((existing?.config ?? {}) as Record<string, unknown>), billFormat: format } as Prisma.InputJsonValue;
+    const config = { ...((existing?.config ?? {}) as unknown as Record<string, unknown>), billFormat: format } as unknown as Prisma.InputJsonValue;
     if (existing) {
       await prisma.printer.update({ where: { id: existing.id }, data: { config } });
     } else {

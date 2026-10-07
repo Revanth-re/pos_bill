@@ -72,9 +72,9 @@ export async function GET(_req: Request, ctx: Ctx) {
           action: h.action,
           by: h.staff?.user.name ?? "System",
           at: h.createdAt,
-          reason: (h.metadata as { reason?: string } | null)?.reason ?? null,
-          amount: (h.metadata as { amount?: number; grandTotal?: number } | null)?.amount ??
-            (h.metadata as { grandTotal?: number } | null)?.grandTotal ?? null,
+          reason: (h.metadata as unknown as { reason?: string } | null)?.reason ?? null,
+          amount: (h.metadata as unknown as { amount?: number; grandTotal?: number } | null)?.amount ??
+            (h.metadata as unknown as { grandTotal?: number } | null)?.grandTotal ?? null,
         })),
       },
     });

@@ -42,7 +42,7 @@ export default async function SettingsPage() {
         <h2 className="mb-1 text-lg font-bold text-ink">Bill format</h2>
         <p className="mb-4 text-sm text-muted">Pick a template, choose what shows on the bill and preview it before printing.</p>
         <BillFormatSettings
-          initial={normalizeFormat((printer?.config as { billFormat?: unknown } | null)?.billFormat)}
+          initial={normalizeFormat((printer?.config as unknown as { billFormat?: unknown } | null)?.billFormat)}
           businessName={business.name}
           businessAddress={[business.address, business.city, business.phone].filter(Boolean).join(", ") || null}
           gstin={business.gstin}

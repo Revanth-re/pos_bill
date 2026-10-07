@@ -58,7 +58,7 @@ export async function GET(req: Request) {
         reprints: myLogs.filter((l) => l.action === "BILL_REPRINTED").length,
         shifts: shifts.length,
         cashDifference: shifts.reduce(
-          (sum, l) => sum + Number((l.metadata as { difference?: number } | null)?.difference ?? 0),
+          (sum, l) => sum + Number((l.metadata as unknown as { difference?: number } | null)?.difference ?? 0),
           0
         ),
       };

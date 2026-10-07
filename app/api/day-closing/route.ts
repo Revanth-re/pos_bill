@@ -33,7 +33,7 @@ async function computeTodaySummary(businessId: string) {
   // so only refunds of *earlier* days' bills take cash out of today's drawer.
   let refundsTotal = 0, cashRefunds = 0;
   for (const log of refundLogs) {
-    const m = (log.metadata ?? {}) as { amount?: number; cashAmount?: number; sameDay?: boolean };
+    const m = (log.metadata ?? {}) as unknown as { amount?: number; cashAmount?: number; sameDay?: boolean };
     refundsTotal += Number(m.amount ?? 0);
     if (!m.sameDay) cashRefunds += Number(m.cashAmount ?? 0);
   }

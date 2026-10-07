@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
 import { can, assertPermission, PermissionError } from "@/lib/permissions";
@@ -44,7 +45,7 @@ async function summarize(businessId: string, staffId: string, openedAt: Date, op
   const by = { CASH: 0, UPI: 0, CARD: 0, CREDIT: 0 } as Record<string, number>;
   for (const inv of invoices) for (const p of inv.payments) by[p.method] = (by[p.method] ?? 0) + Number(p.amount);
   const cashRefunds = refundLogs.reduce((s, l) => {
-    const m = (l.metadata ?? {}) as { cashAmount?: number; sameDay?: boolean };
+    const m = (l.metadata ?? {}) as unknown as { cashAmount?: number; sameDay?: boolean };
     return s + (m.sameDay ? 0 : Number(m.cashAmount ?? 0));
   }, 0);
   const totalSales = invoices.reduce((s, i) => s + Number(i.grandTotal), 0);
@@ -63,7 +64,7 @@ export async function GET() {
     const open = await findOpenShift(session.businessId, session.staffId);
     let current = null;
     if (open) {
-      const openingCash = Number((open.metadata as OpenMeta | null)?.openingCash ?? 0);
+      const openingCash = Number((open.metadata as unknown as OpenMeta | null)?.openingCash ?? 0);
       current = {
         id: open.id,
         openedAt: open.createdAt,
@@ -82,7 +83,7 @@ export async function GET() {
 
     return NextResponse.json({
       current,
-      recent: closedLogs.map((l) => ({ id: l.id, closedAt: l.createdAt, cashier: l.staff?.user.name ?? "—", ...(l.metadata as CloseMeta) })),
+      recent: closedLogs.map((l) => ({ id: l.id, closedAt: l.createdAt, cashier: l.staff?.user.name ?? "—", ...(l.metadata as unknown as CloseMeta) })),
     });
   } catch (err) {
     if (err instanceof UnauthenticatedError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -113,7 +114,7 @@ export async function POST(req: Request) {
     }
 
     if (!open) return NextResponse.json({ error: "No open shift to close." }, { status: 409 });
-    const openingCash = Number((open.metadata as OpenMeta | null)?.openingCash ?? 0);
+    const openingCash = Number((open.metadata as unknown as OpenMeta | null)?.openingCash ?? 0);
     const summary = await summarize(session.businessId, session.staffId, open.createdAt, openingCash);
     const meta: CloseMeta = {
       ...summary,
@@ -124,7 +125,7 @@ export async function POST(req: Request) {
       note: parsed.data.note,
     };
     await prisma.auditLog.create({
-      data: { businessId: session.businessId, staffId: session.staffId, action: "SHIFT_CLOSED", entity: "Shift", entityId: open.id, metadata: meta },
+      data: { businessId: session.businessId, staffId: session.staffId, action: "SHIFT_CLOSED", entity: "Shift", entityId: open.id, metadata: meta as unknown as Prisma.InputJsonValue },
     });
     return NextResponse.json({ ok: true, shift: meta });
   } catch (err) {
