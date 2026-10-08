@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
-import { InstallHelpSheet } from "@/components/pwa/InstallHelpSheet";
+import { InstallHelpSheet, goToLogin } from "@/components/pwa/InstallHelpSheet";
 import { toast } from "@/stores/toastStore";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
@@ -45,7 +45,10 @@ export function InstallAppCard({ compact = false }: { compact?: boolean }) {
               setBusy(true);
               try {
                 const outcome = await promptInstall();
-                if (outcome === "accepted") toast.success(t("install.installing"));
+                if (outcome === "accepted") {
+                  toast.success(t("install.installing"));
+                  goToLogin();
+                }
                 else if (outcome === "unavailable") setOpen(true);
               } finally {
                 setBusy(false);

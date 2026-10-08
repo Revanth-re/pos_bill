@@ -1,52 +1,68 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Download, Share, PlusSquare, MoreVertical, CheckCircle2, Loader2, ExternalLink } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
+export const LOGIN_PATH = "/login";
+
+/** After install → straight to the app's login page (same domain, relative = never an old URL). */
+export function goToLogin() {
+  window.location.assign(LOGIN_PATH);
+}
+
 /**
- * One install sheet for the whole product (website "Get Billo" + app install card).
- *
- * Chrome only hands a page its install prompt after the visitor has interacted with
- * it for a little while, and suppresses it for a period after a dismissal. So instead of
- * a dead-end "not ready" message this sheet:
- *  1. waits and enables "Install now" the moment Chrome allows it,
- *  2. always shows the manual Chrome-menu route (works even when the prompt is suppressed),
- *  3. tells in-app browsers (Instagram/Facebook/WhatsApp) to open in Chrome first,
- *  4. shows Add-to-Home-Screen steps on iPhone.
+ * One install sheet for the whole product. Opens only when Chrome hasn't handed us the
+ * install prompt yet: it shows "Preparing…" and fires the native install dialog by itself
+ * the moment Chrome allows it (or the user taps "Install now"). On install → /login.
  */
 export function InstallHelpSheet({ open, onClose, onInstalled }: { open: boolean; onClose: () => void; onInstalled?: () => void }) {
   const { installed, canPromptNatively, platform, secureContext, promptInstall } = usePwaInstall();
   const [busy, setBusy] = useState(false);
-  const [env, setEnv] = useState<{ ios: boolean; inApp: boolean; desktop: boolean }>({ ios: false, inApp: false, desktop: false });
+  const tried = useRef(false);
+  const [env, setEnv] = useState<{ ios: boolean; inApp: boolean }>({ ios: false, inApp: false });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      tried.current = false;
+      return;
+    }
     const ua = navigator.userAgent;
     const id = setTimeout(
       () =>
         setEnv({
           ios: /iphone|ipad|ipod/i.test(ua) || (ua.includes("Mac") && "ontouchend" in document),
           inApp: /FBAN|FBAV|Instagram|Line\/|; wv\)|WhatsApp/i.test(ua),
-          desktop: !/android|iphone|ipad|ipod|mobile/i.test(ua),
         }),
       0
     );
     return () => clearTimeout(id);
   }, [open]);
 
-  if (!open || typeof document === "undefined") return null;
-
   async function install() {
     setBusy(true);
     try {
       const outcome = await promptInstall();
-      if (outcome === "accepted") onInstalled?.();
+      if (outcome === "accepted") {
+        onInstalled?.();
+        goToLogin();
+      }
     } finally {
       setBusy(false);
     }
   }
+
+  // Chrome just became ready while the sheet is open → show the native dialog automatically.
+  useEffect(() => {
+    if (!open || !canPromptNatively || tried.current) return;
+    tried.current = true;
+    const id = setTimeout(() => void install(), 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, canPromptNatively]);
+
+  if (!open || typeof document === "undefined") return null;
 
   const ios = env.ios || platform === "ios-safari";
 
@@ -79,11 +95,12 @@ export function InstallHelpSheet({ open, onClose, onInstalled }: { open: boolean
           <div className="mt-5 space-y-3 text-[15px] text-[#172020]">
             <p className="rounded-xl bg-[#fdf6cc] p-3 text-sm font-medium">This page is open inside another app. Open it in Chrome to install Billo.</p>
             <Step n={1}>Tap <MoreVertical className="mx-0.5 inline h-4 w-4" /> or <ExternalLink className="mx-0.5 inline h-4 w-4" /> at the top</Step>
-            <Step n={2}>Choose <b>Open in Chrome</b> (or Open in browser)</Step>
+            <Step n={2}>Choose <b>Open in Chrome</b></Step>
             <Step n={3}>Tap <b>Get Billo</b> again</Step>
           </div>
         ) : ios ? (
           <div className="mt-5 space-y-3 text-[15px] text-[#172020]">
+            <p className="rounded-xl bg-[#fdf6cc] p-3 text-sm font-medium">iPhone doesn&apos;t allow one-tap install. 3 quick taps:</p>
             <Step n={1}>Tap <Share className="mx-0.5 inline h-5 w-5 text-[#075E63]" /> <b>Share</b> in Safari</Step>
             <Step n={2}>Choose <PlusSquare className="mx-0.5 inline h-5 w-5 text-[#075E63]" /> <b>Add to Home Screen</b></Step>
             <Step n={3}>Tap <b>Add</b> — done!</Step>
@@ -98,32 +115,18 @@ export function InstallHelpSheet({ open, onClose, onInstalled }: { open: boolean
               {canPromptNatively ? (
                 busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Download className="h-5 w-5" /> Install now</>
               ) : (
-                <><Loader2 className="h-5 w-5 animate-spin" /> Getting install ready…</>
+                <><Loader2 className="h-5 w-5 animate-spin" /> Preparing install…</>
               )}
             </button>
             {!canPromptNatively && (
-              <p className="mt-2 text-center text-xs text-[#647474]">Keep this page open a few seconds and scroll a little — the button turns on automatically.</p>
+              <p className="mt-2 text-center text-xs text-[#647474]">The install popup opens by itself in a few seconds.</p>
             )}
-
-            <div className="mt-5 rounded-2xl border border-[#E5E7E7] bg-[#FAFAF7] p-4">
-              <p className="mb-3 text-sm font-bold text-[#172020]">Or install from the Chrome menu (always works)</p>
-              <div className="space-y-2.5 text-[15px] text-[#172020]">
-                {env.desktop ? (
-                  <>
-                    <Step n={1}>Click the <Download className="mx-0.5 inline h-4 w-4" /> install icon at the right of the address bar</Step>
-                    <Step n={2}>Click <b>Install</b></Step>
-                  </>
-                ) : (
-                  <>
-                    <Step n={1}>Tap <MoreVertical className="mx-0.5 inline h-4 w-4" /> at the top-right of Chrome</Step>
-                    <Step n={2}>Tap <b>Install app</b> or <b>Add to Home screen</b></Step>
-                    <Step n={3}>Tap <b>Install</b></Step>
-                  </>
-                )}
-              </div>
-            </div>
           </>
         )}
+
+        <a href={LOGIN_PATH} className="mt-4 block text-center text-sm font-semibold text-[#075E63] hover:underline">
+          Already installed? Continue to login →
+        </a>
       </div>
     </div>,
     document.body

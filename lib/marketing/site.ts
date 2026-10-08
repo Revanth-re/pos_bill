@@ -1,7 +1,7 @@
 export const SITE = {
   name: "Billo",
   // Live website address. Override with NEXT_PUBLIC_SITE_URL in Vercel when you move to a custom domain (e.g. https://usebillo.in).
-  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://getbillo.vercel.app").replace(/\/$/, ""),
+  url: (/pos-bill-gamma|billo-quick/.test(process.env.NEXT_PUBLIC_SITE_URL || "") ? "https://getbillo.vercel.app" : process.env.NEXT_PUBLIC_SITE_URL || "https://getbillo.vercel.app").replace(/\/$/, ""),
   appUrl: "/dashboard",
   // "Get Billo" → app login with the install sheet opened automatically
   installUrl: "/login?install=1",
