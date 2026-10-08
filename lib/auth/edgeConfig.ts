@@ -32,13 +32,14 @@ export const edgeAuthConfig: NextAuthConfig = {
   callbacks: {
     // Keep every post-login / logout redirect on the CURRENT site.
     // (If NEXTAUTH_URL still points at an old domain, Auth.js would otherwise send users there.)
-    async redirect({ url }) {
-      if (url.startsWith("/")) return url;
+    // Must return an ABSOLUTE url (next-auth/react does `new URL(data.url)`), always on the live domain.
+    async redirect({ url, baseUrl }) {
+      const base = /pos-bill-gamma|billo-quick/.test(baseUrl) ? "https://getbillo.vercel.app" : baseUrl;
       try {
-        const u = new URL(url);
-        return `${u.pathname}${u.search}${u.hash}` || "/dashboard";
+        const u = new URL(url, base);
+        return new URL(`${u.pathname}${u.search}${u.hash}`, base).href;
       } catch {
-        return "/dashboard";
+        return `${base}/dashboard`;
       }
     },
     async jwt({ token, user }) {

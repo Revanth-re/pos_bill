@@ -26,7 +26,7 @@ function buildAdapter() {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
-  return new PrismaPg({ connectionString });
+  return new PrismaPg({ connectionString, max: 5, idleTimeoutMillis: 60_000, connectionTimeoutMillis: 10_000 });
 }
 
 export const prisma =
@@ -39,4 +39,5 @@ export const prisma =
     transactionOptions: { maxWait: 10_000, timeout: 30_000 },
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Reuse one client (and its warm connection pool) across requests in the same server instance.
+globalForPrisma.prisma = prisma;

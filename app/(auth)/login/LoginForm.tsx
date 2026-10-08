@@ -29,19 +29,29 @@ export function LoginForm() {
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
     setServerError(null);
-    const result = await signIn("credentials", {
-      email: values.email,
-      password: values.password,
-      redirect: false,
-    });
+    let ok = false;
+    try {
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
+      ok = !!result?.ok && !result?.error;
+    } catch {
+      // Sign-in can still succeed even if the client couldn't parse the response — check the session.
+      const s = await fetch("/api/auth/session", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+      ok = !!s?.user;
+    }
     setSubmitting(false);
 
-    if (result?.error) {
+    if (!ok) {
       setServerError("Invalid email or password.");
       return;
     }
-    router.push(searchParams.get("callbackUrl") || "/dashboard");
-    router.refresh();
+    // Only same-site paths — never jump to another domain.
+    const cb = searchParams.get("callbackUrl") || "";
+    const dest = cb.startsWith("/") && !cb.startsWith("//") ? cb : "/dashboard";
+    window.location.replace(dest);
   }
 
   return (

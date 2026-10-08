@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/auth";
-import { prisma } from "@/lib/db/prisma";
+import { getShellBusiness } from "@/lib/data/business";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { BottomNav } from "@/components/dashboard/BottomNav";
 import { TopBar } from "@/components/dashboard/TopBar";
@@ -10,7 +10,7 @@ import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
-  const business = await prisma.business.findUniqueOrThrow({ where: { id: session.businessId } });
+  const business = await getShellBusiness(session.businessId);
 
   return (
     <LanguageProvider initialLanguage={business.language}>

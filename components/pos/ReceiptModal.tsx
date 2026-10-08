@@ -58,14 +58,12 @@ export function ReceiptModal({
     if (!open || !receipt) return;
     autoPrinted.current = false;
     let alive = true;
+    // Refresh the bill format in the background — printing uses the cached one, no waiting on the network.
+    void loadBillFormat().then((f) => alive && setFormat(f));
     (async () => {
-      // Latest bill format from the owner's settings (cached for offline).
-      const f = await loadBillFormat();
-      if (alive) setFormat(f);
-      const s = await refreshPrinterStatus();
-      if (s === "disconnected") await reconnectSavedPrinter();
-      const now = await refreshPrinterStatus();
-      if (alive && now === "connected" && !autoPrinted.current) {
+      // Printer is usually already connected (BillingScreen keeps it warm) → print instantly.
+      const ready = (await refreshPrinterStatus()) === "connected" || (await reconnectSavedPrinter());
+      if (alive && ready && !autoPrinted.current) {
         autoPrinted.current = true;
         void doPrint();
       }

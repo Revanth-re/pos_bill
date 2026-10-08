@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
@@ -42,6 +43,7 @@ export async function PATCH(req: Request) {
       },
     });
 
+    revalidateTag(`business-${session.businessId}`, { expire: 0 }); // app shell shows the new name/language now
     return NextResponse.json({ business });
   } catch (err) {
     if (err instanceof UnauthenticatedError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

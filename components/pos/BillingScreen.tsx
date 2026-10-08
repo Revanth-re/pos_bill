@@ -18,6 +18,8 @@ import { submitBill } from "@/lib/billing/submitBill";
 import { toast } from "@/stores/toastStore";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ReceiptData } from "@/lib/printing/types";
+import { reconnectSavedPrinter } from "@/lib/printing/bluetoothPairing";
+import { loadBillFormat } from "@/lib/printing/billFormat";
 import { Spinner } from "@/components/ui/Spinner";
 
 interface Props {
@@ -53,6 +55,19 @@ export function BillingScreen({ businessName, cashierName }: Props) {
       return;
     }
     return useCatalogStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  // Keep the Bluetooth printer connected while billing, so "Print" doesn't wait for a reconnect.
+  useEffect(() => {
+    void reconnectSavedPrinter();
+    const id = window.setInterval(() => void reconnectSavedPrinter(), 20_000);
+    const onVis = () => document.visibilityState === "visible" && void reconnectSavedPrinter();
+    document.addEventListener("visibilitychange", onVis);
+    void loadBillFormat(); // cache the latest bill format before the first print
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, []);
 
   useEffect(() => {

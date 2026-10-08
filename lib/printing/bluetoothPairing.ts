@@ -152,7 +152,15 @@ async function connectTo(d: BTDevice): Promise<void> {
 }
 
 /** Reconnect to the remembered printer without opening the picker. Returns false if a picker is needed. */
-export async function reconnectSavedPrinter(): Promise<boolean> {
+let reconnecting: Promise<boolean> | null = null;
+/** Reconnect the remembered printer. Concurrent calls share one attempt. */
+export function reconnectSavedPrinter(): Promise<boolean> {
+  if (device?.gatt?.connected && writer) return Promise.resolve(true);
+  if (!reconnecting) reconnecting = doReconnect().finally(() => (reconnecting = null));
+  return reconnecting;
+}
+
+async function doReconnect(): Promise<boolean> {
   const n = nav();
   const saved = getSavedPrinter();
   if (!n || !saved) return false;

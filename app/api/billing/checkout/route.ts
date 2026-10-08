@@ -1,4 +1,4 @@
-import { getTokenNumber } from "@/lib/billing/token";
+import { dayStart } from "@/lib/billing/token";
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
     if (input.clientId) {
       const existing = await prisma.offlineTransaction.findUnique({
         where: { clientId: input.clientId },
+        select: { invoiceId: true },
       });
       if (existing?.invoiceId) {
         const invoice = await prisma.invoice.findUnique({ where: { id: existing.invoiceId } });
@@ -62,8 +63,10 @@ export async function POST(req: Request) {
         }
       }
 
-      const business = await tx.business.findUniqueOrThrow({
+      // Reserve the next invoice number AND read business settings in one round-trip.
+      const business = await tx.business.update({
         where: { id: session.businessId },
+        data: { invoiceCounter: { increment: 1 } },
       });
 
       // 2–5. Recalculate prices, discounts, GST, final total — server-authoritative.
@@ -108,14 +111,7 @@ export async function POST(req: Request) {
         },
       });
 
-      // Atomically reserve the next invoice number per business.
-      const updatedBusiness = await tx.business.update({
-        where: { id: session.businessId },
-        data: { invoiceCounter: { increment: 1 } },
-      });
-      const invoiceNumber = `${business.invoicePrefix}-${String(
-        updatedBusiness.invoiceCounter
-      ).padStart(6, "0")}`;
+      const invoiceNumber = `${business.invoicePrefix}-${String(business.invoiceCounter).padStart(6, "0")}`;
 
       // 7–8. Create invoice + invoice items (snapshotted, immutable).
       const invoice = await tx.invoice.create({
@@ -258,13 +254,16 @@ export async function POST(req: Request) {
         });
       }
 
-      return { invoice, invoiceNumber, totals };
+      const tokenNumber = await tx.invoice.count({
+        where: { businessId: session.businessId, createdAt: { gte: dayStart(invoice.createdAt), lte: invoice.createdAt } },
+      });
+      return { invoice, invoiceNumber, totals, tokenNumber };
     }, { maxWait: 10_000, timeout: 30_000 }); // remote DBs (Neon/Supabase) need more than the 5s default
 
     // 15. Printable invoice is generated client-side (see lib/printing) from
     // this response payload — no server-side rendering needed for receipts.
     // Daily token for the kitchen slip + payment split for the printed bill.
-    const tokenNumber = await getTokenNumber(session.businessId, result.invoice.createdAt);
+    const tokenNumber = result.tokenNumber;
     const payments = input.payments.map((p) => ({ method: p.method, amount: p.amount }));
     return NextResponse.json({ invoice: { ...result.invoice, tokenNumber, payments }, totals: result.totals });
   } catch (err) {
