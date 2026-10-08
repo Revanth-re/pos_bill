@@ -9,7 +9,7 @@ export function SignOutButton() {
     <Button
       variant="secondary"
       className="w-full"
-      onClick={() => signOut({ callbackUrl: "/login" })}
+      onClick={async () => { await signOut({ redirect: false }); window.location.replace("/login"); }}
     >
       <span className="inline-flex items-center gap-2">
         <LogOut className="h-4 w-4" /> Sign Out

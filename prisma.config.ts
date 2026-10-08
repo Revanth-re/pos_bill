@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 // Prisma 7 moved connection settings out of schema.prisma. This file is
 // used by the Prisma CLI (generate/migrate/studio) — the app's own runtime
@@ -11,6 +11,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Optional so `prisma generate` (npm install) works without a .env file.
+    url: process.env.DATABASE_URL ?? "",
   },
 });

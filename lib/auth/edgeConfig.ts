@@ -1,5 +1,13 @@
 import type { NextAuthConfig } from "next-auth";
 
+// On Vercel the domain comes from the request itself. A leftover NEXTAUTH_URL / AUTH_URL
+// (e.g. the old pos-bill-gamma.vercel.app) would make Auth.js send people to that dead domain.
+// Old domain is dead — never let Auth.js use it, on Vercel or anywhere else.
+for (const k of ["NEXTAUTH_URL", "AUTH_URL"] as const) {
+  const v = process.env[k];
+  if (process.env.VERCEL || (v && /pos-bill-gamma|billo-quick/.test(v))) delete process.env[k];
+}
+
 /**
  * Edge-safe subset of the Auth.js config: session strategy, pages, and the
  * jwt/session callbacks that just read/write the token — no providers, no

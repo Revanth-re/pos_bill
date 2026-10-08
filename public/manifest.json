@@ -1,10 +1,10 @@
 {
-  "id": "/",
+  "id": "https://getbillo.vercel.app/",
   "name": "Billo — Restaurant Billing",
   "short_name": "Billo",
   "description": "Fast billing, bills, staff, cash and reports for Indian restaurants, tiffin centres, cafes and bakeries.",
-  "start_url": "/login",
-  "scope": "/",
+  "start_url": "https://getbillo.vercel.app/login",
+  "scope": "https://getbillo.vercel.app/",
   "display": "standalone",
   "prefer_related_applications": false,
   "background_color": "#FAFAF7",

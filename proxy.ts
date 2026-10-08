@@ -18,21 +18,32 @@ function isPublicPage(pathname: string) {
   return PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
+// next-auth rewrites req.url to NEXTAUTH_URL/AUTH_URL (e.g. an old domain). Always redirect on the
+// domain the visitor actually opened (getbillo.vercel.app, custom domain, localhost…).
+function realOrigin(req: Request & { nextUrl: URL }) {
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (host && /pos-bill-gamma|billo-quick/.test(host)) return "https://getbillo.vercel.app";
+  if (!host) return req.nextUrl.origin;
+  const proto = req.headers.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto.split(",")[0]}://${host.split(",")[0]}`;
+}
+
 export default auth((req) => {
   if (isPublicPage(req.nextUrl.pathname)) return NextResponse.next();
+  const origin = realOrigin(req);
 
   const isAuthed = !!req.auth;
   const isAuthRoute = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/register");
 
   if (!isAuthed && !isAuthRoute) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
+    const loginUrl = new URL("/login", origin);
     loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (isAuthed && isAuthRoute) {
     // Keep ?install=1 (from the website's "Get Billo") so the dashboard can offer install too.
-    const dest = new URL("/dashboard", req.nextUrl.origin);
+    const dest = new URL("/dashboard", origin);
     if (req.nextUrl.searchParams.get("install") === "1") dest.searchParams.set("install", "1");
     return NextResponse.redirect(dest);
   }
