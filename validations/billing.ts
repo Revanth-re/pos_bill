@@ -4,7 +4,7 @@ import { z } from "zod";
  * IMPORTANT: The client sends product ids + quantities + *requested*
  * discounts, never final prices or totals. The server re-reads live
  * product prices from the DB and recomputes everything — see
- * lib/billing/calculateTotals.ts. Treat every field here as "what the
+ * lib/billing/calculateTotals.ts. Treat every field here as sdwd"what the
  * cashier asked for", not "what the bill costs".
  */
 
