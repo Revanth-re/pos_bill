@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { getShellBusiness } from "@/lib/data/business";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -11,6 +12,8 @@ import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
   const business = await getShellBusiness(session.businessId);
+  // Logged in with a shop that no longer exists (e.g. after a database move) → log out cleanly.
+  if (!business) redirect("/api/session-reset");
 
   return (
     <LanguageProvider initialLanguage={business.language}>
