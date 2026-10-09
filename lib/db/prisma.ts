@@ -26,7 +26,15 @@ function buildAdapter() {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
-  return new PrismaPg({ connectionString, max: 5, idleTimeoutMillis: 60_000, connectionTimeoutMillis: 10_000 });
+  // Supabase requires SSL. Local Postgres (localhost) doesn't use it.
+  const local = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString);
+  return new PrismaPg({
+    connectionString,
+    ssl: local ? false : { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 60_000,
+    connectionTimeoutMillis: 10_000,
+  });
 }
 
 export const prisma =
