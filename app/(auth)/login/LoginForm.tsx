@@ -37,6 +37,11 @@ export function LoginForm() {
         redirect: false,
       });
       ok = !!result?.ok && !result?.error;
+      if (result?.error && result.error !== "CredentialsSignin") {
+        setSubmitting(false);
+        setServerError("Server problem — couldn't reach the database. Please try again in a minute.");
+        return;
+      }
     } catch {
       // Sign-in can still succeed even if the client couldn't parse the response — check the session.
       const s = await fetch("/api/auth/session", { cache: "no-store" }).then((r) => r.json()).catch(() => null);

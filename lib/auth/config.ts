@@ -33,7 +33,9 @@ export const authConfig: NextAuthConfig = {
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({
+        let user;
+        try {
+          user = await prisma.user.findUnique({
           where: { email: email.toLowerCase().trim() },
           include: {
             staff: {
@@ -42,6 +44,10 @@ export const authConfig: NextAuthConfig = {
             },
           },
         });
+        } catch (e) {
+          console.error("LOGIN DB ERROR:", e); // shows in Vercel → Logs
+          throw e;
+        }
 
         if (!user || !user.passwordHash) return null;
 
