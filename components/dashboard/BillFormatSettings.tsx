@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Printer, RotateCcw } from "lucide-react";
+import { useRef, useState } from "react";
+import { Check, ImagePlus, Printer, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ReceiptPreview, SAMPLE_RECEIPT } from "@/components/pos/ReceiptPreview";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/lib/printing/billFormat";
 import { getPrinterAdapter } from "@/lib/printing/getPrinterAdapter";
 import { choosePrinter, reconnectSavedPrinter } from "@/lib/printing/bluetoothPairing";
+import { imageFileToLogo } from "@/lib/printing/logo";
 import { toast } from "@/stores/toastStore";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ type BoolKey = {
 }[keyof BillFormat];
 
 const OPTIONS: { key: BoolKey; label: string }[] = [
+  { key: "showLogo", label: "Shop logo" },
   { key: "showAddress", label: "Address & phone" },
   { key: "showGstin", label: "GSTIN" },
   { key: "showCashier", label: "Cashier name" },
@@ -58,6 +60,19 @@ export function BillFormatSettings({
   };
 
   const set = <K extends keyof BillFormat>(k: K, v: BillFormat[K]) => setFormat((f) => ({ ...f, [k]: v }));
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function onLogoFile(file?: File) {
+    if (!file) return;
+    try {
+      const logo = await imageFileToLogo(file);
+      setFormat((f) => ({ ...f, logo, showLogo: true }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't use this image.");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -150,6 +165,35 @@ export function BillFormatSettings({
           />
         </div>
 
+        {/* Logo */}
+        <div>
+          <p className="field-label">Shop logo</p>
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
+            <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-border">
+              {format.logo ? (
+                <img src={format.logo.preview} alt="Logo on bill" className="max-h-14 max-w-[88px] object-contain" style={{ imageRendering: "pixelated" }} />
+              ) : (
+                <ImagePlus className="h-6 w-6 text-muted" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-ink">{format.logo ? "Logo added" : "Add your restaurant / hotel logo"}</p>
+              <p className="text-xs text-muted">Prints small in black & white at the top of every bill.</p>
+              <div className="mt-2 flex gap-2">
+                <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => fileRef.current?.click()}>
+                  <ImagePlus className="h-4 w-4" /> {format.logo ? "Change" : "Upload"}
+                </Button>
+                {format.logo && (
+                  <Button size="sm" variant="ghost" disabled={!canEdit} onClick={() => set("logo", null)}>
+                    <Trash2 className="h-4 w-4" /> Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => void onLogoFile(e.target.files?.[0])} />
+          </div>
+        </div>
+
         {/* Show / hide */}
         <div>
           <p className="field-label">Show on bill</p>
@@ -188,7 +232,7 @@ export function BillFormatSettings({
             <Printer className="h-4 w-4" /> Test print
           </Button>
           {canEdit && (
-            <Button variant="ghost" onClick={() => setFormat({ ...DEFAULT_FORMAT })}>
+            <Button variant="ghost" onClick={() => setFormat({ ...DEFAULT_FORMAT, logo: format.logo })}>
               <RotateCcw className="h-4 w-4" /> Reset
             </Button>
           )}

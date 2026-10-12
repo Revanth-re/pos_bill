@@ -34,9 +34,9 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <JsonLd data={[faqLd(faqs), breadcrumbLd([{ name: "Home", path: "/" }, { name: u.name, path: `/for/${u.slug}` }])]} />
-      <PageHero crumbs={[{ name: `Billo for ${u.name}`, href: `/for/${u.slug}` }]} eyebrow={`Billo for ${u.name}`} title={u.h1} text={u.intro}>
+      <PageHero crumbs={[{ name: u.eyebrow ?? `Billo for ${u.name}`, href: `/for/${u.slug}` }]} eyebrow={u.eyebrow ?? `Billo for ${u.name}`} title={u.h1} text={u.intro}>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-          <a href={whatsapp(`Hi Billo, I run a ${u.name.toLowerCase().replace(/s$/, "")} and want a demo.`)} target="_blank" rel="noopener" className="btn btn-primary"><MessageCircle className="h-5 w-5" /> Free demo on WhatsApp</a>
+          <a href={whatsapp(u.waText ?? `Hi Billo, I run a ${u.name.toLowerCase().replace(/s$/, "")} and want a demo.`)} target="_blank" rel="noopener" className="btn btn-primary"><MessageCircle className="h-5 w-5" /> Free demo on WhatsApp</a>
           <Link href="/pricing" className="btn btn-ghost">Plans from ₹299</Link>
         </div>
       </PageHero>
@@ -56,7 +56,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
       <section className="container-x py-16"><SectionHead title="Pricing" /><Pricing /></section>
       <section className="bg-white py-16"><div className="container-x"><SectionHead title="FAQ" /><Faq items={faqs} /></div></section>
       <section className="container-x pt-14 text-center">
-        <p className="text-sm font-semibold text-muted">Billo for {u.name.toLowerCase()} in</p>
+        <p className="text-sm font-semibold text-muted">{u.eyebrow ? `${u.eyebrow} with Billo` : `Billo for ${u.name.toLowerCase()}`} in</p>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           {CITIES.slice(0, 10).map((c) => <Link key={c.slug} href={`/billing-software/${c.slug}`} className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-ink-soft hover:text-brand">{c.name}</Link>)}
         </div>

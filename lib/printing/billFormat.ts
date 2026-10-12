@@ -5,7 +5,19 @@
  * printing still works offline.
  */
 
-export type TemplateId = "classic" | "token" | "gst" | "compact" | "kitchen";
+export type TemplateId = "classic" | "token" | "gst" | "compact" | "kitchen" | "logo";
+
+/** Shop logo, already converted to a 1-bit thermal-printer bitmap. */
+export interface BillLogo {
+  /** Width in printer dots (multiple of 8). */
+  w: number;
+  /** Height in printer dots. */
+  h: number;
+  /** Row-major 1-bit pixels (1 = black), base64. */
+  bits: string;
+  /** Same bitmap as a PNG data URL, for previews. */
+  preview: string;
+}
 
 export interface BillFormat {
   template: TemplateId;
@@ -20,11 +32,15 @@ export interface BillFormat {
   showTaxBreakup: boolean;
   showPayment: boolean;
   kitchenCopy: boolean;
+  showLogo: boolean;
+  logo: BillLogo | null;
   headerNote: string;
   footerNote: string;
 }
 
-export const TEMPLATES: { id: TemplateId; name: string; description: string; preset: Omit<BillFormat, "template" | "paper" | "headerNote" | "footerNote"> }[] = [
+type Preset = Omit<BillFormat, "template" | "paper" | "headerNote" | "footerNote" | "logo" | "showLogo"> & { showLogo?: boolean };
+
+export const TEMPLATES: { id: TemplateId; name: string; description: string; preset: Preset }[] = [
   {
     id: "classic",
     name: "Classic",
@@ -55,6 +71,12 @@ export const TEMPLATES: { id: TemplateId; name: string; description: string; pre
     description: "Customer bill, then a separate kitchen token slip",
     preset: { tokenSize: "large", showAddress: false, showGstin: false, showCashier: true, showCustomer: false, showOrderType: true, showItemRate: false, showTaxBreakup: false, showPayment: true, kitchenCopy: true },
   },
+  {
+    id: "logo",
+    name: "Logo Bill",
+    description: "Your shop logo on top, short clean bill",
+    preset: { tokenSize: "normal", showAddress: true, showGstin: false, showCashier: false, showCustomer: false, showOrderType: true, showItemRate: false, showTaxBreakup: false, showPayment: true, kitchenCopy: false, showLogo: true },
+  },
 ];
 
 export const DEFAULT_FORMAT: BillFormat = {
@@ -62,12 +84,16 @@ export const DEFAULT_FORMAT: BillFormat = {
   paper: "58",
   headerNote: "",
   footerNote: "Thank you, visit again!",
+  showLogo: true,
+  logo: null,
   ...TEMPLATES[0].preset,
 };
 
 export function applyTemplate(current: BillFormat, id: TemplateId): BillFormat {
+  // Logo choice is kept across templates (logo works on every format); "Logo Bill" turns it on.
   const t = TEMPLATES.find((x) => x.id === id) ?? TEMPLATES[0];
-  return { ...current, ...t.preset, template: id };
+  const { showLogo, ...rest } = t.preset;
+  return { ...current, ...rest, showLogo: showLogo ?? current.showLogo, template: id };
 }
 
 export function normalizeFormat(raw: unknown): BillFormat {
@@ -75,11 +101,24 @@ export function normalizeFormat(raw: unknown): BillFormat {
   const r = raw as Partial<BillFormat>;
   const out = { ...DEFAULT_FORMAT };
   for (const k of Object.keys(DEFAULT_FORMAT) as (keyof BillFormat)[]) {
+    if (k === "logo") continue;
     if (r[k] !== undefined && typeof r[k] === typeof DEFAULT_FORMAT[k]) (out as Record<string, unknown>)[k] = r[k];
   }
+  if (!TEMPLATES.some((t) => t.id === out.template)) out.template = "classic";
+  out.logo = normalizeLogo(r.logo);
   out.headerNote = out.headerNote.slice(0, 120);
   out.footerNote = out.footerNote.slice(0, 120);
   return out;
+}
+
+function normalizeLogo(raw: unknown): BillLogo | null {
+  if (!raw || typeof raw !== "object") return null;
+  const l = raw as Partial<BillLogo>;
+  const ok =
+    typeof l.w === "number" && typeof l.h === "number" && l.w > 0 && l.w <= 576 && l.w % 8 === 0 && l.h > 0 && l.h <= 240 &&
+    typeof l.bits === "string" && l.bits.length <= 30_000 &&
+    typeof l.preview === "string" && l.preview.startsWith("data:image/png;base64,") && l.preview.length <= 80_000;
+  return ok ? { w: l.w!, h: l.h!, bits: l.bits!, preview: l.preview! } : null;
 }
 
 const CACHE_KEY = "billo-bill-format";

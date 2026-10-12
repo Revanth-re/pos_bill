@@ -19,7 +19,7 @@ export default function Home() {
               <span className="h-1.5 w-1.5 rounded-full bg-brand" /> Made in India · for every Indian food business
             </p>
             <h1 className="mt-5 text-[clamp(2.3rem,6vw,3.9rem)] font-extrabold leading-[1.05] text-ink">
-              Fast billing for <span className="text-brand">Indian restaurants</span>
+              Fast billing software for <span className="text-brand">Indian restaurants</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
               Billo turns your phone into a billing counter. Tap items, print the bill with a big <strong>token number</strong> on a Bluetooth printer,
@@ -50,9 +50,17 @@ export default function Home() {
       <section className="border-y border-border bg-white">
         <div className="container-x flex flex-wrap items-center justify-center gap-2 py-5">
           <span className="mr-2 text-sm font-semibold text-muted">Built for</span>
-          {USE_CASES.map((u) => (
+          {USE_CASES.filter((u) => !u.eyebrow).map((u) => (
             <Link key={u.slug} href={`/for/${u.slug}`} className="rounded-xl border border-border px-3.5 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-brand/40 hover:bg-brand-soft/50 hover:text-brand-dark">
               {u.name}
+            </Link>
+          ))}
+        </div>
+        <div className="container-x flex flex-wrap items-center justify-center gap-2 border-t border-border py-4">
+          <span className="mr-2 text-sm font-semibold text-muted">Popular</span>
+          {USE_CASES.filter((u) => u.eyebrow).map((u) => (
+            <Link key={u.slug} href={`/for/${u.slug}`} className="rounded-xl border border-border px-3.5 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-brand/40 hover:bg-brand-soft/50 hover:text-brand-dark">
+              {u.eyebrow}
             </Link>
           ))}
         </div>

@@ -66,7 +66,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
       <section className="container-x pt-14 text-center">
         <p className="text-sm font-semibold text-muted">Billo in {c.name} for</p>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
-          {USE_CASES.map((u) => <Link key={u.slug} href={`/for/${u.slug}`} className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-ink-soft hover:text-brand">{u.name}</Link>)}
+          {USE_CASES.map((u) => <Link key={u.slug} href={`/for/${u.slug}`} className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-ink-soft hover:text-brand">{u.eyebrow ?? u.name}</Link>)}
         </div>
       </section>
       <CtaBand title={`Start billing faster in ${c.name}`} />

@@ -23,6 +23,13 @@ export function ProductSearch({
   const t = useT();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // No auto-focus on phones/tablets (it pops the keyboard). On a desktop with a mouse,
+  // focus the box so a barcode scanner works straight away.
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) inputRef.current?.focus();
+  }, []);
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => onSearch(value), 150);
@@ -36,7 +43,7 @@ export function ProductSearch({
     <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 touch-target transition-shadow focus-within:border-brand focus-within:ring-3 focus-within:ring-brand-soft">
       <Search className="h-4 w-4 text-muted shrink-0" />
       <input
-        autoFocus
+        ref={inputRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {

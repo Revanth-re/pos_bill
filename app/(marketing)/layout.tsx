@@ -14,13 +14,17 @@ const hindi = Noto_Sans_Devanagari({ subsets: ["devanagari"], weight: ["400", "6
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "Billo – Restaurant Billing App & POS for India | Token Printing, Udhaari, GST",
+    default: "Billo – Billing Software & Mobile Billing App with Thermal Printer | getbillo.in",
     template: "%s",
   },
   description: SITE.description,
   applicationName: "Billo",
   keywords: [
-    "Billo", "Billo app", "Billo billing", "Billo POS", "Billo restaurant billing",
+    "Billo", "getbillo", "get billo", "getbillo.in", "Billo app", "Billo billing", "Billo POS", "Billo restaurant billing",
+    "bill", "billing", "billing software", "billing app", "mobile billing", "mobile billing app", "mini billing", "mini billing machine",
+    "billing services", "billing machine", "bill printing", "printing bill", "bill print", "bill prints", "printer bill",
+    "token print", "token printing", "token printer", "thermal printer", "thermal printer billing", "bluetooth thermal printer",
+    "billing printer", "bill printing machine", "printing machine for bills", "receipt printer app",
     "restaurant billing software", "restaurant billing app", "restaurant POS India", "POS software India",
     "billing app for restaurant", "tiffin centre billing app", "hotel billing software", "billing machine for restaurant",
     "Bluetooth thermal printer billing app", "token billing app", "udhaari app", "khata app for restaurant",
@@ -36,11 +40,11 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: SITE.url,
     siteName: "Billo",
-    title: "Billo – Fast billing for Indian restaurants",
+    title: "Billo – Billing software & mobile billing app | getbillo.in",
     description: SITE.description,
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Billo – restaurant billing app for India" }],
   },
-  twitter: { card: "summary_large_image", title: "Billo – Fast billing for Indian restaurants", description: SITE.description, images: ["/og-image.png"] },
+  twitter: { card: "summary_large_image", title: "Billo – Billing software & mobile billing app | getbillo.in", description: SITE.description, images: ["/og-image.png"] },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   formatDetection: { telephone: true, email: true },
   // Google Search Console "HTML tag" verification — set NEXT_PUBLIC_GOOGLE_VERIFICATION in Vercel.

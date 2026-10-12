@@ -34,7 +34,7 @@ export const edgeAuthConfig: NextAuthConfig = {
     // (If NEXTAUTH_URL still points at an old domain, Auth.js would otherwise send users there.)
     // Must return an ABSOLUTE url (next-auth/react does `new URL(data.url)`), always on the live domain.
     async redirect({ url, baseUrl }) {
-      const base = /pos-bill-gamma|billo-quick/.test(baseUrl) ? "https://getbillo.vercel.app" : baseUrl;
+      const base = /pos-bill-gamma|billo-quick/.test(baseUrl) ? "https://getbillo.in" : baseUrl;
       try {
         const u = new URL(url, base);
         return new URL(`${u.pathname}${u.search}${u.hash}`, base).href;

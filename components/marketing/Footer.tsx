@@ -4,7 +4,7 @@ import { SITE, USE_CASES, CITIES, whatsapp } from "@/lib/marketing/site";
 export function Footer() {
   return (
     <footer className="bg-brand-deep text-white/80">
-      <div className="container-x grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+      <div className="container-x grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white">
@@ -30,8 +30,13 @@ export function Footer() {
           <FL href={SITE.loginUrl}>Login to Billo</FL>
         </FooterCol>
         <FooterCol title="Billo for">
-          {USE_CASES.map((u) => (
+          {USE_CASES.filter((u) => !u.eyebrow).map((u) => (
             <FL key={u.slug} href={`/for/${u.slug}`}>{u.name}</FL>
+          ))}
+        </FooterCol>
+        <FooterCol title="Billing solutions">
+          {USE_CASES.filter((u) => u.eyebrow).map((u) => (
+            <FL key={u.slug} href={`/for/${u.slug}`}>{u.eyebrow}</FL>
           ))}
         </FooterCol>
         <FooterCol title="Billing software in">

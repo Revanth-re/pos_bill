@@ -22,13 +22,21 @@ function isPublicPage(pathname: string) {
 // domain the visitor actually opened (getbillo.vercel.app, custom domain, localhost…).
 function realOrigin(req: Request & { nextUrl: URL }) {
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  if (host && /pos-bill-gamma|billo-quick/.test(host)) return "https://getbillo.vercel.app";
+  if (host && /pos-bill-gamma|billo-quick/.test(host)) return "https://getbillo.in";
   if (!host) return req.nextUrl.origin;
   const proto = req.headers.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return `${proto.split(",")[0]}://${host.split(",")[0]}`;
 }
 
+const MAIN_HOST = "getbillo.in";
+const OLD_HOSTS = new Set(["getbillo.vercel.app", "www.getbillo.in", "pos-bill-gamma.vercel.app", "billo-quick.vercel.app"]);
+
 export default auth((req) => {
+  const reqHost = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(",")[0].trim();
+  if (OLD_HOSTS.has(reqHost)) {
+    const to = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, `https://${MAIN_HOST}`);
+    return NextResponse.redirect(to, 308);
+  }
   if (isPublicPage(req.nextUrl.pathname)) return NextResponse.next();
   const origin = realOrigin(req);
 

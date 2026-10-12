@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 
-// Health check: open https://getbillo.vercel.app/api/where
+// Health check: open https://getbillo.in/api/where
 export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const dbUrl = process.env.DATABASE_URL ?? "";

@@ -27,6 +27,19 @@ export function ReceiptPreview({ data, format, className }: { data: ReceiptData;
                   <span className="h-px flex-1 border-t border-dashed border-[#bbb]" />✂ cut<span className="h-px flex-1 border-t border-dashed border-[#bbb]" />
                 </div>
               );
+            if (r.kind === "image")
+              return (
+                <div key={i} className="flex justify-center pb-1">
+                  {/* 12 printer dots ≈ 1 character column on both 58mm (384 dots) and 80mm (576 dots) */}
+                  <img src={r.logo.preview} alt="Logo" style={{ width: `${r.logo.w / 12}ch`, imageRendering: "pixelated" }} />
+                </div>
+              );
+            if (r.tall)
+              return (
+                <div key={i} className="whitespace-pre" style={{ height: "2.7em", fontWeight: r.bold ? 700 : 400 }}>
+                  <div style={{ transform: "scaleY(2)", transformOrigin: "top", textAlign: r.align }}>{r.text || " "}</div>
+                </div>
+              );
             const size = r.size ?? 1;
             return (
               <div

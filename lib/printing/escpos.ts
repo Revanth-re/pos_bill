@@ -1,5 +1,5 @@
 import type { ReceiptData } from "./types";
-import { DEFAULT_FORMAT, type BillFormat } from "./billFormat";
+import { DEFAULT_FORMAT, type BillFormat, type BillLogo } from "./billFormat";
 
 /**
  * One layout, two outputs:
@@ -10,7 +10,8 @@ import { DEFAULT_FORMAT, type BillFormat } from "./billFormat";
 
 export type Align = "left" | "center";
 export type Row =
-  | { kind: "text"; text: string; align: Align; bold?: boolean; size?: 1 | 2 | 3 }
+  | { kind: "text"; text: string; align: Align; bold?: boolean; size?: 1 | 2 | 3; /** double height, normal width */ tall?: boolean }
+  | { kind: "image"; logo: BillLogo }
   | { kind: "rule"; ch: "-" | "=" }
   | { kind: "feed" }
   | { kind: "cut" };
@@ -60,18 +61,20 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
   };
 
   // ---------- Customer bill ----------
-  for (const r of wrap(data.businessName, Math.floor(W / 2))) t(r, "center", true, 2);
+  // ONE fixed layout for every template. Each on/off option only adds or removes
+  // its own line — nothing else moves. Only the TOTAL is bold (and tall).
+  if (format.showLogo && format.logo) rows.push({ kind: "image", logo: format.logo });
+  for (const r of wrap(data.businessName.toUpperCase(), W)) t(r, "center");
   if (format.showAddress && data.businessAddress) for (const r of wrap(data.businessAddress, W)) t(r, "center");
   if (format.showGstin && data.gstin) t(`GSTIN: ${data.gstin}`, "center");
   if (format.headerNote) for (const r of wrap(format.headerNote, W)) t(r, "center");
-  if (data.copyLabel) t(`*** ${data.copyLabel} ***`, "center", true);
+  if (data.copyLabel) t(`*** ${data.copyLabel} ***`, "center");
+  rule();
 
   if (format.tokenSize !== "off" && data.tokenNumber) {
-    rule("=");
-    t("TOKEN", "center", true);
-    t(String(data.tokenNumber), "center", true, format.tokenSize === "large" ? 3 : 2);
-    rule("=");
-  } else rule();
+    t(`TOKEN ${data.tokenNumber}`, "center", false, format.tokenSize === "large" ? 3 : 2);
+    rule();
+  }
 
   lr(`Bill: ${data.invoiceNumber}`, format.showOrderType ? (data.orderType === "DINE_IN" ? "Dine-in" : "Takeaway") : "");
   t(data.createdAt);
@@ -79,27 +82,16 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
   if (format.showCustomer && data.customerName) t(`Customer: ${data.customerName}`);
   rule();
 
-  if (format.showItemRate && format.paper === "80") {
-    const nameW = W - 22;
-    t("ITEM".padEnd(nameW) + "QTY".padStart(3) + "RATE".padStart(9) + "AMOUNT".padStart(10), "left", true);
-    rule();
-    for (const l of data.lines) {
-      const r = wrap(l.name, nameW);
-      t(r[0].padEnd(nameW) + String(l.qty).padStart(3) + money(l.unitPrice).padStart(9) + money(l.total).padStart(10));
-      for (const extra of r.slice(1)) t(extra);
-    }
-  } else {
-    lr("ITEM", "AMOUNT", true);
-    rule();
-    for (const l of data.lines) {
-      if (format.showItemRate) {
-        for (const r of wrap(l.name, W)) t(r);
-        lr(`  ${l.qty} x ${money(l.unitPrice)}`, money(l.total));
-      } else {
-        const label = `${l.qty} x ${l.name}`;
-        lr(label.length > W - 10 ? label.slice(0, W - 10) : label, money(l.total));
-      }
-    }
+  // Items: fixed columns. "Rate" column is the only thing the rate option adds.
+  const QTY = 3, AMT = 8, RATE = format.showItemRate ? 7 : 0;
+  const nameW = W - QTY - AMT - (RATE ? RATE + 1 : 0) - 2;
+  const itemRow = (name: string, qty: string, rate: string, amt: string) =>
+    name.padEnd(nameW) + " " + qty.padStart(QTY) + (RATE ? " " + rate.padStart(RATE) : "") + " " + amt.padStart(AMT);
+  t(itemRow("Item", "Qty", "Rate", "Amount"));
+  for (const l of data.lines) {
+    const parts = wrap(toAscii(l.name), nameW);
+    t(itemRow(parts[0], String(l.qty), money(l.unitPrice), money(l.total)));
+    for (const extra of parts.slice(1)) t(extra);
   }
   rule();
 
@@ -111,12 +103,11 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
     if (data.sgstTotal > 0) lr("SGST", money(data.sgstTotal));
     if (data.igstTotal > 0) lr("IGST", money(data.igstTotal));
   }
-  const half = Math.floor(W / 2);
+  // TOTAL: bold + double height, normal width → always fits the paper.
   const gt = `Rs ${money(data.grandTotal)}`;
-  t("TOTAL" + " ".repeat(Math.max(1, half - 5 - gt.length)) + gt, "left", true, 2);
+  rows.push({ kind: "text", text: "TOTAL" + " ".repeat(Math.max(1, W - 5 - gt.length)) + gt, align: "left", bold: true, tall: true });
 
   if (format.showPayment && data.payments.length) {
-    rule();
     for (const p of data.payments) lr(`Paid by ${p.method}`, money(p.amount));
   }
   rule();
@@ -125,6 +116,7 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
 
   // ---------- Kitchen slip ----------
   if (format.kitchenCopy) {
+    const half = Math.floor(W / 2);
     t("KITCHEN", "center", true, 2);
     if (data.tokenNumber) t(String(data.tokenNumber), "center", true, 3);
     t(`${data.orderType === "DINE_IN" ? "Dine-in" : "Takeaway"}  ${data.createdAt}`, "center");
@@ -137,6 +129,13 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
   return rows;
 }
 
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = typeof atob === "function" ? atob(b64) : Buffer.from(b64, "base64").toString("binary");
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 const ESC = 0x1b;
 const GS = 0x1d;
 
@@ -145,12 +144,21 @@ export function encodeRows(rows: Row[]): Uint8Array {
   for (const row of rows) {
     if (row.kind === "rule") continue; // encodeReceipt() expands rules to the paper width first
     if (row.kind === "feed") out.push(0x0a, 0x0a, 0x0a);
+    if (row.kind === "image") {
+      // GS v 0 — raster bit image, centred.
+      const { w, h } = row.logo;
+      const bytes = base64ToBytes(row.logo.bits);
+      const wb = w / 8;
+      out.push(ESC, 0x61, 1, GS, 0x76, 0x30, 0, wb & 0xff, (wb >> 8) & 0xff, h & 0xff, (h >> 8) & 0xff);
+      for (let i = 0; i < wb * h; i++) out.push(bytes[i] ?? 0);
+      out.push(0x0a);
+    }
     if (row.kind === "cut") out.push(GS, 0x56, 0x42, 0x00);
     if (row.kind === "text") {
       out.push(ESC, 0x61, row.align === "center" ? 1 : 0);
       out.push(ESC, 0x45, row.bold ? 1 : 0);
       const sz = row.size ?? 1;
-      out.push(GS, 0x21, sz === 1 ? 0x00 : sz === 2 ? 0x11 : 0x22);
+      out.push(GS, 0x21, row.tall ? 0x01 : sz === 1 ? 0x00 : sz === 2 ? 0x11 : 0x22);
       for (const ch of row.text) out.push(ch.charCodeAt(0));
       out.push(0x0a);
       out.push(GS, 0x21, 0x00, ESC, 0x45, 0);
