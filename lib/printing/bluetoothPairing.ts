@@ -72,6 +72,16 @@ function nav(): BTNavigator | null {
   return typeof navigator !== "undefined" && "bluetooth" in navigator ? (navigator as unknown as BTNavigator) : null;
 }
 
+/** iPhone / iPad (Safari, Chrome and every other iOS browser) — Apple blocks Web Bluetooth there. */
+export function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /iphone|ipad|ipod/i.test(ua) || (ua.includes("Mac") && "ontouchend" in document);
+}
+
+/** Bluefy — free iPhone browser that supports Web Bluetooth, so Billo can print from iPhone. */
+export const BLUEFY_URL = "https://apps.apple.com/app/id1492822055";
+
 export function isBluetoothSupported(): boolean {
   return nav() !== null;
 }

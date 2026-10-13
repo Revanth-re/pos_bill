@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Bluetooth, BluetoothConnected, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { isBluetoothSupported, pairBluetoothPrinter, type PairedBluetoothDevice } from "@/lib/printing/bluetoothPairing";
+import { isBluetoothSupported, isIOS, BLUEFY_URL, pairBluetoothPrinter, type PairedBluetoothDevice } from "@/lib/printing/bluetoothPairing";
 import { useT } from "@/lib/i18n/LanguageProvider";
 
 export function BluetoothSettings({
@@ -45,6 +45,20 @@ export function BluetoothSettings({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bluetoothDeviceId: null, bluetoothDeviceName: null, type: "BROWSER" }),
     });
+  }
+
+  if (!supported && isIOS()) {
+    return (
+      <div className="rounded-xl border border-border bg-paper p-4">
+        <p className="text-sm font-semibold text-ink">On iPhone, use the Bluefy app to print</p>
+        <p className="mt-1 text-sm text-muted">
+          Apple blocks Bluetooth printers in Safari and Chrome on iPhone. Install the free Bluefy app, open getbillo.in in it and log in — then connect your printer here.
+        </p>
+        <a href={BLUEFY_URL} target="_blank" rel="noopener" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 font-semibold text-white">
+          Get Bluefy (free)
+        </a>
+      </div>
+    );
   }
 
   if (!supported) {

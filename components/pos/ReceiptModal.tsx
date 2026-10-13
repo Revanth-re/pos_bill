@@ -11,6 +11,8 @@ import {
   reconnectSavedPrinter,
   refreshPrinterStatus,
   type PrinterStatus,
+  isIOS,
+  BLUEFY_URL,
 } from "@/lib/printing/bluetoothPairing";
 import { toast } from "@/stores/toastStore";
 import { formatINR, cn } from "@/lib/utils";
@@ -168,7 +170,18 @@ export function ReceiptModal({
 
         {/* Printer area */}
         <div className="mx-4 mb-3">
-          {status === "unsupported" ? (
+          {status === "unsupported" && isIOS() ? (
+            <Notice
+              icon={<BluetoothOff className="h-6 w-6 text-muted" />}
+              title="On iPhone, print with the Bluefy app"
+              text="Apple doesn't allow Bluetooth printers in Safari or Chrome on iPhone. Install the free Bluefy app, open getbillo.in in it, log in and print. The bill is already saved."
+              action={
+                <a href={BLUEFY_URL} target="_blank" rel="noopener" className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 font-semibold text-white">
+                  Get Bluefy (free)
+                </a>
+              }
+            />
+          ) : status === "unsupported" ? (
             <Notice
               icon={<BluetoothOff className="h-6 w-6 text-muted" />}
               title="Bluetooth printing not available here"

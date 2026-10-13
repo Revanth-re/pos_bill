@@ -12,7 +12,6 @@ const NAV = [
   { href: "/pricing", label: "Pricing" },
   { href: "/for/tiffin-centre-billing-app", label: "Tiffin centres" },
   { href: "/for/restaurant-billing-software", label: "Restaurants" },
-  { href: "/hi", label: "हिन्दी" },
   { href: "/contact", label: "Contact" },
 ];
 
