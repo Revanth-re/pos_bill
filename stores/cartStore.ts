@@ -12,6 +12,7 @@ export interface CartProduct {
   currentStock: number;
   trackInventory: boolean;
   imageUrl: string | null;
+  categoryId?: string | null;
 }
 
 export interface CartLine {

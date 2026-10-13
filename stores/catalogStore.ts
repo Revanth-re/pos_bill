@@ -69,6 +69,7 @@ function mapApiProductToCart(p: Record<string, unknown>): CartProduct {
     currentStock: Number(p.currentStock ?? 0),
     trackInventory: Boolean(p.trackInventory ?? true),
     imageUrl: (p.imageUrl as string | null) ?? null,
+    categoryId: (p.categoryId as string | null) ?? null,
   };
 }
 

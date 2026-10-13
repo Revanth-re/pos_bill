@@ -7,6 +7,8 @@ import { BluetoothSettings } from "@/components/dashboard/BluetoothSettings";
 import { T } from "@/components/i18n/T";
 import { BillFormatSettings } from "@/components/dashboard/BillFormatSettings";
 import { normalizeFormat } from "@/lib/printing/billFormat";
+import { TopItemsSettings } from "@/components/dashboard/TopItemsSettings";
+import { normalizeTopItems } from "@/lib/pos/topItems";
 import { can } from "@/lib/permissions";
 
 export default async function SettingsPage() {
@@ -35,6 +37,15 @@ export default async function SettingsPage() {
             gstin: business.gstin ?? "",
             invoicePrefix: business.invoicePrefix,
           }}
+        />
+      </section>
+
+      <section id="top-items" className="card p-4 sm:p-5">
+        <h2 className="mb-1 text-lg font-bold text-ink">Top items</h2>
+        <p className="mb-4 text-sm text-muted">Pick the products you sell most. They open first on the Billing screen as big cards — tap and print, no searching.</p>
+        <TopItemsSettings
+          initial={normalizeTopItems((printer?.config as unknown as { topItems?: unknown } | null)?.topItems)}
+          canEdit={can(session.role, "settings.manage")}
         />
       </section>
 

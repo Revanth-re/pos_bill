@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { PauseCircle, Printer } from "lucide-react";
-import { CategoryTabs } from "./CategoryTabs";
+import { PauseCircle, Printer, Save } from "lucide-react";
+import { CategoryTabs, TOP_TAB } from "./CategoryTabs";
+import { TopItemsGrid } from "./TopItemsGrid";
+import { getCachedTopItems, loadTopItems, type TopItems } from "@/lib/pos/topItems";
 import { ProductGrid } from "./ProductGrid";
 import { ProductSearch } from "./ProductSearch";
 import { CartPanel } from "./CartPanel";
@@ -35,6 +37,17 @@ export function BillingScreen({ businessName, cashierName }: Props) {
   const seedPosCatalog = useCatalogStore((s) => s.seedPosCatalog);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  // Owner-picked top items (cached for instant display, refreshed in the background).
+  const [topItems, setTopItems] = useState<TopItems | null>(null);
+  useEffect(() => {
+    const cached = getCachedTopItems();
+    setTopItems(cached);
+    if (cached.productIds.length) setActiveCategory(TOP_TAB);
+    void loadTopItems().then((fresh) => {
+      setTopItems(fresh);
+      setActiveCategory((cur) => (fresh.productIds.length ? (cur === null ? TOP_TAB : cur) : cur === TOP_TAB ? null : cur));
+    });
+  }, []);
   const [query, setQuery] = useState("");
   const [cartOpenMobile, setCartOpenMobile] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -77,10 +90,19 @@ export function BillingScreen({ businessName, cashierName }: Props) {
 
   const productsById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
+  const topProducts = useMemo(() => {
+    if (!topItems) return [];
+    const byId = new Map(products.map((p) => [p.id, p]));
+    return topItems.productIds
+      .map((id) => byId.get(id))
+      .filter((p): p is CartProduct => !!p)
+      .slice(0, topItems.count);
+  }, [products, topItems]);
+
   const filtered = useMemo(() => {
     let list = products;
-    if (activeCategory) {
-      list = list;
+    if (activeCategory && activeCategory !== TOP_TAB) {
+      list = list.filter((p) => p.categoryId === activeCategory);
     }
     if (query) {
       const q = query.toLowerCase();
@@ -108,6 +130,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           currentStock: number;
           trackInventory: boolean;
           imageUrl: string | null;
+          categoryId?: string | null;
         }) => ({
           id: p.id,
           name: p.name,
@@ -116,6 +139,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           unit: p.unit,
           currentStock: Number(p.currentStock),
           trackInventory: p.trackInventory,
+          categoryId: p.categoryId ?? null,
           imageUrl: p.imageUrl,
         })
       );
@@ -290,12 +314,15 @@ export function BillingScreen({ businessName, cashierName }: Props) {
               categories={categories}
               activeId={activeCategory}
               onSelect={setActiveCategory}
+              showTop={topProducts.length > 0}
             />
           </div>
           {showBootSpinner ? (
             <div className="flex justify-center py-16">
               <Spinner />
             </div>
+          ) : activeCategory === TOP_TAB && !query && topProducts.length > 0 ? (
+            <TopItemsGrid products={topProducts} />
           ) : (
             <ProductGrid products={filtered} />
           )}
@@ -316,9 +343,18 @@ export function BillingScreen({ businessName, cashierName }: Props) {
       {/* Floating cart bar — sits above the bottom nav, right under the thumb */}
       {lines.length > 0 && (
         <div className="no-select toast-enter md:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 flex items-stretch overflow-hidden rounded-2xl bg-brand-dark text-white shadow-lg">
+          {/* Save (no print) on the left, cart in the middle, Print Bill on the right */}
+          <button
+            onClick={() => handleQuickPrint(false)}
+            disabled={quickPrinting}
+            className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-r border-white/10 px-3.5 text-xs font-semibold text-white/90 active:bg-white/5 disabled:opacity-60"
+          >
+            <Save className="h-5 w-5" />
+            Save
+          </button>
           <button
             onClick={() => setCartOpenMobile(true)}
-            className="touch-target flex min-w-0 flex-1 items-center gap-3 px-4 text-left active:bg-white/5"
+            className="touch-target flex min-w-0 flex-1 items-center gap-2.5 px-3 text-left active:bg-white/5"
           >
             <span className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-white/10 px-1.5 text-sm font-bold tabular">
               {itemCount}
@@ -327,13 +363,6 @@ export function BillingScreen({ businessName, cashierName }: Props) {
               <span className="block text-lg font-extrabold leading-tight tabular text-accent">{formatINR(estimatedTotal)}</span>
               <span className="block text-xs text-white/70">View cart · {t("pos.items")}</span>
             </span>
-          </button>
-          <button
-            onClick={() => handleQuickPrint(false)}
-            disabled={quickPrinting}
-            className="flex min-h-14 items-center border-l border-white/10 px-4 text-sm font-semibold text-white/90 active:bg-white/5 disabled:opacity-60"
-          >
-            Save
           </button>
           <button
             onClick={() => handleQuickPrint(true)}

@@ -33,6 +33,9 @@ export function TiffinScreen() {
   const [loading, setLoading] = useState(true);
   const [planFormOpen, setPlanFormOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  // "Meal Used" asks first, so a wrong tap doesn't use up a meal.
+  const [confirmUse, setConfirmUse] = useState<Subscription | null>(null);
+  const [usingMeal, setUsingMeal] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -153,7 +156,7 @@ export function TiffinScreen() {
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <button
-                    onClick={() => recordUsage(s.id, "USED")}
+                    onClick={() => setConfirmUse(s)}
                     disabled={remaining <= 0}
                     className="touch-target rounded-xl border border-success text-success flex items-center justify-center gap-1 text-sm font-bold disabled:opacity-40"
                   >
@@ -176,6 +179,42 @@ export function TiffinScreen() {
             );
           })}
         </ul>
+      )}
+
+      {confirmUse && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 sm:items-center sm:p-4" onClick={() => !usingMeal && setConfirmUse(null)}>
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="meal-confirm-title"
+            onClick={(e) => e.stopPropagation()}
+            className="toast-enter w-full rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-sm sm:rounded-3xl"
+          >
+            <p id="meal-confirm-title" className="text-lg font-extrabold text-ink">Mark 1 meal used?</p>
+            <p className="mt-1 text-sm text-muted">
+              <span className="font-semibold text-ink">{confirmUse.customer.name}</span> · {confirmUse.plan.name}
+            </p>
+            <p className="mt-3 rounded-xl bg-paper px-3 py-2 text-center text-base font-bold tabular text-ink">
+              {confirmUse.mealsUsed} / {confirmUse.totalMeals} → <span className="text-success">{confirmUse.mealsUsed + 1} / {confirmUse.totalMeals}</span>
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button variant="secondary" disabled={usingMeal} onClick={() => setConfirmUse(null)}>
+                Cancel
+              </Button>
+              <Button
+                loading={usingMeal}
+                onClick={async () => {
+                  setUsingMeal(true);
+                  await recordUsage(confirmUse.id, "USED");
+                  setUsingMeal(false);
+                  setConfirmUse(null);
+                }}
+              >
+                <Check className="h-4 w-4" /> Yes, used
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {planFormOpen && (

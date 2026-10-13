@@ -318,7 +318,7 @@ function AddProductSheet({
     const res = await fetch("/api/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...values, imageUrl: values.imageUrl ?? undefined }),
+      body: JSON.stringify({ ...values, imageUrl: values.imageUrl ?? undefined, trackInventory: false }),
     });
     setSubmitting(false);
     if (!res.ok) {
@@ -360,36 +360,17 @@ function AddProductSheet({
               ))}
             </select>
           </Field>
+          <Field label="SKU / Quantity">
+            <input {...register("sku")} className="field" placeholder="e.g. 1 plate, 2 pcs, Half" />
+          </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="SKU">
-              <input {...register("sku")} className="field" />
-            </Field>
-            <Field label="Barcode">
-              <input {...register("barcode")} className="field" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Selling price (₹)" error={errors.sellingPrice?.message}>
-              <input type="number" step="0.01" {...register("sellingPrice")} className="field" />
-            </Field>
-            <Field label="Purchase price (₹)">
-              <input type="number" step="0.01" {...register("purchasePrice")} className="field" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Unit">
-              <input {...register("unit")} className="field" placeholder="pc" />
+            <Field label="Price (₹)" error={errors.sellingPrice?.message}>
+              <input type="number" step="0.01" inputMode="decimal" {...register("sellingPrice")} className="field" placeholder="60" />
             </Field>
             <Field label="GST %">
-              <input type="number" step="0.01" {...register("gstPercent")} className="field" />
-            </Field>
-            <Field label="Opening stock">
-              <input type="number" step="0.01" {...register("currentStock")} className="field" />
+              <input type="number" step="0.01" inputMode="decimal" {...register("gstPercent")} className="field" />
             </Field>
           </div>
-          <Field label="Minimum stock (for low-stock alerts)">
-            <input type="number" step="0.01" {...register("minStock")} className="field" />
-          </Field>
 
           {serverError && (
             <p className="border border-danger bg-danger-soft px-3 py-2 text-sm font-medium text-danger rounded-xl">{serverError}</p>
@@ -418,11 +399,8 @@ function EditProductSheet({
   const [name, setName] = useState(product.name);
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [sku, setSku] = useState(product.sku ?? "");
-  const [barcode, setBarcode] = useState(product.barcode ?? "");
   const [sellingPrice, setSellingPrice] = useState(String(product.sellingPrice));
-  const [purchasePrice, setPurchasePrice] = useState(String(product.purchasePrice));
   const [gstPercent, setGstPercent] = useState(String(product.gstPercent));
-  const [minStock, setMinStock] = useState(String(product.minStock));
   const [imageUrl, setImageUrl] = useState<string | null>(product.imageUrl);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -437,11 +415,8 @@ function EditProductSheet({
         name,
         categoryId: categoryId || undefined,
         sku: sku || undefined,
-        barcode: barcode || undefined,
         sellingPrice: parseFloat(sellingPrice) || 0,
-        purchasePrice: parseFloat(purchasePrice) || 0,
         gstPercent: parseFloat(gstPercent) || 0,
-        minStock: parseFloat(minStock) || 0,
         imageUrl: imageUrl ?? undefined,
       }),
     });
@@ -458,11 +433,8 @@ function EditProductSheet({
       categoryId: categoryId || null,
       categoryName: categories.find((c) => c.id === categoryId)?.name ?? null,
       sku: sku || null,
-      barcode: barcode || null,
       sellingPrice: parseFloat(sellingPrice) || 0,
-      purchasePrice: parseFloat(purchasePrice) || 0,
       gstPercent: parseFloat(gstPercent) || 0,
-      minStock: parseFloat(minStock) || 0,
       imageUrl,
     });
   }
@@ -492,28 +464,15 @@ function EditProductSheet({
               ))}
             </select>
           </Field>
+          <Field label="SKU / Quantity">
+            <input value={sku} onChange={(e) => setSku(e.target.value)} className="field" placeholder="e.g. 1 plate, 2 pcs, Half" />
+          </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="SKU">
-              <input value={sku} onChange={(e) => setSku(e.target.value)} className="field" />
+            <Field label="Price (₹)">
+              <input type="number" step="0.01" inputMode="decimal" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} className="field" />
             </Field>
-            <Field label="Barcode">
-              <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="field" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Selling price (₹)">
-              <input type="number" step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} className="field" />
-            </Field>
-            <Field label="Purchase price (₹)">
-              <input type="number" step="0.01" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} className="field" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
             <Field label="GST %">
-              <input type="number" step="0.01" value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} className="field" />
-            </Field>
-            <Field label="Minimum stock">
-              <input type="number" step="0.01" value={minStock} onChange={(e) => setMinStock(e.target.value)} className="field" />
+              <input type="number" step="0.01" inputMode="decimal" value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} className="field" />
             </Field>
           </div>
 

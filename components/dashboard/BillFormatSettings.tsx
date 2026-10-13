@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ImagePlus, Printer, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ReceiptPreview, SAMPLE_RECEIPT } from "@/components/pos/ReceiptPreview";
@@ -74,23 +74,33 @@ export function BillFormatSettings({
     }
   }
 
-  async function save() {
-    setSaving(true);
-    const res = await fetch("/api/printers/format", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ format }),
-    });
-    const body = await res.json().catch(() => ({}));
-    setSaving(false);
-    if (!res.ok) {
-      toast.error(body.error ?? "Couldn't save the bill format.");
-      return;
-    }
-    cacheBillFormat(body.format);
-    setSavedFormat(body.format);
-    toast.success("Bill format saved for all devices");
-  }
+  // Auto-save: every change is saved shortly after it's made (text fields wait until typing pauses).
+  const [saveError, setSaveError] = useState(false);
+  useEffect(() => {
+    if (!canEdit || !dirty) return;
+    const toSave = format;
+    const id = window.setTimeout(async () => {
+      setSaving(true);
+      try {
+        const res = await fetch("/api/printers/format", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ format: toSave }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error ?? "Couldn't save the bill format.");
+        cacheBillFormat(body.format);
+        setSavedFormat(toSave);
+        setSaveError(false);
+      } catch (e) {
+        setSaveError(true);
+        toast.error(e instanceof Error ? e.message : "Couldn't save the bill format.");
+      } finally {
+        setSaving(false);
+      }
+    }, 600);
+    return () => window.clearTimeout(id);
+  }, [format, dirty, canEdit]);
 
   async function testPrint() {
     try {
@@ -222,12 +232,7 @@ export function BillFormatSettings({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {canEdit && (
-            <Button className="sm:flex-1" loading={saving} disabled={!dirty} onClick={save}>
-              <Check className="h-4 w-4" /> {dirty ? "Save format" : "Saved"}
-            </Button>
-          )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button variant="secondary" className="sm:flex-1" onClick={testPrint}>
             <Printer className="h-4 w-4" /> Test print
           </Button>
@@ -237,6 +242,19 @@ export function BillFormatSettings({
             </Button>
           )}
         </div>
+        {canEdit && (
+          <p className={cn("flex items-center gap-1.5 text-xs font-medium", saveError ? "text-danger" : "text-muted")} aria-live="polite">
+            {saveError && !saving ? (
+              "Not saved — check your internet and change again"
+            ) : saving || dirty ? (
+              "Saving…"
+            ) : (
+              <>
+                <Check className="h-3.5 w-3.5 text-success" /> Saved automatically for all devices
+              </>
+            )}
+          </p>
+        )}
         {!canEdit && <p className="text-xs text-muted">Only the owner can change the bill format.</p>}
       </div>
 

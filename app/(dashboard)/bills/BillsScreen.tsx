@@ -149,7 +149,8 @@ export function BillsScreen({ canVoid, seeAll }: { canVoid: boolean; seeAll: boo
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search bill no, item or cashier"
-            className="field pl-10"
+            className="field"
+            style={{ paddingLeft: "2.75rem" }} // .field padding would otherwise override pl-* and hide text under the icon
           />
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
