@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
+import { getMenuScope, mergeByName } from "@/lib/menu";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 
 const categorySchema = z.object({
@@ -12,11 +13,14 @@ const categorySchema = z.object({
 export async function GET() {
   try {
     const session = await requireSession();
-    const categories = await prisma.category.findMany({
-      where: { businessId: session.businessId },
+    const scope = await getMenuScope(session.businessId);
+    const rows = await prisma.category.findMany({
+      where: { businessId: { in: scope.ids } },
       orderBy: { sortOrder: "asc" },
       include: { _count: { select: { products: true } } },
     });
+    const order = (c: unknown) => Number((c as { sortOrder?: number }).sortOrder ?? 0);
+    const categories = mergeByName(rows, session.businessId).sort((a, b) => order(a) - order(b));
     return NextResponse.json({ categories });
   } catch (err) {
     if (err instanceof UnauthenticatedError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

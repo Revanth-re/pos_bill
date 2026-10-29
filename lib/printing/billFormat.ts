@@ -34,11 +34,13 @@ export interface BillFormat {
   kitchenCopy: boolean;
   showLogo: boolean;
   logo: BillLogo | null;
+  /** Language of the words printed on the bill (Bill, Item, Total…). "en" = English. */
+  billLanguage: string;
   headerNote: string;
   footerNote: string;
 }
 
-type Preset = Omit<BillFormat, "template" | "paper" | "headerNote" | "footerNote" | "logo" | "showLogo"> & { showLogo?: boolean };
+type Preset = Omit<BillFormat, "template" | "paper" | "headerNote" | "footerNote" | "logo" | "showLogo" | "billLanguage"> & { showLogo?: boolean };
 
 export const TEMPLATES: { id: TemplateId; name: string; description: string; preset: Preset }[] = [
   {
@@ -86,6 +88,7 @@ export const DEFAULT_FORMAT: BillFormat = {
   footerNote: "Thank you, visit again!",
   showLogo: true,
   logo: null,
+  billLanguage: "en",
   ...TEMPLATES[0].preset,
 };
 
@@ -106,6 +109,7 @@ export function normalizeFormat(raw: unknown): BillFormat {
   }
   if (!TEMPLATES.some((t) => t.id === out.template)) out.template = "classic";
   out.logo = normalizeLogo(r.logo);
+  if (!/^(en|hi|te|ta|kn|ml|mr|bn|gu|pa)$/.test(out.billLanguage)) out.billLanguage = "en";
   out.headerNote = out.headerNote.slice(0, 120);
   out.footerNote = out.footerNote.slice(0, 120);
   return out;

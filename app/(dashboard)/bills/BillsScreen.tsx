@@ -35,7 +35,7 @@ interface BillDetail {
   orderType: "DINE_IN" | "TAKEAWAY";
   customerName: string | null;
   business: { name: string; address: string | null; gstin: string | null };
-  items: { name: string; qty: number; unitPrice: number; total: number }[];
+  items: { name: string; localName?: string | null; qty: number; unitPrice: number; total: number }[];
   subtotal: number;
   discountTotal: number;
   cgstTotal: number;
@@ -311,7 +311,7 @@ function toReceipt(b: BillDetail): ReceiptData {
     cashierName: b.cashier,
     orderType: b.orderType,
     customerName: b.customerName ?? undefined,
-    lines: b.items.map((i) => ({ name: i.name, qty: i.qty, unitPrice: i.unitPrice, total: i.total })),
+    lines: b.items.map((i) => ({ name: i.name, localName: i.localName, qty: i.qty, unitPrice: i.unitPrice, total: i.total })),
     subtotal: b.subtotal,
     discountTotal: b.discountTotal,
     cgstTotal: b.cgstTotal,

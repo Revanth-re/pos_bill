@@ -19,8 +19,9 @@ export async function syncOfflineBills(
   onProgress?: (remaining: number) => void
 ): Promise<{ synced: number; failed: number }> {
   const bills = await getAllOfflineBills();
+  // SYNCING too: a bill caught mid-sync when the app was closed must be retried.
   const pending = bills.filter(
-    (b) => (b.status === "PENDING" || b.status === "FAILED") && b.attempts < MAX_ATTEMPTS
+    (b) => (b.status === "PENDING" || b.status === "SYNCING" || b.status === "FAILED") && b.attempts < MAX_ATTEMPTS
   );
 
   let synced = 0;
@@ -39,14 +40,20 @@ export async function syncOfflineBills(
       if (res.ok) {
         await deleteOfflineBill(bill.clientId);
         synced += 1;
+      } else if (res.status >= 500 || res.status === 401) {
+        // Server/database down or login expired — not the bill's fault. Keep it, don't use up
+        // a retry attempt, and stop for now; we'll try again later.
+        await updateOfflineBillStatus(bill.clientId, "PENDING", "Waiting for server");
+        break;
       } else {
         const body = await res.json().catch(() => ({}));
         await updateOfflineBillStatus(bill.clientId, "FAILED", body.error ?? "Sync failed");
         failed += 1;
       }
     } catch {
-      await updateOfflineBillStatus(bill.clientId, "FAILED", "Network error during sync");
-      failed += 1;
+      // No internet — keep the bill, no attempt used, try again later.
+      await updateOfflineBillStatus(bill.clientId, "PENDING", "No internet");
+      break;
     }
   }
 

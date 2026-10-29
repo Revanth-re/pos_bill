@@ -25,6 +25,9 @@ export interface ManagedProduct {
   status: "ACTIVE" | "INACTIVE";
   imageUrl: string | null;
   trackInventory?: boolean;
+  alias?: string | null;
+  /** Comes from the main shop's menu (edit it there). */
+  shared?: boolean;
 }
 
 export interface CustomerCacheRow {
@@ -70,6 +73,7 @@ function mapApiProductToCart(p: Record<string, unknown>): CartProduct {
     trackInventory: Boolean(p.trackInventory ?? true),
     imageUrl: (p.imageUrl as string | null) ?? null,
     categoryId: (p.categoryId as string | null) ?? null,
+    alias: (p.alias as string | null) ?? null,
   };
 }
 
@@ -91,6 +95,8 @@ function mapApiProductToManaged(p: Record<string, unknown>): ManagedProduct {
     status: (p.status as "ACTIVE" | "INACTIVE") ?? "ACTIVE",
     imageUrl: (p.imageUrl as string | null) ?? null,
     trackInventory: p.trackInventory !== undefined ? Boolean(p.trackInventory) : undefined,
+    alias: (p.alias as string | null) ?? null,
+    shared: Boolean(p.shared),
   };
 }
 
@@ -170,6 +176,8 @@ export const useCatalogStore = create<CatalogState>()(
               })),
             });
           }
+        } catch {
+          // Offline / server down: keep showing the copy saved on this phone.
         } finally {
           set({ loadingProducts: false });
         }
@@ -201,6 +209,8 @@ export const useCatalogStore = create<CatalogState>()(
           } else if (cats) {
             set({ categories: cats });
           }
+        } catch {
+          // Offline / server down: keep showing the copy saved on this phone.
         } finally {
           set({ loadingManaged: false });
         }
@@ -226,6 +236,8 @@ export const useCatalogStore = create<CatalogState>()(
             }));
             set({ customers: rows, customersFetchedAt: Date.now() });
           }
+        } catch {
+          // Offline / server down: keep showing the copy saved on this phone.
         } finally {
           set({ loadingCustomers: false });
         }

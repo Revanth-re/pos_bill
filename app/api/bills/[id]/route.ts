@@ -11,7 +11,7 @@ async function loadInvoice(businessId: string, id: string) {
   return prisma.invoice.findFirst({
     where: { id, businessId },
     include: {
-      items: true,
+      items: { include: { product: { select: { alias: true } } } },
       payments: true,
       staff: { include: { user: { select: { name: true } } } },
       order: { include: { customer: { select: { id: true, name: true } } } },
@@ -57,6 +57,7 @@ export async function GET(_req: Request, ctx: Ctx) {
         },
         items: inv.items.map((i) => ({
           name: i.productName,
+          localName: i.product?.alias ?? null,
           qty: Number(i.quantity),
           unitPrice: Number(i.unitPrice),
           total: Number(i.lineTotal),

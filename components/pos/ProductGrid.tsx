@@ -21,8 +21,9 @@ export function ProductGrid({ products }: { products: CartProduct[] }) {
     <div className="grid grid-cols-2 gap-2.5 min-[480px]:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-3">
       {products.map((product) => {
         const inCartQty = lines.find((l) => l.product.id === product.id)?.quantity ?? 0;
-        const outOfStock = product.trackInventory && product.currentStock <= 0;
-        const lowStock = product.trackInventory && product.currentStock > 0 && product.currentStock <= 5;
+        // Billo doesn't track stock — every item can always be billed.
+        const outOfStock = false;
+        const lowStock = false;
 
         return (
           <button

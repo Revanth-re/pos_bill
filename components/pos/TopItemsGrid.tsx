@@ -35,7 +35,7 @@ export function TopItemsGrid({ products }: { products: CartProduct[] }) {
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3">
         {shown.map((product) => {
           const inCartQty = lines.find((l) => l.product.id === product.id)?.quantity ?? 0;
-          const outOfStock = product.trackInventory && product.currentStock <= 0;
+          const outOfStock = false; // no stock tracking
           return (
             <button
               key={product.id}

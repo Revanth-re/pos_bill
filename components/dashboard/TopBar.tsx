@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User } from "lucide-react";
+import { ChevronDown, User } from "lucide-react";
 
 export function TopBar({ businessName }: { businessName: string }) {
   const pathname = usePathname();
@@ -14,9 +14,11 @@ export function TopBar({ businessName }: { businessName: string }) {
 
   return (
     <header className="no-select sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur md:hidden">
-      <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
+      {/* Tap the shop name to see / switch outlets */}
+      <Link href="/outlets" className="flex min-w-0 items-center gap-2.5" aria-label={`${businessName} — switch outlet`}>
         <img src="/brand/billo-icon.png" alt="Billo" className="h-8 w-8 shrink-0 object-contain" />
         <span className="truncate text-base font-bold text-ink">{businessName}</span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted" />
       </Link>
       <Link
         href="/profile"

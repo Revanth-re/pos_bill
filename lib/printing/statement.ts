@@ -1,4 +1,4 @@
-import { toAscii, type Row, paperWidth } from "./escpos";
+import { type Row, paperWidth } from "./escpos";
 
 export interface StatementEntry {
   type: "CREDIT_SALE" | "PAYMENT" | "ADJUSTMENT";
@@ -28,16 +28,15 @@ const day = (iso: string) =>
 export function buildStatementRows(d: StatementData, paper: "58" | "80"): Row[] {
   const W = paperWidth(paper);
   const rows: Row[] = [];
+  // Any language: non-English text is printed as a picture (see rasterText.ts).
   const t = (text: string, align: "left" | "center" = "left", bold = false, size: 1 | 2 = 1) =>
-    rows.push({ kind: "text", text: toAscii(text), align, bold, size });
-  const lr = (l: string, r: string, bold = false) => {
-    const a = toAscii(l).slice(0, W - r.length - 1);
-    t(a + " ".repeat(Math.max(1, W - a.length - r.length)) + r, "left", bold);
-  };
+    rows.push({ kind: "text", text, align, bold, size });
+  const lr = (l: string, r: string, bold = false) =>
+    rows.push({ kind: "cols", cells: [{ text: l, w: W - r.length - 1 }, { text: " " + r, w: r.length + 1, align: "right" }], bold });
 
   {
     let line = "";
-    for (const w of toAscii(d.businessName).split(" ")) {
+    for (const w of d.businessName.split(" ")) {
       if ((line + " " + w).trim().length > Math.floor(W / 2)) {
         if (line) t(line, "center", true, 2);
         line = w;
@@ -59,7 +58,7 @@ export function buildStatementRows(d: StatementData, paper: "58" | "80"): Row[] 
       const items = (e.items ?? []).map((i) => `${i.qty}x ${i.name}`).join(", ");
       if (items) {
         let line = "  ";
-        for (const w of toAscii(items).split(" ")) {
+        for (const w of items.split(" ")) {
           if ((line + w).length > W) {
             t(line);
             line = "  ";

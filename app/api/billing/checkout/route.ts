@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
+import { getMenuScope } from "@/lib/menu";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 import { checkoutSchema } from "@/validations/billing";
 import { calculateBillTotals, validatePaymentSum } from "@/lib/billing/calculateTotals";
@@ -43,11 +44,14 @@ export async function POST(req: Request) {
       }
     }
 
+    // This outlet's products + the main shop's shared menu.
+    const menuIds = (await getMenuScope(session.businessId)).ids;
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Validate cart — fetch live products scoped to this business only.
       const productIds = input.items.map((i) => i.productId);
       const products = await tx.product.findMany({
-        where: { id: { in: productIds }, businessId: session.businessId },
+        where: { id: { in: productIds }, businessId: { in: menuIds } },
         include: { recipe: { include: { lines: true } } },
       });
       if (products.length !== new Set(productIds).size) {
@@ -56,12 +60,7 @@ export async function POST(req: Request) {
       const productsById = new Map(products.map((p) => [p.id, p]));
 
       // Stock check before committing to anything.
-      for (const item of input.items) {
-        const product = productsById.get(item.productId)!;
-        if (product.trackInventory && Number(product.currentStock) < item.quantity) {
-          throw new BillingError(`${product.name} does not have enough stock`);
-        }
-      }
+      // No stock check: Billo sells by plate and doesn't block bills on stock counts.
 
       // Reserve the next invoice number AND read business settings in one round-trip.
       const business = await tx.business.update({

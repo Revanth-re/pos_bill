@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./config";
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth(authConfig);
 
 /**
  * Convenience helper for server code (API routes, server actions): returns
@@ -12,7 +12,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
 export async function requireSession() {
   const session = await auth();
   const user = session?.user as
-    | { staffId?: string; businessId?: string; role?: string; name?: string; email?: string }
+    | { id?: string; staffId?: string; businessId?: string; role?: string; name?: string; email?: string }
     | undefined;
 
   if (!session || !user?.staffId || !user?.businessId || !user?.role) {
@@ -20,6 +20,7 @@ export async function requireSession() {
   }
 
   return {
+    userId: user.id ?? "",
     staffId: user.staffId,
     businessId: user.businessId,
     role: user.role as "OWNER" | "MANAGER" | "CASHIER",

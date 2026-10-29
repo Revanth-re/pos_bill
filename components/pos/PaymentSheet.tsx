@@ -2,7 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { X, Banknote, Smartphone, CreditCard, HandCoins, User } from "lucide-react";
-import { useCartStore, estimateCartTotal } from "@/stores/cartStore";
+import { useCartStore } from "@/stores/cartStore";
+import { cartTotals } from "@/lib/billing/clientTotals";
+import type { BillTotals } from "@/lib/billing/calculateTotals";
+
+export interface CheckoutSuccess {
+  invoice?: unknown;
+  offline: boolean;
+  clientId?: string;
+  /** Totals worked out on the phone (used for the printed bill when offline). */
+  totals?: BillTotals;
+  payments?: { method: string; amount: number }[];
+  creditOnly?: boolean;
+}
 import { formatINR, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { submitBill } from "@/lib/billing/submitBill";
@@ -25,7 +37,7 @@ export function PaymentSheet({
 }: {
   open: boolean;
   onClose: () => void;
-  onSuccess: (result: { invoice?: unknown; offline: boolean; creditOnly?: boolean }) => void;
+  onSuccess: (result: CheckoutSuccess) => void;
 }) {
   const lines = useCartStore((s) => s.lines);
   const orderType = useCartStore((s) => s.orderType);
@@ -36,7 +48,9 @@ export function PaymentSheet({
   const heldBillId = useCartStore((s) => s.heldBillId);
   const clear = useCartStore((s) => s.clear);
 
-  const estimatedTotal = estimateCartTotal(lines);
+  // Exact total (GST + bill discount), same maths as the server.
+  const exact = cartTotals(lines, billDiscount);
+  const estimatedTotal = exact.grandTotal;
 
   const [splits, setSplits] = useState<{ method: Method; amount: string }[]>([
     { method: "CASH", amount: estimatedTotal.toFixed(2) },
@@ -108,7 +122,14 @@ export function PaymentSheet({
     clear();
     // Udhaari = every rupee actually paid is on credit (ignore ₹0 rows left over from switching methods).
     const paid = splits.filter((s) => (parseFloat(s.amount) || 0) > 0);
-    onSuccess({ invoice: result.invoice, offline: result.offline, creditOnly: paid.length > 0 && paid.every((s) => s.method === "CREDIT") });
+    onSuccess({
+      invoice: result.invoice,
+      offline: result.offline,
+      clientId: result.clientId,
+      totals: exact,
+      payments: paid.map((s) => ({ method: s.method, amount: parseFloat(s.amount) || 0 })),
+      creditOnly: paid.length > 0 && paid.every((s) => s.method === "CREDIT"),
+    });
   }
 
   return (

@@ -13,6 +13,8 @@ export interface CartProduct {
   trackInventory: boolean;
   imageUrl: string | null;
   categoryId?: string | null;
+  /** Name in the shop's language, printed on bills when the bill language isn't English. */
+  alias?: string | null;
 }
 
 export interface CartLine {

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
+import { Store, HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { can, type Permission } from "@/lib/permissions";
 
 const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Permission }[] = [
   { href: "/profile", label: "Profile", icon: User },
+  { href: "/outlets", label: "Outlets (all your shops)", icon: Store },
   { href: "/udhaari", label: "Udhaari (credit khata)", icon: HandCoins, permission: "customers.view" },
   { href: "/shifts", label: "Cashier Shift", icon: Clock, permission: "shift.manage" },
   { href: "/inventory", label: "Inventory", icon: Package, permission: "inventory.view" },

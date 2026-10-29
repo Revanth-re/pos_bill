@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
+import { Store,
   LayoutDashboard,
   Receipt,
   LineChart,
@@ -41,6 +41,7 @@ const ITEMS: { href: string; labelKey: string; icon: typeof LayoutDashboard; per
   { href: "/performance", labelKey: "nav.performance", icon: Trophy, permission: "reports.view" },
   { href: "/day-closing", labelKey: "nav.dayClosing", icon: Lock, permission: "dayClosing.perform" },
   { href: "/staff", labelKey: "nav.staff", icon: UserCog, permission: "staff.manage" },
+  { href: "/outlets", labelKey: "nav.outlets", icon: Store },
   { href: "/settings", labelKey: "nav.settings", icon: Settings, permission: "settings.manage" },
 ];
 

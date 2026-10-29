@@ -8,6 +8,7 @@ import { Plus, X, Search, IndianRupee, Pencil, Trash2, Printer, MessageCircle } 
 import { toast } from "@/stores/toastStore";
 import { buildStatementRows, buildStatementText, type StatementData } from "@/lib/printing/statement";
 import { rowsToBytes } from "@/lib/printing/escpos";
+import { rasterRow } from "@/lib/printing/rasterText";
 import { choosePrinter, reconnectSavedPrinter, writeToPrinter } from "@/lib/printing/bluetoothPairing";
 import { getCachedBillFormat } from "@/lib/printing/billFormat";
 import { Button } from "@/components/ui/Button";
@@ -443,7 +444,7 @@ function CustomerDetailSheet({
   async function printStatement() {
     try {
       if (!(await reconnectSavedPrinter())) await choosePrinter();
-      await writeToPrinter(rowsToBytes(buildStatementRows(statementData(), getCachedBillFormat().paper), getCachedBillFormat().paper));
+      await writeToPrinter(rowsToBytes(buildStatementRows(statementData(), getCachedBillFormat().paper), getCachedBillFormat().paper, rasterRow));
       toast.success("Statement printed");
     } catch (e) {
       const err = e as { name?: string; message?: string };

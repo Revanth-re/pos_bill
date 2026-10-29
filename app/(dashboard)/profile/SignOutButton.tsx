@@ -9,7 +9,12 @@ export function SignOutButton() {
     <Button
       variant="secondary"
       className="w-full"
-      onClick={async () => { await signOut({ redirect: false }); window.location.replace("/login"); }}
+      onClick={async () => {
+        // Remove this account's saved offline screens from the phone.
+        navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_PAGES" });
+        await signOut({ redirect: false });
+        window.location.replace("/login");
+      }}
     >
       <span className="inline-flex items-center gap-2">
         <LogOut className="h-4 w-4" /> Sign Out

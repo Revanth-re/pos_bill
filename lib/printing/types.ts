@@ -10,6 +10,8 @@ export type PrinterType = "THERMAL_58MM" | "THERMAL_80MM" | "A4" | "BROWSER";
 
 export interface ReceiptLine {
   name: string;
+  /** Name in the shop's language (product "Name on bill"), printed when the bill language isn't English. */
+  localName?: string | null;
   qty: number;
   unitPrice: number;
   total: number;

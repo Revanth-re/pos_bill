@@ -13,6 +13,7 @@ const updateSchema = z.object({
   unit: z.string().min(1).max(20).optional(),
   purchasePrice: z.number().nonnegative().optional(),
   sellingPrice: z.number().positive().optional(),
+  trackInventory: z.boolean().optional(),
   mrp: z.number().nonnegative().optional(),
   gstPercent: z.number().min(0).max(28).optional(),
   minStock: z.number().nonnegative().optional(),

@@ -1,6 +1,6 @@
 "use client";
 
-import { buildReceiptRows, paperWidth } from "@/lib/printing/escpos";
+import { buildReceiptRows, isAscii, paperWidth } from "@/lib/printing/escpos";
 import type { BillFormat } from "@/lib/printing/billFormat";
 import type { ReceiptData } from "@/lib/printing/types";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,13 @@ export function ReceiptPreview({ data, format, className }: { data: ReceiptData;
     <div className={cn("flex justify-center overflow-x-auto py-1 [filter:drop-shadow(0_6px_16px_rgba(6,72,76,0.14))]", className)}>
       <div
         className="receipt-edge relative bg-white px-3 pb-6 pt-4 text-[#111]"
-        style={{ fontFamily: "'Courier New', ui-monospace, monospace", fontSize, lineHeight: 1.35 }}
+        style={{
+          // Monospace for English; the phone's Indian-language fonts for Telugu, Hindi, Tamil…
+          fontFamily:
+            "'Courier New', ui-monospace, monospace, 'Noto Sans Telugu', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Kannada', 'Noto Sans Malayalam', 'Noto Sans Bengali', 'Noto Sans Gujarati', 'Noto Sans Gurmukhi', 'Nirmala UI', sans-serif",
+          fontSize,
+          lineHeight: 1.35,
+        }}
       >
         <div style={{ width: `${W}ch` }}>
           {rows.map((r, i) => {
@@ -34,6 +40,33 @@ export function ReceiptPreview({ data, format, className }: { data: ReceiptData;
                   <img src={r.logo.preview} alt="Logo" style={{ width: `${r.logo.w / 12}ch`, imageRendering: "pixelated" }} />
                 </div>
               );
+            // Column rows (items, totals): fixed character widths like the printer.
+            if (r.kind === "cols") {
+              const cells = (
+                <div className="flex">
+                  {r.cells.map((c, j) =>
+                    c.w === 0 ? null : (
+                      <span
+                        key={j}
+                        className={cn("shrink-0", isAscii(c.text) ? "whitespace-pre" : c.align === "right" ? "whitespace-nowrap" : "break-words pr-1")}
+                        style={{ width: `${c.w}ch`, textAlign: c.align ?? "left", overflow: c.align === "right" ? "visible" : "hidden" }}
+                      >
+                        {c.text}
+                      </span>
+                    )
+                  )}
+                </div>
+              );
+              return r.tall ? (
+                <div key={i} style={{ height: "2.7em", fontWeight: r.bold ? 700 : 400 }}>
+                  <div style={{ transform: "scaleY(2)", transformOrigin: "top" }}>{cells}</div>
+                </div>
+              ) : (
+                <div key={i} style={{ fontWeight: r.bold ? 700 : 400 }}>
+                  {cells}
+                </div>
+              );
+            }
             if (r.tall)
               return (
                 <div key={i} className="whitespace-pre" style={{ height: "2.7em", fontWeight: r.bold ? 700 : 400 }}>
@@ -44,7 +77,7 @@ export function ReceiptPreview({ data, format, className }: { data: ReceiptData;
             return (
               <div
                 key={i}
-                className="whitespace-pre"
+                className={isAscii(r.text) ? "whitespace-pre" : "break-words"}
                 style={{
                   textAlign: r.align,
                   fontWeight: r.bold ? 700 : 400,

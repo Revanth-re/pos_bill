@@ -22,41 +22,7 @@ export interface Insight {
 export async function getBusinessInsights(businessId: string): Promise<Insight[]> {
   const insights: Insight[] = [];
 
-  const lowStockProducts = await prisma.product.findMany({
-    where: {
-      businessId,
-      status: "ACTIVE",
-      trackInventory: true,
-    },
-  });
-  const lowStock = lowStockProducts.filter((p) => Number(p.currentStock) <= Number(p.minStock));
-  const outOfStock = lowStock.filter((p) => Number(p.currentStock) <= 0);
-
-  if (outOfStock.length > 0) {
-    insights.push({
-      type: "OUT_OF_STOCK",
-      icon: "🚫",
-      title: `${outOfStock.length} product${outOfStock.length > 1 ? "s" : ""} out of stock`,
-      message: outOfStock
-        .slice(0, 3)
-        .map((p) => p.name)
-        .join(", "),
-      actionLabel: "View Inventory",
-      actionUrl: "/inventory",
-    });
-  } else if (lowStock.length > 0) {
-    insights.push({
-      type: "LOW_STOCK",
-      icon: "⚠️",
-      title: `${lowStock.length} product${lowStock.length > 1 ? "s" : ""} running low`,
-      message: lowStock
-        .slice(0, 3)
-        .map((p) => `${p.name} (${Number(p.currentStock)} ${p.unit} left)`)
-        .join(", "),
-      actionLabel: "View Inventory",
-      actionUrl: "/inventory",
-    });
-  }
+  // (No stock insights — Billo sells by plate and doesn't count stock.)
 
   const yesterdayStart = new Date();
   yesterdayStart.setDate(yesterdayStart.getDate() - 1);

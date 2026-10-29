@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
+import { getMenuScope, mergeByName } from "@/lib/menu";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 
 const productSchema = z.object({
@@ -34,9 +35,10 @@ export async function GET(req: Request) {
     const limitParam = Number(searchParams.get("limit") ?? (statusAll ? 500 : 200));
     const take = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 500) : 200;
 
-    const products = await prisma.product.findMany({
+    const scope = await getMenuScope(session.businessId);
+    const rows = await prisma.product.findMany({
       where: {
-        businessId: session.businessId,
+        businessId: { in: scope.ids },
         ...(statusAll ? {} : { status: "ACTIVE" }),
         ...(categoryId ? { categoryId } : {}),
         ...(q
@@ -50,12 +52,21 @@ export async function GET(req: Request) {
             }
           : {}),
       },
-      include: statusAll ? { category: { select: { name: true } } } : undefined,
+      include: { category: { select: { name: true } } },
       orderBy: { name: "asc" },
       take,
     });
 
-    return NextResponse.json({ products });
+    // Main shop's items show in every outlet; point them at this outlet's same-name category.
+    const products = mergeByName(rows, session.businessId);
+    if (scope.ids.length > 1) {
+      const ownCats = await prisma.category.findMany({ where: { businessId: session.businessId }, select: { id: true, name: true } });
+      const byName = new Map(ownCats.map((c) => [c.name.trim().toLowerCase(), c.id]));
+      for (const p of products) {
+        if (p.shared && p.category) p.categoryId = byName.get(p.category.name.trim().toLowerCase()) ?? p.categoryId;
+      }
+    }
+    return NextResponse.json({ products, sharedFrom: scope.ids.length > 1 ? scope.mainName : null });
   } catch (err) {
     if (err instanceof UnauthenticatedError) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

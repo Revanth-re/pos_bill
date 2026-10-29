@@ -14,8 +14,22 @@ import {
 import { getPrinterAdapter } from "@/lib/printing/getPrinterAdapter";
 import { choosePrinter, reconnectSavedPrinter } from "@/lib/printing/bluetoothPairing";
 import { imageFileToLogo } from "@/lib/printing/logo";
+import { BILL_LANGUAGES, billLabels } from "@/lib/printing/billLabels";
 import { toast } from "@/stores/toastStore";
 import { cn } from "@/lib/utils";
+
+/** Sample item names (Idly, Masala Dosa, Filter Coffee) for the preview in each bill language. */
+const SAMPLE_LOCAL_NAMES: Record<string, string[]> = {
+  te: ["ఇడ్లీ (2)", "మసాలా దోశ", "ఫిల్టర్ కాఫీ"],
+  hi: ["इडली (2)", "मसाला डोसा", "फ़िल्टर कॉफ़ी"],
+  ta: ["இட்லி (2)", "மசாலா தோசை", "ஃபில்டர் காபி"],
+  kn: ["ಇಡ್ಲಿ (2)", "ಮಸಾಲೆ ದೋಸೆ", "ಫಿಲ್ಟರ್ ಕಾಫಿ"],
+  ml: ["ഇഡ്ഡലി (2)", "മസാല ദോശ", "ഫിൽറ്റർ കാപ്പി"],
+  mr: ["इडली (2)", "मसाला डोसा", "फिल्टर कॉफी"],
+  bn: ["ইডলি (2)", "মশলা দোসা", "ফিল্টার কফি"],
+  gu: ["ઇડલી (2)", "મસાલા ઢોસા", "ફિલ્ટર કોફી"],
+  pa: ["ਇਡਲੀ (2)", "ਮਸਾਲਾ ਡੋਸਾ", "ਫਿਲਟਰ ਕੌਫੀ"],
+};
 
 type BoolKey = {
   [K in keyof BillFormat]: BillFormat[K] extends boolean ? K : never;
@@ -52,8 +66,10 @@ export function BillFormatSettings({
   const [saving, setSaving] = useState(false);
   const dirty = JSON.stringify(format) !== JSON.stringify(savedFormat);
 
+  const sampleNames = SAMPLE_LOCAL_NAMES[format.billLanguage];
   const sample = {
     ...SAMPLE_RECEIPT,
+    lines: SAMPLE_RECEIPT.lines.map((l, i) => ({ ...l, localName: sampleNames?.[i] })),
     businessName: businessName || SAMPLE_RECEIPT.businessName,
     businessAddress: businessAddress || SAMPLE_RECEIPT.businessAddress,
     gstin: gstin || SAMPLE_RECEIPT.gstin,
@@ -148,6 +164,35 @@ export function BillFormatSettings({
               );
             })}
           </div>
+        </div>
+
+        {/* Bill language */}
+        <div>
+          <label className="field-label" htmlFor="bill-language">Bill language</label>
+          <select
+            id="bill-language"
+            className="field"
+            disabled={!canEdit}
+            value={format.billLanguage}
+            onChange={(e) => {
+              const lang = e.target.value;
+              setFormat((f) => {
+                // If the footer is still a standard "Thank you" line, switch it to the new language too.
+                const standard = BILL_LANGUAGES.some((l) => billLabels(l.id).thankYou === f.footerNote);
+                return { ...f, billLanguage: lang, footerNote: standard ? billLabels(lang).thankYou : f.footerNote };
+              });
+            }}
+          >
+            {BILL_LANGUAGES.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted">
+            Words like Bill, Item, Total print in this language. Item names print in your language when the product has a
+            &quot;Name on bill&quot; (Products → edit). English is fastest; other languages print as a picture and take a little longer.
+          </p>
         </div>
 
         {/* Paper + token */}

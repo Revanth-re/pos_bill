@@ -17,6 +17,10 @@ import { useCartStore, estimateCartTotal, type CartProduct } from "@/stores/cart
 import { useCatalogStore } from "@/stores/catalogStore";
 import { formatINR } from "@/lib/utils";
 import { submitBill } from "@/lib/billing/submitBill";
+import { cartTotals, loadTaxSettings } from "@/lib/billing/clientTotals";
+import type { BillTotals } from "@/lib/billing/calculateTotals";
+import { nextOfflineToken, recordServerToken } from "@/lib/offline/localToken";
+import type { CheckoutSuccess } from "./PaymentSheet";
 import { toast } from "@/stores/toastStore";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ReceiptData } from "@/lib/printing/types";
@@ -77,6 +81,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     const onVis = () => document.visibilityState === "visible" && void reconnectSavedPrinter();
     document.addEventListener("visibilitychange", onVis);
     void loadBillFormat(); // cache the latest bill format before the first print
+    void loadTaxSettings(); // cache GST settings so totals are exact even offline
     return () => {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
@@ -117,8 +122,9 @@ export function BillingScreen({ businessName, cashierName }: Props) {
       void ensurePosCatalog({ force: true });
       return;
     }
-    const res = await fetch(`/api/products?q=${encodeURIComponent(q)}`);
-    if (res.ok) {
+    // Offline: the list is already filtered on the phone from the saved products.
+    const res = await fetch(`/api/products?q=${encodeURIComponent(q)}`).catch(() => null);
+    if (res?.ok) {
       const body = await res.json();
       const mapped: CartProduct[] = body.products.map(
         (p: {
@@ -131,6 +137,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           trackInventory: boolean;
           imageUrl: string | null;
           categoryId?: string | null;
+          alias?: string | null;
         }) => ({
           id: p.id,
           name: p.name,
@@ -140,6 +147,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           currentStock: Number(p.currentStock),
           trackInventory: p.trackInventory,
           categoryId: p.categoryId ?? null,
+          alias: p.alias ?? null,
           imageUrl: p.imageUrl,
         })
       );
@@ -157,7 +165,14 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     if (match) addProduct(match);
   }
 
-  function buildReceiptData(invoice: unknown): ReceiptData {
+  /**
+   * Printed bill data. Online: the server's invoice. Offline: totals worked out on the phone
+   * (same maths as the server), a temporary bill number and the next token on this phone.
+   */
+  function buildReceiptData(
+    invoice: unknown,
+    offline?: { clientId?: string; totals?: BillTotals; payments?: { method: string; amount: number }[] }
+  ): ReceiptData {
     const inv = invoice as
       | {
           invoiceNumber?: string;
@@ -171,31 +186,35 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           payments?: { method: string; amount: number }[];
         }
       | undefined;
+    const local = offline?.totals ?? cartTotals(lines, useCartStore.getState().billDiscount);
+    if (inv?.tokenNumber) recordServerToken(inv.tokenNumber);
 
     return {
       businessName,
-      invoiceNumber: inv?.invoiceNumber ?? "OFFLINE-PENDING",
-      tokenNumber: inv?.tokenNumber,
+      invoiceNumber: inv?.invoiceNumber ?? `OFF-${(offline?.clientId ?? "").slice(0, 6).toUpperCase() || "PENDING"}`,
+      tokenNumber: inv ? inv.tokenNumber : nextOfflineToken(),
+      copyLabel: inv ? undefined : "OFFLINE",
       createdAt: new Date().toLocaleString("en-IN"),
       cashierName,
       orderType,
       lines: lines.map((l) => ({
         name: l.product.name,
+        localName: l.product.alias,
         qty: l.quantity,
         unitPrice: l.product.sellingPrice,
         total: l.product.sellingPrice * l.quantity,
       })),
-      subtotal: Number(inv?.subtotal ?? estimateCartTotal(lines)),
-      discountTotal: Number(inv?.discountTotal ?? 0),
-      cgstTotal: Number(inv?.cgstTotal ?? 0),
-      sgstTotal: Number(inv?.sgstTotal ?? 0),
-      igstTotal: Number(inv?.igstTotal ?? 0),
-      grandTotal: Number(inv?.grandTotal ?? estimateCartTotal(lines)),
-      payments: (inv?.payments ?? []).map((p) => ({ method: p.method, amount: Number(p.amount) })),
+      subtotal: Number(inv?.subtotal ?? local.subtotal),
+      discountTotal: Number(inv?.discountTotal ?? local.discountTotal),
+      cgstTotal: Number(inv?.cgstTotal ?? local.cgstTotal),
+      sgstTotal: Number(inv?.sgstTotal ?? local.sgstTotal),
+      igstTotal: Number(inv?.igstTotal ?? local.igstTotal),
+      grandTotal: Number(inv?.grandTotal ?? local.grandTotal),
+      payments: (inv?.payments ?? offline?.payments ?? []).map((p) => ({ method: p.method, amount: Number(p.amount) })),
     };
   }
 
-  function handleCheckoutSuccess({ invoice, offline, creditOnly }: { invoice?: unknown; offline: boolean; creditOnly?: boolean }) {
+  function handleCheckoutSuccess({ invoice, offline, creditOnly, clientId, totals, payments }: CheckoutSuccess) {
     setPaymentOpen(false);
     setCartOpenMobile(false);
     // Don't toast "completed" yet — that only happens after a successful print
@@ -207,13 +226,13 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     );
     const isUdhaari = creditOnly || (serverPayments.length > 0 && serverPayments.every((p) => p.method === "CREDIT"));
     if (isUdhaari) {
-      const total = Number((invoice as { grandTotal?: number } | undefined)?.grandTotal ?? estimateCartTotal(lines));
+      const total = Number((invoice as { grandTotal?: number } | undefined)?.grandTotal ?? totals?.grandTotal ?? estimateCartTotal(lines));
       toast.success(`${formatINR(total)} added to udhaari`);
       void useCatalogStore.getState().ensureCustomers({ force: true });
       useCartStore.getState().clear();
       return;
     }
-    setReceipt({ data: buildReceiptData(invoice), offline });
+    setReceipt({ data: buildReceiptData(invoice, offline ? { clientId, totals, payments } : undefined), offline });
   }
 
   // Udhaari: pick the customer, bill goes straight onto their khata — no payment screen, no print.
@@ -222,13 +241,13 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     const { lines: cartLines, orderType: cartOrderType, billDiscount, heldBillId } = useCartStore.getState();
     if (cartLines.length === 0) return;
     setQuickPrinting(true);
-    const total = estimateCartTotal(cartLines);
+    const total = cartTotals(cartLines, billDiscount).grandTotal;
     const result = await submitBill({
       orderType: cartOrderType,
       items: cartLines.map((l) => ({ productId: l.product.id, quantity: l.quantity, discount: l.discount })),
       billDiscount,
       customerId,
-      payments: [{ method: "CREDIT", amount: Math.round(total * 100) / 100 }],
+      payments: [{ method: "CREDIT", amount: total }],
       heldBillId,
     });
     setQuickPrinting(false);
@@ -255,7 +274,9 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     if (cartLines.length === 0) return;
 
     setQuickPrinting(true);
-    const total = estimateCartTotal(cartLines);
+    // Exact total incl. GST + bill discount — the server checks payments match it.
+    const totals = cartTotals(cartLines, billDiscount);
+    const payments = [{ method: "CASH" as const, amount: totals.grandTotal }];
     const result = await submitBill({
       orderType: cartOrderType,
       items: cartLines.map((l) => ({
@@ -265,7 +286,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
       })),
       billDiscount,
       customerId,
-      payments: [{ method: "CASH", amount: Math.round(total * 100) / 100 }],
+      payments,
       heldBillId,
     });
     setQuickPrinting(false);
@@ -277,7 +298,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
 
     setCartOpenMobile(false);
     if (result.offline) toast.info(t("toast.savedOffline"));
-    const data = buildReceiptData(result.invoice);
+    const data = buildReceiptData(result.invoice, result.offline ? { clientId: result.clientId, totals, payments } : undefined);
     useCartStore.getState().clear();
     if (!print) {
       // Saved without printing — reprint any time from Bills.

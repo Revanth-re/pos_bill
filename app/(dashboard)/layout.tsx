@@ -7,6 +7,7 @@ import { TopBar } from "@/components/dashboard/TopBar";
 import { OfflineSyncBoot } from "@/components/pos/OfflineSyncBoot";
 import { ServiceWorkerBoot } from "@/components/pos/ServiceWorkerBoot";
 import { InstallBanner } from "@/components/dashboard/InstallBanner";
+import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <Sidebar role={session.role} businessName={business.name} />
         <div className="flex-1 flex flex-col min-w-0 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
           <TopBar businessName={business.name} />
+          <OfflineBanner />
           {children}
         </div>
         <BottomNav />

@@ -97,7 +97,6 @@ export function DashboardText({
 
       <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3">
         {todayExpenses && <Kpi label="Today's expenses" value={todayExpenses} />}
-        <Kpi label={t("dashboard.lowStock")} value={lowStockCount} accent={lowStockDanger ? "danger" : undefined} />
         <Kpi label={t("dashboard.outstandingCredit")} value={outstandingCredit} />
         <Kpi label={t("dashboard.activeTiffin")} value={activeSubs} />
       </div>

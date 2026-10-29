@@ -18,6 +18,7 @@ type ProductRow = ManagedProduct;
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  alias: z.string().max(120).optional(),
   categoryId: z.string().optional(),
   sku: z.string().optional(),
   barcode: z.string().optional(),
@@ -144,23 +145,22 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
         <>
         <ul className="space-y-2 md:hidden">
           {filtered.map((p) => {
-            const low = p.currentStock <= p.minStock;
             return (
               <li key={p.id} className="card p-3">
                 <div className="flex items-center gap-3">
                   <Thumbnail url={p.imageUrl} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold text-ink">{p.name}</p>
+                    <p className="truncate font-bold text-ink">
+                      {p.name} {p.shared && <SharedTag />}
+                    </p>
                     <p className="truncate text-xs text-muted">{p.categoryName ?? "No category"} · GST {p.gstPercent}%</p>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="font-extrabold text-ink tabular">{formatINR(p.sellingPrice)}</p>
-                    <p className={cn("text-xs tabular", low ? "font-semibold text-danger" : "text-muted")}>
-                      {p.currentStock} {p.unit}{low ? " · low" : ""}
-                    </p>
+                    {p.sku && <p className="text-xs text-muted">{p.sku}</p>}
                   </div>
                 </div>
-                {canEdit && (
+                {canEdit && !p.shared && (
                   <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
                     <button onClick={() => setEditingProduct(p)} className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-border text-sm font-semibold text-ink-soft hover:bg-paper">
                       <Pencil className="h-4 w-4" /> Edit
@@ -184,33 +184,30 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
                 <th className="p-3">Product</th>
                 <th className="hidden p-3 lg:table-cell">Category</th>
                 <th className="p-3 text-right">Price</th>
-                <th className="p-3 text-right">Stock</th>
                 <th className="hidden p-3 text-right lg:table-cell">GST</th>
                 {canEdit && <th className="p-3" />}
               </tr>
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const low = p.currentStock <= p.minStock;
                 return (
                   <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-brand-soft/30">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
                         <Thumbnail url={p.imageUrl} />
                         <div>
-                          <p className="font-bold text-ink">{p.name}</p>
+                          <p className="font-bold text-ink">
+                            {p.name} {p.shared && <SharedTag />}
+                          </p>
                           {p.sku && <p className="text-sm text-muted">SKU: {p.sku}</p>}
                         </div>
                       </div>
                     </td>
                     <td className="hidden p-3 text-ink-soft lg:table-cell">{p.categoryName ?? "—"}</td>
                     <td className="p-3 text-right tabular font-bold">{formatINR(p.sellingPrice)}</td>
-                    <td className={cn("p-3 text-right tabular", low && "text-danger font-bold")}>
-                      {p.currentStock} {p.unit}
-                      {low && " ⚠️"}
-                    </td>
                     <td className="hidden p-3 text-right tabular text-ink-soft lg:table-cell">{p.gstPercent}%</td>
-                    {canEdit && (
+                    {canEdit && p.shared && <td className="p-3 text-right text-xs text-muted">Edit in main shop</td>}
+                    {canEdit && !p.shared && (
                       <td className="p-3 text-right whitespace-nowrap">
                         <button
                           onClick={() => setEditingProduct(p)}
@@ -350,6 +347,9 @@ function AddProductSheet({
           <Field label="Product name" error={errors.name?.message}>
             <input {...register("name")} className="field" placeholder="Masala Dosa" />
           </Field>
+          <Field label="Name on bill — your language (optional)">
+            <input {...register("alias")} className="field" placeholder="e.g. మసాలా దోశ / मसाला डोसा" />
+          </Field>
           <Field label="Category">
             <select {...register("categoryId")} className="field">
               <option value="">No category</option>
@@ -399,6 +399,9 @@ function EditProductSheet({
   const [name, setName] = useState(product.name);
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [sku, setSku] = useState(product.sku ?? "");
+  const [alias, setAlias] = useState(product.alias ?? "");
+  // Billo doesn't count stock (sold by plate) — saving a product always turns old stock tracking off.
+  const trackStock = false;
   const [sellingPrice, setSellingPrice] = useState(String(product.sellingPrice));
   const [gstPercent, setGstPercent] = useState(String(product.gstPercent));
   const [imageUrl, setImageUrl] = useState<string | null>(product.imageUrl);
@@ -415,6 +418,8 @@ function EditProductSheet({
         name,
         categoryId: categoryId || undefined,
         sku: sku || undefined,
+        alias,
+        trackInventory: trackStock,
         sellingPrice: parseFloat(sellingPrice) || 0,
         gstPercent: parseFloat(gstPercent) || 0,
         imageUrl: imageUrl ?? undefined,
@@ -427,12 +432,15 @@ function EditProductSheet({
       return;
     }
     toast.success("Product updated");
+    void useCatalogStore.getState().ensurePosCatalog({ force: true }); // Billing screen picks up the change now
     onSaved({
       ...product,
       name,
       categoryId: categoryId || null,
       categoryName: categories.find((c) => c.id === categoryId)?.name ?? null,
       sku: sku || null,
+      alias: alias || null,
+      trackInventory: trackStock,
       sellingPrice: parseFloat(sellingPrice) || 0,
       gstPercent: parseFloat(gstPercent) || 0,
       imageUrl,
@@ -453,6 +461,9 @@ function EditProductSheet({
 
           <Field label="Product name">
             <input value={name} onChange={(e) => setName(e.target.value)} className="field" />
+          </Field>
+          <Field label="Name on bill — your language (optional)">
+            <input value={alias} onChange={(e) => setAlias(e.target.value)} className="field" placeholder="e.g. మసాలా దోశ / मसाला डोसा" />
           </Field>
           <Field label="Category">
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="field">
@@ -487,6 +498,11 @@ function EditProductSheet({
       </div>
     </div>
   );
+}
+
+/** Item from the owner's main shop menu — shows in every outlet; edit it in the main shop. */
+function SharedTag() {
+  return <span className="ml-1 inline-block rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-semibold text-brand-dark">Main menu</span>;
 }
 
 function Field({

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 import { normalizeTopItems } from "@/lib/pos/topItems";
+import { getMenuScope } from "@/lib/menu";
 
 // Top items live in the default printer's existing `config` JSON (next to billFormat) — no schema change.
 
@@ -28,7 +29,7 @@ export async function PUT(req: Request) {
 
     // Only keep products that belong to this business.
     const valid = await prisma.product.findMany({
-      where: { id: { in: topItems.productIds }, businessId: session.businessId },
+      where: { id: { in: topItems.productIds }, businessId: { in: (await getMenuScope(session.businessId)).ids } },
       select: { id: true },
     });
     const validIds = new Set(valid.map((p) => p.id));

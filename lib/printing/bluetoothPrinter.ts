@@ -1,6 +1,7 @@
 import type { PrinterType, ReceiptData, ReceiptPrinter } from "./types";
 import { BrowserPrinter } from "./browserPrinter";
 import { encodeReceipt } from "./escpos";
+import { rasterRow } from "./rasterText";
 import { writeToPrinter } from "./bluetoothPairing";
 import { getCachedBillFormat } from "./billFormat";
 
@@ -10,7 +11,7 @@ export class BluetoothPrinter implements ReceiptPrinter {
 
   async print(data: ReceiptData): Promise<void> {
     const format = { ...getCachedBillFormat(), paper: this.type === "THERMAL_80MM" ? ("80" as const) : ("58" as const) };
-    await writeToPrinter(encodeReceipt(data, format));
+    await writeToPrinter(encodeReceipt(data, format, rasterRow));
   }
 
   preview(data: ReceiptData): string {

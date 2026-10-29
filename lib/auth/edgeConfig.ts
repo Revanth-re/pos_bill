@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { verifyOutletSwitch } from "./outletSwitch";
 
 // On Vercel the domain comes from the request itself. A leftover NEXTAUTH_URL / AUTH_URL
 // (e.g. the old pos-bill-gamma.vercel.app) would make Auth.js send people to that dead domain.
@@ -42,7 +43,18 @@ export const edgeAuthConfig: NextAuthConfig = {
         return `${base}/dashboard`;
       }
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // Outlet switch: only accepted with a fresh signature made by our server (see /api/outlets/switch).
+      if (trigger === "update") {
+        const claim = await verifyOutletSwitch((session as { outletSwitch?: unknown } | undefined)?.outletSwitch, token.sub);
+        if (claim) {
+          token.staffId = claim.staffId;
+          token.businessId = claim.businessId;
+          token.businessName = claim.businessName;
+          token.role = claim.role;
+        }
+        return token;
+      }
       if (user) {
         token.staffId = (user as unknown as { staffId: string }).staffId;
         token.businessId = (user as unknown as { businessId: string }).businessId;
@@ -53,6 +65,7 @@ export const edgeAuthConfig: NextAuthConfig = {
     },
     async session({ session, token }) {
       if (session.user) {
+        (session.user as unknown as Record<string, unknown>).id = token.sub;
         (session.user as unknown as Record<string, unknown>).staffId = token.staffId;
         (session.user as unknown as Record<string, unknown>).businessId = token.businessId;
         (session.user as unknown as Record<string, unknown>).businessName = token.businessName;

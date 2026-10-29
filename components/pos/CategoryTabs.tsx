@@ -22,7 +22,7 @@ export function CategoryTabs({
   showTop?: boolean;
 }) {
   return (
-    <div className="no-select flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none snap-x">
+    <div className="no-select flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scroll-px-1 scrollbar-none snap-x">
       {showTop && (
         <button
           onClick={() => onSelect(TOP_TAB)}

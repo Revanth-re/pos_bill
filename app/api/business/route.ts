@@ -17,6 +17,30 @@ const businessSchema = z.object({
   language: z.enum(["en", "hi", "ta", "te", "kn", "ml", "mr", "bn", "gu", "pa"]).optional(),
 });
 
+/** Tax settings the billing screen caches, so bill totals are exact even offline. */
+export async function GET() {
+  try {
+    const session = await requireSession();
+    const b = await prisma.business.findUniqueOrThrow({
+      where: { id: session.businessId },
+      select: { gstEnabled: true, taxInclusive: true, cgstPercent: true, sgstPercent: true, igstPercent: true },
+    });
+    return NextResponse.json({
+      tax: {
+        gstEnabled: b.gstEnabled,
+        taxInclusive: b.taxInclusive,
+        cgstPercent: Number(b.cgstPercent),
+        sgstPercent: Number(b.sgstPercent),
+        igstPercent: Number(b.igstPercent),
+      },
+    });
+  } catch (err) {
+    if (err instanceof UnauthenticatedError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    console.error(err);
+    return NextResponse.json({ error: "Unable to load settings." }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: Request) {
   try {
     const session = await requireSession();
