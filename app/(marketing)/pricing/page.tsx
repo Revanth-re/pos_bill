@@ -5,21 +5,27 @@ import { JsonLd, faqLd, breadcrumbLd } from "@/components/marketing/JsonLd";
 import { FAQS } from "@/lib/marketing/site";
 
 export const metadata: Metadata = {
-  title: "Billo Pricing – Restaurant Billing App from ₹299 | Printer Kit ₹4,799",
-  description: "Billo pricing: ₹299 for 3 months (first-time offer), ₹599 for 6 months, ₹999 for 1 year. Counter Kit with 58mm Bluetooth printer, setup and 1 year app free for ₹4,799.",
+  title: "Billo is Free – Free Billing App + Free Setup at Your Shop",
+  description: "Billo is a free billing app for Indian shops and restaurants. Free setup of your printer and app at your counter, free live demo, free support. No card, no hidden charges.",
   alternates: { canonical: "/pricing" },
-  openGraph: { url: "/pricing", title: "Billo Pricing – from ₹299", images: ["/og-image.png"] },
+  openGraph: { url: "/pricing", title: "Billo is free – free app + free setup", images: ["/og-image.png"] },
 };
 
-const PRICE_FAQ = [FAQS[1], FAQS[3], FAQS[2], { q: "Is there any setup or yearly hidden fee?", a: "No hidden fees. The Counter Kit is a one-time ₹4,799 with the first year of the app included. After that, renew the app at ₹999/year or ₹599 for 6 months." }];
+const PRICE_FAQ = [
+  FAQS[1],
+  { q: "Is Billo really free?", a: "Yes. The Billo platform is free to use — unlimited bills, token printing, udhaari, staff and reports. There is no card, contract or hidden charge." },
+  { q: "Is setup free too?", a: "Yes. We set up the billing machine — your Bluetooth printer and the Billo app — load your menu with photos, train your staff and give you a live demo, free." },
+  { q: "I don't have a printer. What do I do?", a: "Tell us when you book. We'll suggest a printer that works with Billo and set it up for you." },
+  FAQS[2],
+];
 
 export default function PricingPage() {
   return (
     <>
-      <JsonLd data={[faqLd(PRICE_FAQ), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Pricing", path: "/pricing" }])]} />
-      <PageHero crumbs={[{ name: "Pricing", href: "/pricing" }]} eyebrow="Pricing" title="Simple, honest pricing for every counter" text="Start with the complete Counter Kit — printer, setup and a full year of Billo — or use the app with the printer you already have." />
+      <JsonLd data={[faqLd(PRICE_FAQ), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Free setup", path: "/pricing" }])]} />
+      <PageHero crumbs={[{ name: "Free setup", href: "/pricing" }]} eyebrow="Free for your shop" title="Billo is free — and we set it up for you" text="Free platform, free setup of your printer and app, and a free live demo at your counter." />
       <section className="container-x py-14"><Pricing /></section>
-      <section className="bg-white py-16"><div className="container-x"><h2 className="mb-8 text-center text-3xl font-extrabold">Pricing questions</h2><Faq items={PRICE_FAQ} /></div></section>
+      <section className="bg-white py-16"><div className="container-x"><h2 className="mb-8 text-center text-3xl font-extrabold">Questions about free setup</h2><Faq items={PRICE_FAQ} /></div></section>
       <CtaBand title="Not sure which plan fits?" text="Message us on WhatsApp — we'll suggest the right setup for your shop in 2 minutes." />
     </>
   );

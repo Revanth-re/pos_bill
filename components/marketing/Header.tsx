@@ -9,7 +9,7 @@ import { SITE } from "@/lib/marketing/site";
 
 const NAV = [
   { href: "/features", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
+  { href: "/pricing", label: "Free setup" },
   { href: "/for/tiffin-centre-billing-app", label: "Tiffin centres" },
   { href: "/for/restaurant-billing-software", label: "Restaurants" },
   { href: "/contact", label: "Contact" },

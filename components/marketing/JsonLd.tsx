@@ -1,4 +1,4 @@
-import { SITE, PLANS, KIT, FAQS } from "@/lib/marketing/site";
+import { SITE, FAQS } from "@/lib/marketing/site";
 
 export function JsonLd({ data }: { data: object | object[] }) {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
@@ -40,9 +40,9 @@ export const softwareLd = () => ({
   url: SITE.url,
   image: `${SITE.url}/og-image.png`,
   publisher: { "@id": `${SITE.url}/#org` },
+  // Billo is free to use, with free setup.
   offers: [
-    ...PLANS.map((p) => ({ "@type": "Offer", name: `Billo ${p.name} (${p.period})`, price: p.price, priceCurrency: "INR", url: `${SITE.url}/pricing`, availability: "https://schema.org/InStock" })),
-    { "@type": "Offer", name: KIT.name, price: KIT.price, priceCurrency: "INR", url: `${SITE.url}/pricing`, availability: "https://schema.org/InStock" },
+    { "@type": "Offer", name: "Billo — free billing platform + free setup", price: 0, priceCurrency: "INR", url: `${SITE.url}/pricing`, availability: "https://schema.org/InStock" },
   ],
   featureList: ["Token printing", "Bluetooth thermal printer", "Udhaari / credit khata", "Tiffin subscriptions", "GST bills", "Staff roles", "Cashier shifts", "Daily sales reports"],
 });

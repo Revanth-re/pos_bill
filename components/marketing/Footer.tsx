@@ -23,7 +23,7 @@ export function Footer() {
         </div>
         <FooterCol title="Billo">
           <FL href="/features">Features</FL>
-          <FL href="/pricing">Pricing</FL>
+          <FL href="/pricing">Free setup</FL>
           <FL href="/hi">Billo हिन्दी में</FL>
           <FL href="/te">Billo తెలుగులో</FL>
           <FL href="/contact">Contact & demo</FL>

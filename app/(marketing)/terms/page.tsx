@@ -9,10 +9,10 @@ export default function Terms() {
     <>
       <PageHero crumbs={[{ name: "Terms", href: "/terms" }]} title="Terms of Service" text="Last updated: October 2026" />
       <article className="container-x max-w-3xl space-y-5 py-12 text-[16px] leading-relaxed text-ink-soft [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-ink">
-        <h2>Plans</h2>
-        <p>App plans are prepaid for the period purchased (3, 6 or 12 months). The ₹299 offer is for first-time customers only. The Counter Kit (₹4,799) includes a 58mm Bluetooth printer, setup and 12 months of app access.</p>
-        <h2>Renewals</h2>
-        <p>Plans do not auto-renew. We will remind you on WhatsApp before your plan ends.</p>
+        <h2>Free use</h2>
+        <p>Billo is currently free to use, and setup of the app and your printer at your counter is free. If we ever introduce paid features, we will tell you in advance on WhatsApp — nothing will be charged without your agreement.</p>
+        <h2>Printers</h2>
+        <p>If you buy a printer yourself, it is between you and the seller. We help you choose a printer that works with Billo and set it up free.</p>
         <h2>Printer warranty</h2>
         <p>Printers supplied with the Counter Kit carry the manufacturer&apos;s warranty. We help with replacements during the warranty period.</p>
         <h2>Your responsibilities</h2>

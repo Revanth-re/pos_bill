@@ -37,7 +37,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
       <PageHero crumbs={[{ name: u.eyebrow ?? `Billo for ${u.name}`, href: `/for/${u.slug}` }]} eyebrow={u.eyebrow ?? `Billo for ${u.name}`} title={u.h1} text={u.intro}>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <a href={whatsapp(u.waText ?? `Hi Billo, I run a ${u.name.toLowerCase().replace(/s$/, "")} and want a demo.`)} target="_blank" rel="noopener" className="btn btn-primary"><MessageCircle className="h-5 w-5" /> Free demo on WhatsApp</a>
-          <Link href="/pricing" className="btn btn-ghost">Plans from ₹299</Link>
+          <Link href="/pricing" className="btn btn-ghost">Free setup + demo</Link>
         </div>
       </PageHero>
       <section className="container-x grid items-center gap-10 py-16 lg:grid-cols-2">
@@ -53,7 +53,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ slug: 
         <img src={u.image} alt={`${u.name} billing with Billo`} width={640} height={400} loading="lazy" className="w-full rounded-3xl object-cover shadow-xl" />
       </section>
       <section className="bg-white py-16"><div className="container-x"><SectionHead title="Also included" /><FeatureGrid limit={6} /></div></section>
-      <section className="container-x py-16"><SectionHead title="Pricing" /><Pricing /></section>
+      <section className="container-x py-16"><SectionHead eyebrow="Free for your shop" title="Free platform. Free setup. Free demo." /><Pricing /></section>
       <section className="bg-white py-16"><div className="container-x"><SectionHead title="FAQ" /><Faq items={faqs} /></div></section>
       <section className="container-x pt-14 text-center">
         <p className="text-sm font-semibold text-muted">{u.eyebrow ? `${u.eyebrow} with Billo` : `Billo for ${u.name.toLowerCase()}`} in</p>

@@ -21,6 +21,8 @@ export interface LangContent {
   kitItems: string[];
   appOnly: string;
   appRows: [string, string][];
+  /** The word for "free" in this language (shown big on the offer card). */
+  freeWord: string;
   faqTitle: string;
   faqs: { q: string; a: string }[];
 }
@@ -72,7 +74,7 @@ export function LangLanding({ c }: { c: LangContent }) {
           <div className="rounded-3xl bg-brand-dark p-6 text-white sm:p-8">
             <p className="text-sm font-semibold text-accent">{c.kitLabel}</p>
             <p className="mt-1 text-2xl font-bold">{c.kitName}</p>
-            <p className="mt-2 text-5xl font-extrabold text-accent">₹4,799</p>
+            <p className="mt-2 text-5xl font-extrabold text-accent">{c.freeWord}</p>
             <ul className="mt-4 space-y-2">
               {c.kitItems.map((x) => (
                 <li key={x} className="flex gap-2"><Check className="h-5 w-5 shrink-0 text-accent" /> {x}</li>
@@ -89,7 +91,7 @@ export function LangLanding({ c }: { c: LangContent }) {
                 </li>
               ))}
             </ul>
-            <Link href="/pricing" className="btn btn-ghost mt-4 w-full">Pricing (English)</Link>
+            <a href={whatsapp(c.waText)} target="_blank" rel="noopener" className="btn btn-primary mt-4 w-full"><MessageCircle className="h-5 w-5" /> {c.cta}</a>
           </div>
         </div>
       </section>

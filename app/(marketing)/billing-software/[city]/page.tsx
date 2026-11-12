@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const c = CITIES.find((x) => x.slug === city);
   if (!c) return {};
   const title = `Restaurant Billing Software in ${c.name} | Billo – Token Printing & Udhaari`;
-  const description = `Billo is restaurant & tiffin centre billing software in ${c.name}, ${c.state}. Bluetooth token printing, udhaari khata, GST bills and setup at your shop. Plans from ₹299, printer kit ₹4,799.`;
+  const description = `Billo is restaurant & tiffin centre billing software in ${c.name}, ${c.state}. Bluetooth token printing, udhaari khata, GST bills and FREE setup at your shop. Billo is free to use.`;
   return {
     title,
     description,
@@ -33,7 +33,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
   if (!c) notFound();
   const faqs = [
     { q: `Do you set up Billo at shops in ${c.name}?`, a: `Yes. We ship the Billo Counter Kit to your shop in ${c.name} — including areas like ${c.areas.slice(0, 3).join(", ")} — and set up the printer, menu and staff logins with you on a video call. Most shops are billing the same day.` },
-    { q: `How much does billing software cost in ${c.name}?`, a: "Billo app plans are ₹299 for the first 3 months, ₹599 for 6 months or ₹999 for a year. The Counter Kit with a 58mm Bluetooth printer, setup and 1 year of the app is ₹4,799." },
+    { q: `How much does billing software cost in ${c.name}?`, a: "Billo is free to use. We also set it up free at your counter in " + c.name + " (or over video call) — printer, menu and staff training included." },
     { q: "Which languages does Billo support?", a: "The Billo app is available in 10 Indian languages including Hindi, Tamil, Telugu, Kannada, Marathi, Bengali, Gujarati, Punjabi and Malayalam. Support on WhatsApp and phone in Hindi, English and Telugu." },
   ];
   return (
@@ -61,7 +61,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
         </div>
       </section>
       <section className="bg-white py-16"><div className="container-x"><SectionHead title={`Why ${c.name} restaurants choose Billo`} /><FeatureGrid limit={6} /></div></section>
-      <section className="container-x py-16"><SectionHead title="Pricing" /><Pricing /></section>
+      <section className="container-x py-16"><SectionHead eyebrow="Free for your shop" title="Free platform. Free setup. Free demo." /><Pricing /></section>
       <section className="bg-white py-16"><div className="container-x"><SectionHead title="FAQ" /><Faq items={faqs} /></div></section>
       <section className="container-x pt-14 text-center">
         <p className="text-sm font-semibold text-muted">Billo in {c.name} for</p>

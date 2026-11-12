@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { Check, ChevronDown, Printer, MessageCircle } from "lucide-react";
-import { FAQS, FEATURES, KIT, PLANS, whatsapp } from "@/lib/marketing/site";
+import { FAQS, FEATURES, whatsapp } from "@/lib/marketing/site";
+import { FreeOffer } from "./FreeOffer";
 import { Icon } from "./Icon";
-
-const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 /* ---------- Hero visual: phone running Billo + a printed token ---------- */
 export function PhoneMock() {
@@ -87,77 +86,9 @@ export function FeatureGrid({ limit }: { limit?: number }) {
   );
 }
 
-/* ---------- Pricing ---------- */
+/* ---------- Free offer (replaces pricing) ---------- */
 export function Pricing() {
-  return (
-    <div className="space-y-6">
-      {/* Kit */}
-      <div className="relative overflow-hidden rounded-3xl bg-brand-dark p-6 text-white shadow-xl sm:p-8">
-        <div className="grid-bg absolute inset-0 opacity-60" />
-        <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
-            <span className="inline-flex rounded-lg bg-accent px-2.5 py-1 text-xs font-extrabold text-brand-deep">COMPLETE SETUP</span>
-            <h3 className="mt-3 text-2xl font-extrabold sm:text-3xl">{KIT.name}</h3>
-            <p className="mt-1 text-white/75">Printer + installation + 1 year of Billo — ready to bill the same day.</p>
-            <ul className="mt-5 grid gap-2 sm:grid-cols-2">
-              {KIT.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-[15px]">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-accent" /> {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl bg-white/10 p-5 text-center ring-1 ring-white/15 lg:min-w-[240px]">
-            <p className="text-sm text-white/70">One-time</p>
-            <p className="text-5xl font-extrabold text-accent tabular">{inr(KIT.price)}</p>
-            <p className="mt-1 text-sm text-white/70">App free for 12 months</p>
-            <a href={whatsapp("Hi Billo, I want the Counter Kit (printer + setup) for ₹4,799.")} target="_blank" rel="noopener" className="btn btn-accent mt-4 w-full">
-              Book setup
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* App plans */}
-      <div>
-        <p className="mb-3 text-center text-sm font-semibold text-muted">Already have a printer? Choose an app-only plan</p>
-        <div className="grid gap-4 md:grid-cols-3">
-          {PLANS.map((p) => {
-            const hi = "highlight" in p && p.highlight;
-            return (
-              <div key={p.id} className={`card relative flex flex-col p-6 ${hi ? "ring-2 ring-brand" : ""}`}>
-                {"badge" in p && p.badge && (
-                  <span className={`absolute -top-3 left-6 rounded-lg px-2.5 py-1 text-xs font-bold ${hi ? "bg-brand text-white" : "bg-accent text-brand-deep"}`}>{p.badge}</span>
-                )}
-                <p className="font-bold text-ink">{p.name}</p>
-                <p className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-ink tabular">{inr(p.price)}</span>
-                  <span className="text-sm text-muted">/ {p.period}</span>
-                </p>
-                <p className="text-sm font-medium text-brand">{p.perMonth}</p>
-                <ul className="mt-5 flex-1 space-y-2.5">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[15px] text-ink-soft">
-                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-success" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href={whatsapp(`Hi Billo, I want the ${p.name} plan (${inr(p.price)} for ${p.period}).`)}
-                  target="_blank"
-                  rel="noopener"
-                  className={`btn mt-6 w-full ${hi ? "btn-primary" : "btn-ghost"}`}
-                >
-                  {p.cta}
-                </a>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-center text-xs text-muted">₹299 offer is for first-time customers only. Prices in INR.</p>
-      </div>
-    </div>
-  );
+  return <FreeOffer />;
 }
 
 /* ---------- FAQ (native details = no JS, crawlable) ---------- */
@@ -178,7 +109,7 @@ export function Faq({ items = FAQS }: { items?: readonly { q: string; a: string 
 }
 
 /* ---------- CTA band ---------- */
-export function CtaBand({ title = "Start billing faster from tomorrow morning", text = "Get Billo set up at your counter — printer, menu and staff training included." }: { title?: string; text?: string }) {
+export function CtaBand({ title = "Start billing faster from tomorrow morning", text = "Billo is free. We set it up at your counter — printer, menu and staff training — free." }: { title?: string; text?: string }) {
   return (
     <section className="container-x py-16">
       <div className="relative overflow-hidden rounded-3xl bg-brand-dark px-6 py-12 text-center text-white sm:px-12">
@@ -189,9 +120,9 @@ export function CtaBand({ title = "Start billing faster from tomorrow morning", 
           <p className="mx-auto mt-3 max-w-xl text-white/75">{text}</p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <a href={whatsapp()} target="_blank" rel="noopener" className="btn btn-accent">
-              <MessageCircle className="h-5 w-5" /> Get a free demo on WhatsApp
+              <MessageCircle className="h-5 w-5" /> Book free setup on WhatsApp
             </a>
-            <Link href="/pricing" className="btn btn-ghost-dark">See pricing</Link>
+            <Link href="/pricing" className="btn btn-ghost-dark">How it&apos;s free</Link>
           </div>
         </div>
       </div>

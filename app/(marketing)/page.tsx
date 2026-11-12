@@ -27,12 +27,13 @@ export default function Home() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href={whatsapp()} target="_blank" rel="noopener" className="btn btn-primary text-base">
-                <MessageCircle className="h-5 w-5" /> Book a free demo
+                <MessageCircle className="h-5 w-5" /> Book free setup + demo
               </a>
               <InstallButton className="btn btn-ghost text-base" label="Get Billo app" iconClass="h-5 w-5" />
             </div>
             <p className="mt-3 text-sm text-muted">
-              Plans from ₹299 · <Link href="/pricing" className="font-semibold text-brand hover:underline">see pricing <ArrowRight className="inline h-3.5 w-3.5" /></Link>
+              <strong className="text-ink">100% free</strong> · free setup at your shop ·{" "}
+              <Link href="#free" className="font-semibold text-brand hover:underline">book now <ArrowRight className="inline h-3.5 w-3.5" /></Link>
             </p>
             <ul className="mt-8 grid gap-2 text-sm font-medium text-ink-soft sm:grid-cols-3">
               <li className="flex items-center gap-2"><Smartphone className="h-4 w-4 text-brand" /> Runs on your phone</li>
@@ -133,10 +134,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" className="bg-white py-20">
+      {/* FREE OFFER (replaces pricing) */}
+      <section id="free" className="scroll-mt-20 bg-white py-20">
         <div className="container-x">
-          <SectionHead eyebrow="Pricing" title="Simple pricing. No hidden charges." text="Get the complete counter kit, or use the app with your own printer." />
+          <SectionHead eyebrow="Free for your shop" title="Free platform. Free setup. Free demo." text="Use Billo free. We come to your counter, set up the billing machine and app, and show you a live demo — at no cost." />
           <Pricing />
         </div>
       </section>

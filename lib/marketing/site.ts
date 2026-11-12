@@ -8,7 +8,7 @@ export const SITE = {
   loginUrl: "/login",
   tagline: "Fast billing for Indian restaurants",
   description:
-    "Billo (getbillo.in) is a fast billing software and mobile billing app for India — print bills and tokens on a Bluetooth thermal printer, mini billing machine for shops & restaurants, udhaari khata, GST bills and daily reports. From ₹299.",
+    "Billo (getbillo.in) is a fast billing software and mobile billing app for India — print bills and tokens on a Bluetooth thermal printer, mini billing machine for shops & restaurants, udhaari khata, GST bills and daily reports. Free to use, free setup.",
   phone: "+91 76709 15570",
   phoneRaw: "917670915570",
   email: "revanthrevi131@gmail.com",
@@ -18,49 +18,10 @@ export const SITE = {
 export const whatsapp = (text = "Hi Billo, I want a demo for my restaurant.") =>
   `https://wa.me/${SITE.phoneRaw}?text=${encodeURIComponent(text)}`;
 
-export const PLANS = [
-  {
-    id: "starter",
-    name: "First-time offer",
-    price: 299,
-    period: "3 months",
-    perMonth: "≈ ₹100 / month",
-    badge: "New customers",
-    features: ["Full Billo app", "Unlimited bills & tokens", "Udhaari khata & tiffin plans", "Use on your own phone", "WhatsApp support"],
-    cta: "Start for ₹299",
-  },
-  {
-    id: "half",
-    name: "6 months",
-    price: 599,
-    period: "6 months",
-    perMonth: "≈ ₹100 / month",
-    features: ["Everything in the offer", "Staff logins & roles", "Shifts & day closing", "Sales & staff reports", "WhatsApp support"],
-    cta: "Choose 6 months",
-  },
-  {
-    id: "year",
-    name: "1 year",
-    price: 999,
-    period: "12 months",
-    perMonth: "≈ ₹83 / month — best value",
-    badge: "Most popular",
-    highlight: true,
-    features: ["Everything in 6 months", "Lowest monthly cost", "Priority WhatsApp support", "Free bill-format setup", "All new features"],
-    cta: "Choose 1 year",
-  },
-] as const;
-
-export const KIT = {
-  name: "Billo Counter Kit",
-  price: 4799,
-  features: [
-    "58mm Bluetooth thermal printer",
-    "Same-day setup (on video call or at your shop)",
-    "Menu + product photos loaded for you",
-    "1 year Billo app access — FREE",
-    "Staff training on billing & tokens",
-  ],
+/** Billo is free: free platform, free setup at the shop, free demo. (No paid plans on the website.) */
+export const FREE_OFFER = {
+  headline: "Billo is free — and we set it up for you, free",
+  points: ["Free billing platform — unlimited bills", "Free setup of your printer + app at your counter", "Free live demo with your own menu", "Free WhatsApp & phone support"],
 };
 
 export const FEATURES = [
@@ -80,13 +41,13 @@ export const FEATURES = [
 
 export const FAQS = [
   { q: "What is Billo?", a: "Billo (getbillo.in) is a billing software and mobile billing app made for Indian businesses — restaurants, tiffin centres, fast food, bakeries and cafes. It prints bills and tokens on a Bluetooth thermal printer, tracks udhaari, tiffin plans, staff, cash and daily sales." },
-  { q: "How much does Billo cost?", a: "App-only plans: ₹299 for the first 3 months (first-time offer), ₹599 for 6 months, or ₹999 for 1 year. The Billo Counter Kit is ₹4,799 and includes a 58mm Bluetooth printer, setup at your shop and 1 year of the app free." },
+  { q: "How much does Billo cost?", a: "Billo is free to use. Setup is free too — we connect your printer, load your menu and show you a live demo at your counter, at no cost. No card, no hidden charges, no contract." },
   { q: "Do I need a computer?", a: "No. Billo runs on an Android phone or tablet, or a laptop with Google Chrome, and the thermal printer connects over Bluetooth. Owners can view reports from any phone, including iPhone." },
-  { q: "Which printers work with Billo?", a: "Most 58mm and 80mm Bluetooth (BLE) thermal receipt printers work. If you buy the Counter Kit, we give you a tested printer and set it up." },
+  { q: "Which printers work with Billo?", a: "Most 58mm and 80mm Bluetooth (BLE) thermal receipt printers work. Don't have one? We'll suggest a printer that works and set it up for you — free." },
   { q: "Can I track udhaari (credit) for regular customers?", a: "Yes. Bill to a customer's udhaari with one tap. When they pay, open their khata to see each day's items and amount, take full or part payment by cash/UPI, and send the statement on WhatsApp." },
   { q: "Does Billo support GST bills?", a: "Yes. Add your GSTIN and tax rates; Billo calculates CGST/SGST and prints a GST invoice format. You can also use a short token-only format for fast counters." },
   { q: "Can my staff use it on their own phones?", a: "Yes. Create owner, manager and cashier logins. Multiple people can bill at once, and every bill, cancellation and refund shows who did it." },
-  { q: "Is Billo available all over India?", a: "Yes. We ship the printer anywhere in India and set up Billo with you over a video call — most shops start billing the same day. Support on WhatsApp and phone in Hindi, English and Telugu." },
+  { q: "Is Billo available all over India?", a: "Yes. We set up Billo for free at your counter or over a video call — most shops start billing the same day. Support on WhatsApp and phone in Hindi, English and Telugu." },
   { q: "What if the internet goes off?", a: "Billo keeps billing during network drops and syncs the bills automatically when the connection returns." },
 ] as const;
 
@@ -110,7 +71,7 @@ export const USE_CASES: UseCase[] = [
     slug: "restaurant-billing-software",
     name: "Restaurants",
     title: "Restaurant Billing Software in India | Billo",
-    description: "Fast restaurant billing software with token printing, GST bills, udhaari, staff logins and daily reports. Runs on your phone with a Bluetooth printer. From ₹299.",
+    description: "Fast restaurant billing software with token printing, GST bills, udhaari, staff logins and daily reports. Runs on your phone with a Bluetooth printer. Free to use, free setup.",
     h1: "Restaurant billing software that keeps up with rush hour",
     intro: "Billo replaces the old cash register with a fast, clean billing app on your phone — same counter workflow, far less hassle.",
     points: [
@@ -126,7 +87,7 @@ export const USE_CASES: UseCase[] = [
     slug: "tiffin-centre-billing-app",
     name: "Tiffin centres",
     title: "Tiffin Centre Billing App with Token Printing | Billo",
-    description: "Billing app for tiffin centres — idli, dosa, vada in seconds, large token printing, udhaari khata and prepaid tiffin plans. Works across India. From ₹299.",
+    description: "Billing app for tiffin centres — idli, dosa, vada in seconds, large token printing, udhaari khata and prepaid tiffin plans. Works across India. Free to use, free setup.",
     h1: "The billing app built for busy tiffin centres",
     intro: "Morning rush, 300 tokens, regulars on udhaari — Billo is made for exactly that.",
     points: [
@@ -142,7 +103,7 @@ export const USE_CASES: UseCase[] = [
     slug: "fast-food-billing-software",
     name: "Fast food",
     title: "Fast Food & Chinese Counter Billing Software | Billo",
-    description: "Billing software for fast food, Chinese and biryani counters — one-tap items, token printing, UPI/cash split and shift cash tallies. From ₹299.",
+    description: "Billing software for fast food, Chinese and biryani counters — one-tap items, token printing, UPI/cash split and shift cash tallies. Free to use, free setup.",
     h1: "Fast food billing that's actually fast",
     intro: "Fried rice, noodles, biryani — tap, print, next customer.",
     points: [
@@ -158,7 +119,7 @@ export const USE_CASES: UseCase[] = [
     slug: "cafe-pos-software",
     name: "Cafés & tea stalls",
     title: "Café & Tea Stall Billing App (POS) | Billo",
-    description: "Simple POS for cafés, tea and coffee stalls — tap to bill, Bluetooth receipt printer, UPI tracking and daily sales on your phone. From ₹299.",
+    description: "Simple POS for cafés, tea and coffee stalls — tap to bill, Bluetooth receipt printer, UPI tracking and daily sales on your phone. Free to use, free setup.",
     h1: "A simple POS for cafés and tea stalls",
     intro: "Small tickets, huge volume. Billo keeps every tea and coffee counted.",
     points: [
@@ -174,7 +135,7 @@ export const USE_CASES: UseCase[] = [
     slug: "bakery-billing-software",
     name: "Bakeries & sweet shops",
     title: "Bakery & Sweet Shop Billing Software | Billo",
-    description: "Bakery and sweet shop billing with stock tracking, low-stock alerts, GST bills and Bluetooth printing. Runs on your phone. From ₹299.",
+    description: "Bakery and sweet shop billing with stock tracking, low-stock alerts, GST bills and Bluetooth printing. Runs on your phone. Free to use, free setup.",
     h1: "Bakery and sweet shop billing with stock control",
     intro: "Track every cake, puff and sweet box — and know what's running low before evening.",
     points: [
@@ -194,7 +155,7 @@ export const USE_CASES: UseCase[] = [
     eyebrow: "Billing software",
     waText: "Hi Billo, I want a demo of your billing software.",
     title: "Billing Software for Shops & Restaurants in India | Billo (getbillo.in)",
-    description: "Billo is simple billing software for India — make a bill in 3 seconds, print on a thermal printer, GST bills, udhaari and daily reports on your phone. From ₹299.",
+    description: "Billo is simple billing software for India — make a bill in 3 seconds, print on a thermal printer, GST bills, udhaari and daily reports on your phone. Free to use, free setup.",
     h1: "Simple billing software for every Indian shop",
     intro: "Billo (getbillo.in) is billing software that runs on your phone. Tap items, print the bill, done — no computer, no training needed.",
     points: [
@@ -212,7 +173,7 @@ export const USE_CASES: UseCase[] = [
     eyebrow: "Mobile billing app",
     waText: "Hi Billo, I want to try mobile billing on my phone.",
     title: "Mobile Billing App with Bluetooth Printer | Billo (getbillo.in)",
-    description: "Turn your Android phone into a billing machine. Billo mobile billing app prints bills and tokens on a Bluetooth thermal printer. Works across India. From ₹299.",
+    description: "Turn your Android phone into a billing machine. Billo mobile billing app prints bills and tokens on a Bluetooth thermal printer. Works across India. Free to use, free setup.",
     h1: "Mobile billing — your phone is the billing machine",
     intro: "No billing computer needed. Billo turns any Android phone or tablet into a fast billing counter that prints on a small Bluetooth printer.",
     points: [
@@ -230,16 +191,16 @@ export const USE_CASES: UseCase[] = [
     eyebrow: "Mini billing machine",
     waText: "Hi Billo, I need a mini billing machine for my shop.",
     title: "Mini Billing Machine for Shops – Phone + Thermal Printer Kit | Billo",
-    description: "Billo Counter Kit: a mini billing machine with 58mm Bluetooth thermal printer, setup and 1 year app free for ₹4,799. Perfect for small shops, tiffin centres and cafes.",
+    description: "Turn your counter into a mini billing machine: your phone + a small Bluetooth printer, set up FREE by Billo. Billo is free to use. Perfect for small shops, tiffin centres and cafes.",
     h1: "A mini billing machine that fits on any counter",
-    intro: "The Billo Counter Kit is a complete mini billing machine — your phone plus a compact thermal printer, set up and ready to bill the same day.",
+    intro: "Billo makes a complete mini billing machine from your phone and a compact thermal printer — we set it up free and you can bill the same day.",
     points: [
-      { title: "Complete kit ₹4,799", text: "58mm Bluetooth thermal printer, setup at your shop and 1 year of Billo free." },
+      { title: "Free setup + free app", text: "We connect the printer, load your menu and train your staff — and Billo is free to use." },
       { title: "Small & portable", text: "Takes less space than a cash register; runs on battery when power goes." },
       { title: "Bills with token number", text: "Every bill can print a big token number for the kitchen or counter." },
       { title: "Support on WhatsApp", text: "Help in Hindi, English and Telugu whenever you need it." },
     ],
-    keywords: ["mini billing machine", "mini billing", "billing machine for shop", "small billing machine", "portable billing machine", "billing machine price"],
+    keywords: ["mini billing machine", "mini billing", "billing machine for shop", "small billing machine", "portable billing machine", "free billing software", "free billing app"],
     image: "/food-library/idli.jpg",
   },
   {
@@ -248,14 +209,14 @@ export const USE_CASES: UseCase[] = [
     eyebrow: "Thermal printer billing",
     waText: "Hi Billo, I want to print bills on a thermal printer.",
     title: "Thermal Printer Billing App – Print Bills from Phone | Billo",
-    description: "Print bills from your phone on any 58mm or 80mm Bluetooth thermal printer. Billo prints instantly — no PDF, no print dialog. Printer bill formats with logo. From ₹299.",
+    description: "Print bills from your phone on any 58mm or 80mm Bluetooth thermal printer. Billo prints instantly — no PDF, no print dialog. Printer bill formats with logo. Free to use, free setup.",
     h1: "Print bills on a thermal printer, straight from your phone",
     intro: "Billo sends the bill directly to your Bluetooth thermal printer in about a second — short, clean bills with your logo and a bold total.",
     points: [
       { title: "58mm & 80mm printers", text: "Works with most Bluetooth (BLE) thermal receipt printers." },
       { title: "Bill formats with logo", text: "Classic, Quick Token, GST, Paper Saver and Logo Bill — with live preview." },
       { title: "One-tap reprint", text: "Reprint any old bill from the Bills page in one tap." },
-      { title: "Tested printer available", text: "Buy the Billo Counter Kit and get a printer that's already tested and set up." },
+      { title: "Help choosing a printer", text: "No printer yet? We suggest one that works with Billo and set it up for you." },
     ],
     keywords: ["thermal printer", "thermal printer billing", "bluetooth thermal printer", "printer bill", "bill printing", "printing bill", "bill print", "bill prints", "bill printing machine", "receipt printer"],
     image: "/food-library/coffee.jpg",
