@@ -1,40 +1,22 @@
 import { NextResponse } from "next/server";
+import { istDayStart, istDayEnd, istDaysAgoStart, istStartOfDateString, istEndOfDateString, istDateKey } from "@/lib/time";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
 
+// All ranges are India-time days (servers run in UTC).
 function resolveRange(searchParams: URLSearchParams): { start: Date; end: Date } {
   const range = searchParams.get("range") ?? "today";
-  const now = new Date();
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
+  const end = istDayEnd();
 
   if (range === "custom") {
-    const start = new Date(searchParams.get("start") ?? now);
-    const customEnd = new Date(searchParams.get("end") ?? now);
-    start.setHours(0, 0, 0, 0);
-    customEnd.setHours(23, 59, 59, 999);
-    return { start, end: customEnd };
+    const s = searchParams.get("start");
+    const e = searchParams.get("end");
+    return { start: s ? istStartOfDateString(s) : istDayStart(), end: e ? istEndOfDateString(e) : end };
   }
-
-  const start = new Date(now);
-  if (range === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (range === "yesterday") {
-    start.setDate(start.getDate() - 1);
-    start.setHours(0, 0, 0, 0);
-    const yEnd = new Date(start);
-    yEnd.setHours(23, 59, 59, 999);
-    return { start, end: yEnd };
-  } else if (range === "week") {
-    start.setDate(start.getDate() - 7);
-    start.setHours(0, 0, 0, 0);
-  } else if (range === "month") {
-    start.setDate(start.getDate() - 30);
-    start.setHours(0, 0, 0, 0);
-  } else {
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end };
+  if (range === "yesterday") return { start: istDaysAgoStart(1), end: new Date(istDayStart().getTime() - 1) };
+  if (range === "week") return { start: istDaysAgoStart(7), end };
+  if (range === "month") return { start: istDaysAgoStart(30), end };
+  return { start: istDayStart(), end };
 }
 
 export async function GET(req: Request) {
@@ -92,7 +74,7 @@ export async function GET(req: Request) {
 
     const dailyMap = new Map<string, number>();
     for (const inv of invoices) {
-      const day = inv.createdAt.toISOString().slice(0, 10);
+      const day = istDateKey(inv.createdAt);
       dailyMap.set(day, (dailyMap.get(day) ?? 0) + Number(inv.grandTotal));
     }
     const dailySeries = Array.from(dailyMap.entries())

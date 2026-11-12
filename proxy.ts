@@ -41,7 +41,10 @@ export default auth((req) => {
   const origin = realOrigin(req);
 
   const isAuthed = !!req.auth;
-  const isAuthRoute = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/register");
+  const isAuthRoute =
+    req.nextUrl.pathname.startsWith("/login") ||
+    req.nextUrl.pathname.startsWith("/register") ||
+    req.nextUrl.pathname.startsWith("/forgot-password");
 
   if (!isAuthed && !isAuthRoute) {
     const loginUrl = new URL("/login", origin);

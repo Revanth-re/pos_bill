@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Store, HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
+import { Activity, Store, HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { can, type Permission } from "@/lib/permissions";
+import { isBilloAdmin } from "@/lib/admin";
 
 const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Permission }[] = [
   { href: "/profile", label: "Profile", icon: User },
@@ -23,6 +24,8 @@ const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Per
 export default async function MorePage() {
   const session = await requireSession();
   const visible = ITEMS.filter((item) => !item.permission || can(session.role, item.permission));
+  // Billo team only (ADMIN_EMAILS): usage of every shop on Billo.
+  if (isBilloAdmin(session.email)) visible.unshift({ href: "/admin", label: "Billo usage (all shops)", icon: Activity });
 
   return (
     <div className="mx-auto w-full max-w-2xl p-4">

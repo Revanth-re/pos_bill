@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { istDayStart, istDaysAgoStart } from "@/lib/time";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
@@ -13,22 +14,9 @@ const expenseSchema = z.object({
 });
 
 function rangeStart(range: string | null): Date | undefined {
-  const now = new Date();
-  if (range === "today") {
-    const d = new Date(now);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  if (range === "week") {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 7);
-    return d;
-  }
-  if (range === "month") {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 30);
-    return d;
-  }
+  if (range === "today") return istDayStart();
+  if (range === "week") return istDaysAgoStart(7);
+  if (range === "month") return istDaysAgoStart(30);
   return undefined;
 }
 

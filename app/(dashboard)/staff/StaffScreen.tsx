@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "@/stores/toastStore";
+
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +49,7 @@ export function StaffScreen({
   const [staff, setStaff] = useState(initialStaff);
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetFor, setResetFor] = useState<StaffRow | null>(null);
 
   async function updateRole(id: string, role: Role) {
     setError(null);
@@ -165,9 +168,19 @@ export function StaffScreen({
                 </button>
               )}
             </div>
+            {(s.role !== "OWNER" || s.id === currentStaffId) && (
+              <button
+                onClick={() => setResetFor(s)}
+                className="mt-2 min-h-10 rounded-xl border border-border text-sm font-semibold text-ink-soft hover:bg-paper"
+              >
+                {s.id === currentStaffId ? "Change my password" : "Reset password"}
+              </button>
+            )}
           </div>
         ))}
       </div>
+
+      {resetFor && <ResetPasswordSheet staff={resetFor} onClose={() => setResetFor(null)} />}
 
       <Link href="/performance" className="card flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-md">
         <div>
@@ -287,6 +300,50 @@ function AddStaffSheet({
             {submitting ? "Adding…" : "Add Staff Member"}
           </Button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+/** Owner/manager sets a new password for a staff member who forgot theirs. */
+function ResetPasswordSheet({ staff, onClose }: { staff: StaffRow; onClose: () => void }) {
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function save() {
+    setSaving(true);
+    setErr(null);
+    const res = await fetch(`/api/staff/${staff.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    }).catch(() => null);
+    setSaving(false);
+    if (!res?.ok) {
+      setErr((await res?.json().catch(() => ({})))?.error ?? "Couldn't change the password.");
+      return;
+    }
+    toast.success(`Password changed for ${staff.name}`);
+    onClose();
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 sm:items-center sm:p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-sm sm:rounded-3xl">
+        <p className="text-lg font-extrabold text-ink">New password for {staff.name}</p>
+        <p className="mt-1 text-sm text-muted">{staff.email} — tell them the new password; they can log in right away.</p>
+        <input
+          type="text"
+          className="field mt-4"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="At least 6 characters"
+          autoComplete="new-password"
+        />
+        {err && <p className="mt-2 text-sm font-medium text-danger">{err}</p>}
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={() => void save()} loading={saving} disabled={password.length < 6}>Save</Button>
+        </div>
       </div>
     </div>
   );

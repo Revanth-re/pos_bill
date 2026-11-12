@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { istDayStart, istDaysAgoStart, istHour } from "@/lib/time";
 import type { NotificationType } from "@prisma/client";
 
 export interface Insight {
@@ -24,16 +25,11 @@ export async function getBusinessInsights(businessId: string): Promise<Insight[]
 
   // (No stock insights — Billo sells by plate and doesn't count stock.)
 
-  const yesterdayStart = new Date();
-  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-  yesterdayStart.setHours(0, 0, 0, 0);
-  const yesterdayEnd = new Date(yesterdayStart);
-  yesterdayEnd.setHours(23, 59, 59, 999);
-
-  const dayBeforeStart = new Date(yesterdayStart);
-  dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
-  const dayBeforeEnd = new Date(dayBeforeStart);
-  dayBeforeEnd.setHours(23, 59, 59, 999);
+  // India-time days (servers run in UTC).
+  const yesterdayStart = istDaysAgoStart(1);
+  const yesterdayEnd = new Date(istDayStart().getTime() - 1);
+  const dayBeforeStart = istDaysAgoStart(2);
+  const dayBeforeEnd = new Date(yesterdayStart.getTime() - 1);
 
   const [yesterdayInvoices, dayBeforeInvoices] = await Promise.all([
     prisma.invoice.findMany({
@@ -123,11 +119,8 @@ export async function getQuickInsights(
 
   // Compare with yesterday up to the same clock time, so the morning isn't compared to a full day.
   const now = new Date();
-  const yStart = new Date(now);
-  yStart.setDate(yStart.getDate() - 1);
-  yStart.setHours(0, 0, 0, 0);
-  const ySameTime = new Date(now);
-  ySameTime.setDate(ySameTime.getDate() - 1);
+  const yStart = istDaysAgoStart(1);
+  const ySameTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const ySales = await prisma.invoice.aggregate({
     where: { businessId, createdAt: { gte: yStart, lte: ySameTime }, status: { notIn: ["CANCELLED", "REFUNDED"] } },
     _sum: { grandTotal: true },
@@ -140,7 +133,7 @@ export async function getQuickInsights(
 
   const byHour = new Map<number, number>();
   for (const inv of todayInvoices) {
-    const h = inv.createdAt.getHours();
+    const h = istHour(inv.createdAt); // India time
     byHour.set(h, (byHour.get(h) ?? 0) + Number(inv.grandTotal));
   }
   const [peak] = Array.from(byHour.entries()).sort((a, b) => b[1] - a[1]);

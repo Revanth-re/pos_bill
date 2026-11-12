@@ -1,4 +1,5 @@
 import { requireSession } from "@/lib/auth";
+import { istDayStart } from "@/lib/time";
 import { prisma } from "@/lib/db/prisma";
 import { can } from "@/lib/permissions";
 import { getBusinessInsights, getQuickInsights } from "@/lib/insights/getBusinessInsights";
@@ -6,11 +7,8 @@ import { formatINR } from "@/lib/utils";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { DashboardText } from "@/components/dashboard/DashboardText";
 
-function startOfToday() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
+// "Today" = India-time day (servers run in UTC).
+const startOfToday = () => istDayStart();
 
 export default async function DashboardPage() {
   const session = await requireSession();

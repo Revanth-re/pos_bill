@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
+import { istDayStart, istDaysAgoStart } from "@/lib/time";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 
 function rangeStart(range: string): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  if (range === "week") d.setDate(d.getDate() - 6);
-  else if (range === "month") d.setDate(d.getDate() - 29);
-  return d;
+  if (range === "week") return istDaysAgoStart(6);
+  if (range === "month") return istDaysAgoStart(29);
+  return istDayStart();
 }
 
 /** Per-staff performance: sales, bills, discounts, voids/refunds, shift cash accuracy. */

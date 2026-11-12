@@ -3,10 +3,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
 import { assertPermission, PermissionError } from "@/lib/permissions";
+import bcrypt from "bcryptjs";
+import { clearFailedLogins } from "@/lib/auth/security";
 
 const updateSchema = z.object({
   role: z.enum(["OWNER", "MANAGER", "CASHIER"]).optional(),
   status: z.enum(["ACTIVE", "DISABLED"]).optional(),
+  /** Owner/manager sets a new password for this staff member (e.g. they forgot it). */
+  password: z.string().min(6).max(100).optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -18,8 +22,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const parsed = updateSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
 
-    const target = await prisma.staff.findFirst({ where: { id, businessId: session.businessId } });
+    const target = await prisma.staff.findFirst({ where: { id, businessId: session.businessId }, include: { user: { select: { id: true, email: true } } } });
     if (!target) return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
+
+    // Password reset: never another owner's (only your own).
+    if (parsed.data.password) {
+      if (target.role === "OWNER" && target.id !== session.staffId) {
+        return NextResponse.json({ error: "Only that owner can change their own password." }, { status: 403 });
+      }
+      await prisma.user.update({ where: { id: target.user.id }, data: { passwordHash: await bcrypt.hash(parsed.data.password, 10) } });
+      await clearFailedLogins(target.user.email);
+      await prisma.auditLog.create({
+        data: { businessId: session.businessId, staffId: session.staffId, action: "STAFF_PASSWORD_RESET", entity: "Staff", entityId: target.id },
+      });
+      if (!parsed.data.role && !parsed.data.status) return NextResponse.json({ ok: true });
+    }
+    const updates = { role: parsed.data.role, status: parsed.data.status };
 
     // Guard: never allow the business to end up with zero active owners.
     const demotingOwner =
@@ -35,7 +53,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const staff = await prisma.staff.update({
       where: { id },
-      data: parsed.data,
+      data: updates,
       include: { user: { select: { name: true, email: true } } },
     });
 

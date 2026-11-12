@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
+import { istDayStart } from "@/lib/time";
 
-/** Start of the local business day for a given date. */
+/** Start of the business day (India time — tokens restart at midnight IST, not 5:30 AM). */
 export function dayStart(d: Date): Date {
-  const s = new Date(d);
-  s.setHours(0, 0, 0, 0);
-  return s;
+  return istDayStart(d);
 }
 
 /**
@@ -26,8 +25,7 @@ export async function getTokenMap(
   const days = new Map<string, Date>();
   for (const inv of invoices) days.set(dayStart(inv.createdAt).toISOString(), dayStart(inv.createdAt));
   for (const start of days.values()) {
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
     const ids = await prisma.invoice.findMany({
       where: { businessId, createdAt: { gte: start, lt: end } },
       select: { id: true },

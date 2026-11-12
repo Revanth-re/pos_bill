@@ -14,6 +14,8 @@ export default function Privacy() {
         <p>Account details (name, email, phone, business name, GSTIN), and the business data you enter — products, bills, payments, customers, udhaari, staff and expenses.</p>
         <h2>How we use it</h2>
         <p>Only to run the service for you: storing bills, generating reports, printing receipts and providing support. We do not sell your data or your customers&apos; data.</p>
+        <h2>Website & app statistics</h2>
+        <p>We count visits (pages viewed, device type, country, where visitors came from) using Vercel Web Analytics, which doesn&apos;t use cookies, and may use Google Analytics. These numbers help us improve Billo; they never include your bills or customer data.</p>
         <h2>Your customers&apos; data</h2>
         <p>Customer names and phone numbers you add for udhaari belong to your business. We process them only on your behalf.</p>
         <h2>Storage & security</h2>

@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
+import { istDayStart, istDateKey } from "@/lib/time";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 
+/** Start of today in India time (for createdAt queries). */
 function todayDateOnly(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return istDayStart();
+}
+
+/** Today's India calendar date as a DATE value (DayClosing.date is a date-only column). */
+function todayKey(): Date {
+  return new Date(`${istDateKey(new Date())}T00:00:00.000Z`);
 }
 
 async function computeTodaySummary(businessId: string) {
@@ -59,10 +64,8 @@ async function computeTodaySummary(businessId: string) {
 export async function GET() {
   try {
     const session = await requireSession();
-    const start = todayDateOnly();
-
     const existing = await prisma.dayClosing.findUnique({
-      where: { businessId_date: { businessId: session.businessId, date: start } },
+      where: { businessId_date: { businessId: session.businessId, date: todayKey() } },
     });
 
     if (existing) {
@@ -88,9 +91,8 @@ export async function POST(req: Request) {
     const parsed = closeSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "Enter the counted cash amount." }, { status: 400 });
 
-    const start = todayDateOnly();
     const alreadyClosed = await prisma.dayClosing.findUnique({
-      where: { businessId_date: { businessId: session.businessId, date: start } },
+      where: { businessId_date: { businessId: session.businessId, date: todayKey() } },
     });
     if (alreadyClosed) {
       return NextResponse.json({ error: "Today has already been closed." }, { status: 409 });
@@ -102,7 +104,7 @@ export async function POST(req: Request) {
     const closing = await prisma.dayClosing.create({
       data: {
         businessId: session.businessId,
-        date: start,
+        date: todayKey(),
         totalSales: summary.totalSales,
         cashSales: summary.cashSales,
         upiSales: summary.upiSales,

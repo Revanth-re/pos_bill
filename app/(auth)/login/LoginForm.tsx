@@ -37,6 +37,11 @@ export function LoginForm() {
         redirect: false,
       });
       ok = !!result?.ok && !result?.error;
+      if (result?.code === "locked") {
+        setSubmitting(false);
+        setServerError("Too many wrong attempts. Please wait 15 minutes, or use “Forgot password?”.");
+        return;
+      }
       if (result?.error && result.error !== "CredentialsSignin") {
         setSubmitting(false);
         setServerError("Server problem — couldn't reach the database. Please try again in a minute.");
@@ -89,6 +94,12 @@ export function LoginForm() {
       <Button type="submit" className="w-full" size="lg" disabled={submitting}>
         {submitting ? "Signing in…" : "Sign in"}
       </Button>
+
+      <p className="text-center text-sm">
+        <a href="/forgot-password" className="font-semibold text-brand">
+          Forgot password?
+        </a>
+      </p>
 
       <p className="text-center text-xs text-muted">
         New business?{" "}

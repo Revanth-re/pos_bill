@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { istStartOfDateString, istEndOfDateString } from "@/lib/time";
 import type { Prisma, InvoiceStatus, PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
@@ -27,8 +28,8 @@ export async function GET(req: Request) {
     if (METHODS.includes(method)) where.payments = { some: { method: method as PaymentMethod } };
     if (from || to) {
       const createdAt: Prisma.DateTimeFilter = {};
-      if (from) { const d = new Date(from); d.setHours(0, 0, 0, 0); createdAt.gte = d; }
-      if (to) { const d = new Date(to); d.setHours(23, 59, 59, 999); createdAt.lte = d; }
+      if (from) createdAt.gte = istStartOfDateString(from); // India-time days
+      if (to) createdAt.lte = istEndOfDateString(to);
       where.createdAt = createdAt;
     }
     if (q) {

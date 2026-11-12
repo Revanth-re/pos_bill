@@ -1,8 +1,14 @@
-import type { NextAuthConfig } from "next-auth";
+import { CredentialsSignin, type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
 import { edgeAuthConfig } from "./edgeConfig";
+import { clearFailedLogins, isLoginLocked, recordFailedLogin } from "./security";
+
+/** Shown as "Too many wrong attempts" on the login screen. */
+class LockedSignin extends CredentialsSignin {
+  code = "locked";
+}
 
 /**
  * Full Auth.js config for Node.js contexts only (the NextAuth API route,
@@ -33,6 +39,9 @@ export const authConfig: NextAuthConfig = {
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 
+        // 5 wrong passwords in 15 minutes → this email is locked for 15 minutes.
+        if (await isLoginLocked(email)) throw new LockedSignin();
+
         let user;
         try {
           user = await prisma.user.findUnique({
@@ -49,10 +58,17 @@ export const authConfig: NextAuthConfig = {
           throw e;
         }
 
-        if (!user || !user.passwordHash) return null;
+        if (!user || !user.passwordHash) {
+          await recordFailedLogin(email);
+          return null;
+        }
 
         const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        if (!valid) {
+          await recordFailedLogin(email);
+          return null;
+        }
+        await clearFailedLogins(email);
 
         const activeStaff = user.staff[0];
         if (!activeStaff) return null; // no active business membership

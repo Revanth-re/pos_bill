@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
+import { istDayStart, istDaysAgoStart } from "@/lib/time";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 
 function rangeStart(range: string | null): Date {
-  const now = new Date();
-  const d = new Date(now);
-  if (range === "week") d.setDate(d.getDate() - 7);
-  else if (range === "month") d.setDate(d.getDate() - 30);
-  else d.setHours(0, 0, 0, 0);
-  return d;
+  if (range === "week") return istDaysAgoStart(7);
+  if (range === "month") return istDaysAgoStart(30);
+  return istDayStart();
 }
 
 export async function GET(req: Request) {
