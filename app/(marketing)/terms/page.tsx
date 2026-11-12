@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageHero } from "@/components/marketing/PageHero";
 import { SITE } from "@/lib/marketing/site";
 
-export const metadata: Metadata = { title: "Terms of Service | Billo", description: "Terms for using the Billo billing app and Counter Kit.", alternates: { canonical: "/terms" } };
+export const metadata: Metadata = { title: "Terms of Service | Billo", description: "Terms for using the Billo billing app.", alternates: { canonical: "/terms" } };
 
 export default function Terms() {
   return (
@@ -14,7 +14,7 @@ export default function Terms() {
         <h2>Printers</h2>
         <p>If you buy a printer yourself, it is between you and the seller. We help you choose a printer that works with Billo and set it up free.</p>
         <h2>Printer warranty</h2>
-        <p>Printers supplied with the Counter Kit carry the manufacturer&apos;s warranty. We help with replacements during the warranty period.</p>
+        <p>Printers carry their manufacturer&apos;s warranty. We help you with printer setup and troubleshooting.</p>
         <h2>Your responsibilities</h2>
         <p>You are responsible for the accuracy of prices, taxes and GST details entered in the app and for complying with applicable tax laws.</p>
         <h2>Availability</h2>

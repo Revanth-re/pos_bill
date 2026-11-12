@@ -4,6 +4,7 @@ import { PhoneMock, FeatureGrid, Pricing, Faq, CtaBand, SectionHead } from "@/co
 import { JsonLd, faqLd } from "@/components/marketing/JsonLd";
 import { InstallButton } from "@/components/marketing/InstallButton";
 import { USE_CASES, CITIES, whatsapp } from "@/lib/marketing/site";
+import { GUIDES } from "@/lib/marketing/guides";
 
 export default function Home() {
   return (
@@ -144,7 +145,7 @@ export default function Home() {
 
       {/* CITIES */}
       <section className="container-x py-20">
-        <SectionHead eyebrow="Across India" title="Restaurant billing software across India" text="Printer shipped anywhere in India with same-day setup and WhatsApp support — from metros to small towns." />
+        <SectionHead eyebrow="Across India" title="Restaurant billing software across India" text="Free setup at your counter or on video call, anywhere in India — from metros to small towns, with WhatsApp support." />
         <div className="flex flex-wrap justify-center gap-2">
           {CITIES.map((c) => (
             <Link key={c.slug} href={`/billing-software/${c.slug}`} className="rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:border-brand/40 hover:text-brand-dark">
@@ -152,6 +153,23 @@ export default function Home() {
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* GUIDES */}
+      <section className="container-x pb-20">
+        <SectionHead eyebrow="Guides" title="Billing tips for your counter" text="Simple guides on billing machines, printers, GST, tokens and udhaari." />
+        <div className="grid gap-4 md:grid-cols-3">
+          {GUIDES.slice(0, 3).map((g) => (
+            <Link key={g.slug} href={`/guides/${g.slug}`} className="card group overflow-hidden transition-shadow hover:shadow-md">
+              <img src={g.image} alt="" width={640} height={360} loading="lazy" className="aspect-[16/9] w-full object-cover" />
+              <div className="p-5">
+                <p className="font-extrabold leading-snug text-ink group-hover:text-brand-dark">{g.h1}</p>
+                <p className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand">Read guide <ArrowRight className="h-4 w-4" /></p>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className="mt-8 text-center"><Link href="/guides" className="btn btn-ghost">All guides <ArrowRight className="h-4 w-4" /></Link></div>
       </section>
 
       {/* FAQ */}

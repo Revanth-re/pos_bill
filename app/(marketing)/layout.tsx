@@ -14,13 +14,13 @@ const hindi = Noto_Sans_Devanagari({ subsets: ["devanagari"], weight: ["400", "6
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "Billo – Billing Software & Mobile Billing App with Thermal Printer | getbillo.in",
+    default: "Billo – Free Billing Software & Billing App with Free Setup | getbillo.in",
     template: "%s",
   },
   description: SITE.description,
   applicationName: "Billo",
   keywords: [
-    "Billo", "getbillo", "get billo", "getbillo.in", "Billo app", "Billo billing", "Billo POS", "Billo restaurant billing",
+    "Billo", "getbillo", "free billing software", "free billing app", "get billo", "getbillo.in", "Billo app", "Billo billing", "Billo POS", "Billo restaurant billing",
     "bill", "billing", "billing software", "billing app", "mobile billing", "mobile billing app", "mini billing", "mini billing machine",
     "billing services", "billing machine", "bill printing", "printing bill", "bill print", "bill prints", "printer bill",
     "token print", "token printing", "token printer", "thermal printer", "thermal printer billing", "bluetooth thermal printer",

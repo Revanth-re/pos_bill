@@ -5,7 +5,7 @@ import { SITE, whatsapp } from "@/lib/marketing/site";
 
 export const metadata: Metadata = {
   title: "Contact Billo – Free Demo for Your Restaurant | WhatsApp 76709 15570",
-  description: "Get a free Billo demo for your restaurant, tiffin centre or café. WhatsApp or call +91 76709 15570. Printer shipped and set up anywhere in India.",
+  description: "Get a free Billo demo for your restaurant, tiffin centre or café. WhatsApp or call +91 76709 15570. Free setup + free demo anywhere in India — Billo is free to use.",
   alternates: { canonical: "/contact" },
 };
 
@@ -33,7 +33,7 @@ export default function ContactPage() {
           <MapPin className="h-7 w-7 shrink-0 text-brand" />
           <div>
             <p className="text-lg font-bold">We serve all of India</p>
-            <p className="mt-1 text-muted">All over India — from Delhi, Mumbai, Bengaluru, Hyderabad, Chennai and Kolkata to smaller towns. We ship the printer to your shop and set everything up with you on a video call, usually the same day. On-site setup is available in select cities.</p>
+            <p className="mt-1 text-muted">All over India — from Delhi, Mumbai, Bengaluru, Hyderabad, Chennai and Kolkata to smaller towns. We set everything up free — at your counter or on a video call, usually the same day. We also help you choose a printer that works with Billo.</p>
           </div>
         </div>
       </section>

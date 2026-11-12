@@ -16,12 +16,12 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const { city } = await params;
   const c = CITIES.find((x) => x.slug === city);
   if (!c) return {};
-  const title = `Restaurant Billing Software in ${c.name} | Billo – Token Printing & Udhaari`;
+  const title = `Billing Software in ${c.name} – Free + Free Setup | Billo`;
   const description = `Billo is restaurant & tiffin centre billing software in ${c.name}, ${c.state}. Bluetooth token printing, udhaari khata, GST bills and FREE setup at your shop. Billo is free to use.`;
   return {
     title,
     description,
-    keywords: [`restaurant billing software ${c.name}`, `billing software ${c.name}`, `POS ${c.name}`, `tiffin billing app ${c.name}`, `billing machine ${c.name}`],
+    keywords: [`free billing software ${c.name}`, `billing machine in ${c.name}`, `restaurant billing software ${c.name}`, `billing software ${c.name}`, `POS ${c.name}`, `tiffin billing app ${c.name}`, `billing machine ${c.name}`],
     alternates: { canonical: `/billing-software/${c.slug}` },
     openGraph: { url: `/billing-software/${c.slug}`, title, description, images: ["/og-image.png"] },
   };
@@ -32,7 +32,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
   const c = CITIES.find((x) => x.slug === city);
   if (!c) notFound();
   const faqs = [
-    { q: `Do you set up Billo at shops in ${c.name}?`, a: `Yes. We ship the Billo Counter Kit to your shop in ${c.name} — including areas like ${c.areas.slice(0, 3).join(", ")} — and set up the printer, menu and staff logins with you on a video call. Most shops are billing the same day.` },
+    { q: `Do you set up Billo at shops in ${c.name}?`, a: `Yes. We set up Billo free for shops in ${c.name} — including areas like ${c.areas.slice(0, 3).join(", ")} — the printer, menu and staff logins, at your counter or on a video call. Most shops are billing the same day.` },
     { q: `How much does billing software cost in ${c.name}?`, a: "Billo is free to use. We also set it up free at your counter in " + c.name + " (or over video call) — printer, menu and staff training included." },
     { q: "Which languages does Billo support?", a: "The Billo app is available in 10 Indian languages including Hindi, Tamil, Telugu, Kannada, Marathi, Bengali, Gujarati, Punjabi and Malayalam. Support on WhatsApp and phone in Hindi, English and Telugu." },
   ];
@@ -56,7 +56,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
           <MapPin className="h-8 w-8 shrink-0 text-brand" />
           <div>
             <h2 className="text-xl font-bold">{`Same-day setup in ${c.name}`}</h2>
-            <p className="mt-1 text-muted">{`Printer shipped to your shop in ${c.areas.join(", ")} and nearby. Setup and training over video call — you're billing the same day.`}</p>
+            <p className="mt-1 text-muted">{`Free setup for shops in ${c.areas.join(", ")} and nearby — printer, menu and staff training, at your counter or on video call. You're billing the same day.`}</p>
           </div>
         </div>
       </section>
