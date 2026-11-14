@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Activity, Store, HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
+import { Activity, ChefHat, Store, HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { can, type Permission } from "@/lib/permissions";
 import { isBilloAdmin } from "@/lib/admin";
 
 const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Permission }[] = [
+  { href: "/kitchen", label: "Kitchen display (chef screen)", icon: ChefHat },
   { href: "/profile", label: "Profile", icon: User },
   { href: "/outlets", label: "Outlets (all your shops)", icon: Store },
   { href: "/udhaari", label: "Udhaari (credit khata)", icon: HandCoins, permission: "customers.view" },

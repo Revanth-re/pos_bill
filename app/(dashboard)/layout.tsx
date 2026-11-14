@@ -16,6 +16,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Logged in with a shop that no longer exists (e.g. after a database move) → log out cleanly.
   if (!business) redirect("/api/session-reset");
 
+  // Kitchen staff get a clean full-screen kitchen display — no menus, billing or reports.
+  if (session.role === "KITCHEN") {
+    return (
+      <LanguageProvider initialLanguage={business.language}>
+        <div className="flex min-h-dvh w-full flex-col">{children}</div>
+        <ServiceWorkerBoot />
+      </LanguageProvider>
+    );
+  }
+
   return (
     <LanguageProvider initialLanguage={business.language}>
       <div className="flex min-h-screen w-full max-w-full overflow-x-clip">

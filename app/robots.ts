@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         // Billing app screens are private — keep them out of Google.
-        disallow: ["/api/", "/login", "/register", "/forgot-password", "/dashboard", "/billing$", "/billing/", "/bills", "/sales", "/products", "/inventory", "/customers", "/udhaari", "/expenses", "/tiffin", "/reports", "/day-closing", "/staff", "/shifts", "/performance", "/settings", "/profile", "/more", "/admin", "/outlets"],
+        disallow: ["/api/", "/login", "/register", "/forgot-password", "/dashboard", "/billing$", "/billing/", "/bills", "/sales", "/products", "/inventory", "/customers", "/udhaari", "/expenses", "/tiffin", "/reports", "/day-closing", "/staff", "/shifts", "/performance", "/settings", "/profile", "/more", "/admin", "/outlets", "/kitchen"],
       },
     ], sitemap: `${SITE.url}/sitemap.xml`, host: SITE.url };
 }

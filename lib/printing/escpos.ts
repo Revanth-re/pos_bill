@@ -36,8 +36,18 @@ export interface RasterImage {
 }
 export type RasterRenderer = (row: Extract<Row, { kind: "text" | "cols" }>, paperChars: number) => RasterImage | null;
 
+/** Full printer width in characters (Font A, 12 dots each): 58mm = 32, 80mm = 48. */
 export function paperWidth(paper: "58" | "80") {
   return paper === "58" ? 32 : 48;
+}
+
+/**
+ * Characters we actually use per line = one less than the full width.
+ * A line that exactly fills the paper makes many cheap printers wrap and then add an
+ * EMPTY line on the newline — that caused broken columns and big blank gaps.
+ */
+export function lineChars(paper: "58" | "80") {
+  return paperWidth(paper) - 1;
 }
 
 /** Text the printer's built-in font can print (₹ → Rs). */
@@ -80,17 +90,36 @@ function wrap(s: string, width: number): string[] {
 }
 
 const money = (n: number) => n.toFixed(2);
+/** Item rate: "30" instead of "30.00" when it's a whole number — keeps the rate column narrow. */
+const rateStr = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
+/** "07/10/2026, 8:15 am" → "07/10/26 8:15 am" (same info, fits beside other details). */
+const shortDate = (s: string) => s.replace(/^(\d{1,2})\/(\d{1,2})\/\d{2}(\d{2}),?\s*/, "$1/$2/$3 ");
 
 export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT_FORMAT): Row[] {
-  const W = paperWidth(format.paper);
+  const W = lineChars(format.paper);
   const L = billLabels(format.billLanguage);
   const rows: Row[] = [];
   const t = (text: string, align: Align = "left", bold = false, size: 1 | 2 | 3 = 1) =>
     rows.push({ kind: "text", text, align, bold, size });
   const rule = (ch: "-" | "=" = "-") => rows.push({ kind: "rule", ch });
   const lr = (left: string, right: string, opts: { bold?: boolean; tall?: boolean } = {}) => {
-    const rw = Math.min(right.length, W - 1);
-    rows.push({ kind: "cols", cells: [{ text: left, w: W - rw }, { text: right, w: rw, align: "right" }], ...opts });
+    if (!right) {
+      rows.push({ kind: "cols", cells: [{ text: left, w: W }], ...opts });
+      return;
+    }
+    const r = ` ${right}`; // leading space = left text can never touch the right text
+    const rw = Math.min(r.length, W - 4);
+    rows.push({ kind: "cols", cells: [{ text: left, w: W - rw }, { text: r, w: rw, align: "right" }], ...opts });
+  };
+  /** Two short facts on one line when they fit (saves paper), otherwise one per line. */
+  const pair = (left: string, right: string) => {
+    if (!right) return t(left);
+    if (!left) return t(right, "right");
+    if (isAscii(left + right) && printable(left).length + printable(right).length + 2 <= W) lr(left, right);
+    else {
+      t(left);
+      t(right);
+    }
   };
 
   // ---------- Customer bill ----------
@@ -105,18 +134,33 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
   rule();
 
   if (format.tokenSize !== "off" && data.tokenNumber) {
-    t(`${L.token} ${data.tokenNumber}`, "center", false, format.tokenSize === "large" ? 3 : 2);
-    rule();
+    t(`${L.token} ${data.tokenNumber}`, "center", true, format.tokenSize === "large" ? 3 : 2);
   }
 
-  lr(`${L.bill}: ${data.invoiceNumber}`, format.showOrderType ? (data.orderType === "DINE_IN" ? L.dineIn : L.takeaway) : "");
-  t(data.createdAt);
-  if (format.showCashier) t(`${L.cashier}: ${data.cashierName}`);
+  // Bill details packed two per line when they fit (saves paper); each on its own line otherwise.
+  const facts = [
+    `${L.bill}: ${data.invoiceNumber}`,
+    format.showOrderType ? (data.orderType === "DINE_IN" ? L.dineIn : L.takeaway) : "",
+    shortDate(data.createdAt),
+    format.showCashier && data.cashierName ? `${L.cashier}: ${data.cashierName}` : "",
+  ].filter(Boolean);
+  for (let i = 0; i < facts.length; i++) {
+    const a = facts[i], b = facts[i + 1];
+    if (b && isAscii(a + b) && printable(a).length + printable(b).length + 2 <= W) {
+      pair(a, b);
+      i++;
+    } else t(a);
+  }
   if (format.showCustomer && data.customerName) t(`${L.customer}: ${data.customerName}`);
   rule();
 
-  // Items: fixed columns. "Rate" column is the only thing the rate option adds.
-  const QTY = 4, AMT = 9, RATE = format.showItemRate ? 8 : 0;
+  // Items: columns sized to the real numbers on this bill (plus a 1-space gap), so the item
+  // name gets every spare character. "Rate" column is the only thing the rate option adds.
+  const colW = (label: string, values: string[], min: number) =>
+    Math.max(min, ...values.map((v) => v.length), isAscii(label) ? printable(label).length : 0) + 1;
+  const QTY = colW(L.qty, data.lines.map((l) => String(l.qty)), 2);
+  const AMT = colW(L.amount, data.lines.map((l) => money(l.total)), 4);
+  const RATE = format.showItemRate ? colW(L.rate, data.lines.map((l) => rateStr(l.unitPrice)), 3) : 0;
   const nameW = W - QTY - AMT - RATE;
   const itemCells = (name: string, qty: string, rate: string, amt: string): Cell[] => [
     { text: name, w: nameW },
@@ -128,8 +172,8 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
   for (const l of data.lines) {
     const name = l.localName || l.name; // "Name on bill" (shop's language) when the product has one
     const parts = isAscii(name) ? wrap(name, nameW - 1) : [name]; // non-English names wrap inside their column when drawn
-    rows.push({ kind: "cols", cells: itemCells(parts[0], String(l.qty), money(l.unitPrice), money(l.total)) });
-    for (const extra of parts.slice(1)) t(extra);
+    rows.push({ kind: "cols", cells: itemCells(parts[0], String(l.qty), rateStr(l.unitPrice), money(l.total)) });
+    for (const extra of parts.slice(1)) t(` ${extra}`); // name continues, indented
   }
   rule();
 
@@ -153,14 +197,14 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
 
   // ---------- Kitchen slip ----------
   if (format.kitchenCopy) {
-    const half = Math.floor(W / 2);
     t(L.kitchen, "center", true, 2);
     if (data.tokenNumber) t(String(data.tokenNumber), "center", true, 3);
-    t(`${data.orderType === "DINE_IN" ? L.dineIn : L.takeaway}  ${data.createdAt}`, "center");
+    t(`${data.orderType === "DINE_IN" ? L.dineIn : L.takeaway} - ${shortDate(data.createdAt)}`, "center");
     rule("=");
     for (const l of data.lines) {
       const name = l.localName || l.name;
-      for (const r of wrap(`${l.qty} x ${name}`, half)) t(r, "left", true, 2);
+      // Double height, normal width: big and easy to read, but uses the full line (no extra wrapping).
+      for (const r of wrap(`${l.qty} x ${name}`, W)) rows.push({ kind: "text", text: r, align: "left", bold: true, tall: true });
     }
     rule("=");
     rows.push({ kind: "feed" }, { kind: "cut" });
@@ -173,7 +217,7 @@ export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT
 export function colsToLine(cells: Cell[]): string {
   return cells
     .map((c) => {
-      const s = printable(c.text).slice(0, c.w);
+      const s = toAscii(c.text).slice(0, c.w);
       return c.align === "right" ? s.padStart(c.w) : s.padEnd(c.w);
     })
     .join("");
@@ -200,16 +244,18 @@ function pushRaster(out: number[], w: number, h: number, bits: Uint8Array) {
  * (on the phone); without a renderer (e.g. tests) they fall back to English-only text.
  */
 export function encodeRows(rows: Row[], paperChars: number, raster?: RasterRenderer): Uint8Array {
-  const out: number[] = [ESC, 0x40];
+  const lineW = paperChars - 1; // see lineChars()
+  // ESC @ reset, then tighter line spacing (26 dots instead of ~30) → about 12% less paper, same text size.
+  const out: number[] = [ESC, 0x40, ESC, 0x33, 26];
   for (const row of rows) {
-    if (row.kind === "feed") out.push(0x0a, 0x0a, 0x0a);
+    if (row.kind === "feed") out.push(ESC, 0x4a, 80); // feed ~10mm so the bill clears the tear bar
     else if (row.kind === "cut") out.push(GS, 0x56, 0x42, 0x00);
     else if (row.kind === "image") {
+      // GS v 0 already moves the paper by the image height — no extra blank line after the logo.
       pushRaster(out, row.logo.w, row.logo.h, base64ToBytes(row.logo.bits));
-      out.push(0x0a);
     } else if (row.kind === "rule") {
       out.push(ESC, 0x61, 0);
-      for (const ch of row.ch.repeat(paperChars)) out.push(ch.charCodeAt(0));
+      for (const ch of row.ch.repeat(lineW)) out.push(ch.charCodeAt(0));
       out.push(0x0a);
     } else {
       const text = row.kind === "text" ? row.text : row.cells.map((c) => c.text).join("");
@@ -220,10 +266,12 @@ export function encodeRows(rows: Row[], paperChars: number, raster?: RasterRende
           continue;
         }
       }
-      const line = row.kind === "text" ? toAscii(row.text) : toAscii(colsToLine(row.cells));
+      const sz = row.kind === "text" ? row.size ?? 1 : 1;
+      // Never send more characters than fit on one line (double/triple width counts 2×/3×).
+      const max = Math.floor(lineW / sz);
+      const line = (row.kind === "text" ? toAscii(row.text) : colsToLine(row.cells)).replace(/\s+$/, "").slice(0, max);
       out.push(ESC, 0x61, row.kind === "text" && row.align === "center" ? 1 : row.kind === "text" && row.align === "right" ? 2 : 0);
       out.push(ESC, 0x45, row.bold ? 1 : 0);
-      const sz = row.kind === "text" ? row.size ?? 1 : 1;
       out.push(GS, 0x21, row.tall ? 0x01 : sz === 1 ? 0x00 : sz === 2 ? 0x11 : 0x22);
       for (const ch of line) out.push(ch.charCodeAt(0));
       out.push(0x0a);

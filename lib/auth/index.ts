@@ -23,7 +23,7 @@ export async function requireSession() {
     userId: user.id ?? "",
     staffId: user.staffId,
     businessId: user.businessId,
-    role: user.role as "OWNER" | "MANAGER" | "CASHIER",
+    role: user.role as "OWNER" | "MANAGER" | "CASHIER" | "KITCHEN",
     name: user.name ?? "",
     email: user.email ?? "",
   };

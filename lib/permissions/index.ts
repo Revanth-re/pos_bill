@@ -86,6 +86,8 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     "shift.manage",
     // Deliberately excluded: everything destructive or owner-sensitive
   ],
+  // Kitchen staff only use the kitchen display (/kitchen). No billing, money or settings.
+  KITCHEN: [],
 };
 
 export function can(role: StaffRole, permission: Permission): boolean {

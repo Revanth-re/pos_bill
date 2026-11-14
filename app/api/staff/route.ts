@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureKitchenRole } from "@/lib/db/ensureKitchenRole";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
@@ -32,7 +33,7 @@ const staffSchema = z.object({
   name: z.string().min(1).max(80),
   email: z.string().email(),
   password: z.string().min(6).max(72),
-  role: z.enum(["OWNER", "MANAGER", "CASHIER"]),
+  role: z.enum(["OWNER", "MANAGER", "CASHIER", "KITCHEN"]),
 });
 
 export async function POST(req: Request) {
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
       }
     }
 
+    if (parsed.data.role === "KITCHEN") await ensureKitchenRole();
     const passwordHash = await bcrypt.hash(parsed.data.password, 10);
 
     const result = await prisma.$transaction(async (tx) => {

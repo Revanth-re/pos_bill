@@ -12,8 +12,8 @@ const { auth } = NextAuth(edgeAuthConfig);
 // Next.js 16 renamed the `middleware.ts` file convention to `proxy.ts`.
 // A default export is still valid here — only the filename changed.
 // Public website pages (SEO) — open to everyone, logged in or not.
-const PUBLIC_EXACT = new Set(["/", "/pricing", "/features", "/hi", "/te", "/contact", "/privacy", "/terms"]);
-const PUBLIC_PREFIXES = ["/for/", "/billing-software/"];
+const PUBLIC_EXACT = new Set(["/", "/pricing", "/features", "/hi", "/te", "/contact", "/privacy", "/terms", "/guides"]);
+const PUBLIC_PREFIXES = ["/for/", "/billing-software/", "/guides/"];
 function isPublicPage(pathname: string) {
   return PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 }
@@ -50,6 +50,12 @@ export default auth((req) => {
     const loginUrl = new URL("/login", origin);
     loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Kitchen staff: only the kitchen display (plus logout/login flows).
+  const role = (req.auth?.user as { role?: string } | undefined)?.role;
+  if (isAuthed && role === "KITCHEN" && !req.nextUrl.pathname.startsWith("/kitchen")) {
+    return NextResponse.redirect(new URL("/kitchen", origin));
   }
 
   if (isAuthed && isAuthRoute) {

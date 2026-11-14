@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, MessageCircle, Phone, Printer, Store, Wrench, Sparkles, PlayCircle, ReceiptText } from "lucide-react";
 import { SITE, whatsapp } from "@/lib/marketing/site";
+import { FreeBill } from "./FreeBill";
 
 /**
  * "Billo is free" offer — replaces all pricing on the website.
@@ -80,7 +81,7 @@ export function FreeOffer() {
           {/* Left: the offer */}
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-brand-deep">
-              <Sparkles className="h-3.5 w-3.5" /> 100% free
+              <Sparkles className="h-3.5 w-3.5" /> 100% free · all features · ₹0 setup
             </span>
             <h3 className="mt-4 text-3xl font-extrabold leading-tight sm:text-5xl">
               Use Billo <span className="text-accent">free.</span>
@@ -88,7 +89,7 @@ export function FreeOffer() {
               We set it up <span className="text-accent">free.</span>
             </h3>
             <p className="mt-4 max-w-lg text-lg text-white/80">
-              No plans, no card, no contract. We come to your counter, set up the billing machine and app, show you a live demo — and you start billing.
+              The complete Billo app with every feature — free. No plans, no setup cost, no card, no contract. We come to your counter, set up the billing machine and app, show you a live demo — and you start billing.
             </p>
 
             {/* Shop type picker */}
@@ -170,6 +171,11 @@ export function FreeOffer() {
             <p className="mt-3 text-center text-xs text-muted">No card · No hidden charges · No contract</p>
           </div>
         </div>
+      </div>
+
+      {/* The whole app free — receipt that prints ₹0 */}
+      <div className="rounded-3xl border border-border bg-paper p-6 sm:p-10">
+        <FreeBill />
       </div>
 
       {/* 3 steps — tap to see what happens */}

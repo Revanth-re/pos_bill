@@ -19,6 +19,7 @@ enum StaffRole {
   OWNER
   MANAGER
   CASHIER
+  KITCHEN // kitchen display only — sees orders, nothing else
 }
 
 enum StaffStatus {

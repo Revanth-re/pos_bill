@@ -16,11 +16,11 @@ export default function Home() {
         <div className="absolute inset-x-0 top-0 -z-10 h-[620px] bg-[radial-gradient(60%_60%_at_80%_10%,rgba(242,210,27,.18),transparent),radial-gradient(50%_60%_at_10%_0%,rgba(7,94,99,.12),transparent)]" />
         <div className="container-x grid items-center gap-12 py-12 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:py-20">
           <div className="rise">
-            <p className="eyebrow rounded-full bg-brand-soft px-3 py-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand" /> Made in India · for every Indian food business
-            </p>
+            <Link href="#free" className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-extrabold text-brand-deep shadow-sm transition-transform hover:-translate-y-0.5">
+              100% FREE · All features · ₹0 setup <ArrowRight className="h-4 w-4" />
+            </Link>
             <h1 className="mt-5 text-[clamp(2.3rem,6vw,3.9rem)] font-extrabold leading-[1.05] text-ink">
-              Fast billing software for <span className="text-brand">Indian restaurants</span>
+              <span className="text-brand">Free</span> billing software for Indian restaurants &amp; shops
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
               Billo turns your phone into a billing counter. Tap items, print the bill with a big <strong>token number</strong> on a Bluetooth printer,
@@ -33,8 +33,8 @@ export default function Home() {
               <InstallButton className="btn btn-ghost text-base" label="Get Billo app" iconClass="h-5 w-5" />
             </div>
             <p className="mt-3 text-sm text-muted">
-              <strong className="text-ink">100% free</strong> · free setup at your shop ·{" "}
-              <Link href="#free" className="font-semibold text-brand hover:underline">book now <ArrowRight className="inline h-3.5 w-3.5" /></Link>
+              <strong className="text-ink">The complete app is free</strong> — every feature, unlimited bills, ₹0 setup at your shop ·{" "}
+              <Link href="#free" className="font-semibold text-brand hover:underline">see how <ArrowRight className="inline h-3.5 w-3.5" /></Link>
             </p>
             <ul className="mt-8 grid gap-2 text-sm font-medium text-ink-soft sm:grid-cols-3">
               <li className="flex items-center gap-2"><Smartphone className="h-4 w-4 text-brand" /> Runs on your phone</li>
@@ -90,7 +90,7 @@ export default function Home() {
       {/* FEATURES */}
       <section className="bg-white py-20">
         <div className="container-x">
-          <SectionHead eyebrow="Features" title="Everything a busy counter needs" text="Fast billing, bill management, staff control, payments and owner reports — in one simple app." />
+          <SectionHead eyebrow="Every feature is free" title="Everything a busy counter needs — all free" text="Fast billing, bill management, staff control, payments and owner reports. Nothing locked, nothing extra to pay." />
           <FeatureGrid limit={9} />
           <div className="mt-8 text-center">
             <Link href="/features" className="btn btn-ghost">See all features <ArrowRight className="h-4 w-4" /></Link>
@@ -138,7 +138,7 @@ export default function Home() {
       {/* FREE OFFER (replaces pricing) */}
       <section id="free" className="scroll-mt-20 bg-white py-20">
         <div className="container-x">
-          <SectionHead eyebrow="Free for your shop" title="Free platform. Free setup. Free demo." text="Use Billo free. We come to your counter, set up the billing machine and app, and show you a live demo — at no cost." />
+          <SectionHead eyebrow="Free for your shop" title="The entire app free. Setup free. Demo free." text="Every Billo feature is free to use. We come to your counter, set up the billing machine and app, and show you a live demo — no setup cost, nothing to pay." />
           <Pricing />
         </div>
       </section>

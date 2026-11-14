@@ -21,7 +21,18 @@ export function InstallHelpSheet({ open, onClose, onInstalled }: { open: boolean
   const { installed, canPromptNatively, platform, secureContext, promptInstall } = usePwaInstall();
   const [busy, setBusy] = useState(false);
   const tried = useRef(false);
-  const [env, setEnv] = useState<{ ios: boolean; inApp: boolean }>({ ios: false, inApp: false });
+  const [env, setEnv] = useState<{ ios: boolean; inApp: boolean; samsung: boolean }>({ ios: false, inApp: false, samsung: false });
+  // Chrome only hands over the install popup when it wants to (not if the app is already installed,
+  // or the popup was dismissed before). Never spin forever: after a few seconds show manual steps.
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!open || canPromptNatively) {
+      const r = setTimeout(() => setSlow(false), 0);
+      return () => clearTimeout(r);
+    }
+    const id = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(id);
+  }, [open, canPromptNatively]);
 
   useEffect(() => {
     if (!open) {
@@ -34,6 +45,7 @@ export function InstallHelpSheet({ open, onClose, onInstalled }: { open: boolean
         setEnv({
           ios: /iphone|ipad|ipod/i.test(ua) || (ua.includes("Mac") && "ontouchend" in document),
           inApp: /FBAN|FBAV|Instagram|Line\/|; wv\)|WhatsApp/i.test(ua),
+          samsung: /SamsungBrowser/i.test(ua),
         }),
       0
     );
@@ -118,8 +130,29 @@ export function InstallHelpSheet({ open, onClose, onInstalled }: { open: boolean
                 <><Loader2 className="h-5 w-5 animate-spin" /> Preparing install…</>
               )}
             </button>
-            {!canPromptNatively && (
+            {!canPromptNatively && !slow && (
               <p className="mt-2 text-center text-xs text-[#647474]">The install popup opens by itself in a few seconds.</p>
+            )}
+            {!canPromptNatively && slow && (
+              <div className="mt-4 space-y-3 text-[15px] text-[#172020]">
+                <p className="rounded-xl bg-[#fdf6cc] p-3 text-sm font-medium">
+                  No popup? Billo may already be on your home screen — check there first. Or install it in 2 taps:
+                </p>
+                {env.samsung ? (
+                  <>
+                    <Step n={1}>Tap the <b>☰ menu</b> at the bottom</Step>
+                    <Step n={2}>Choose <b>Add page to</b> → <b>Home screen</b></Step>
+                  </>
+                ) : (
+                  <>
+                    <Step n={1}>Tap <MoreVertical className="mx-0.5 inline h-4 w-4" /> at the top right of Chrome</Step>
+                    <Step n={2}>Choose <b>Install app</b> or <b>Add to Home screen</b></Step>
+                  </>
+                )}
+                <a href={LOGIN_PATH} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#075E63] px-4 text-base font-bold text-[#075E63] hover:bg-[#D9F0EF]">
+                  Use Billo now without installing →
+                </a>
+              </div>
             )}
           </>
         )}

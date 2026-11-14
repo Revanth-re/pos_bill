@@ -75,8 +75,11 @@ export function FeatureGrid({ limit }: { limit?: number }) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((f) => (
         <div key={f.title} className="card p-5 transition-shadow hover:shadow-md">
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft">
-            <Icon name={f.icon} className="h-5 w-5 text-brand" />
+          <div className="mb-3 flex items-start justify-between">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft">
+              <Icon name={f.icon} className="h-5 w-5 text-brand" />
+            </div>
+            <span className="rounded-md bg-accent px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-brand-deep">Free</span>
           </div>
           <h3 className="text-lg font-bold text-ink">{f.title}</h3>
           <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{f.text}</p>
@@ -109,7 +112,7 @@ export function Faq({ items = FAQS }: { items?: readonly { q: string; a: string 
 }
 
 /* ---------- CTA band ---------- */
-export function CtaBand({ title = "Start billing faster from tomorrow morning", text = "Billo is free. We set it up at your counter — printer, menu and staff training — free." }: { title?: string; text?: string }) {
+export function CtaBand({ title = "Start billing faster from tomorrow morning", text = "The entire Billo app is free — every feature. We set it up at your counter — printer, menu and staff training — at ₹0 cost." }: { title?: string; text?: string }) {
   return (
     <section className="container-x py-16">
       <div className="relative overflow-hidden rounded-3xl bg-brand-dark px-6 py-12 text-center text-white sm:px-12">

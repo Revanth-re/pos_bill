@@ -41,7 +41,7 @@ export const FEATURES = [
 
 export const FAQS = [
   { q: "What is Billo?", a: "Billo (getbillo.in) is a billing software and mobile billing app made for Indian businesses — restaurants, tiffin centres, fast food, bakeries and cafes. It prints bills and tokens on a Bluetooth thermal printer, tracks udhaari, tiffin plans, staff, cash and daily sales." },
-  { q: "How much does Billo cost?", a: "Billo is free to use. Setup is free too — we connect your printer, load your menu and show you a live demo at your counter, at no cost. No card, no hidden charges, no contract." },
+  { q: "How much does Billo cost?", a: "Billo is free — the entire app with every feature, unlimited bills, no premium plan. Setup is free too: we connect your printer, load your menu and show you a live demo at your counter, with no setup cost. No card, no hidden charges, no contract." },
   { q: "Do I need a computer?", a: "No. Billo runs on an Android phone or tablet, or a laptop with Google Chrome, and the thermal printer connects over Bluetooth. Owners can view reports from any phone, including iPhone." },
   { q: "Which printers work with Billo?", a: "Most 58mm and 80mm Bluetooth (BLE) thermal receipt printers work. Don't have one? We'll suggest a printer that works and set it up for you — free." },
   { q: "Can I track udhaari (credit) for regular customers?", a: "Yes. Bill to a customer's udhaari with one tap. When they pay, open their khata to see each day's items and amount, take full or part payment by cash/UPI, and send the statement on WhatsApp." },

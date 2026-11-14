@@ -22,6 +22,13 @@ export function Header() {
   const loggedIn = status === "authenticated";
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-paper/90 backdrop-blur">
+      <Link href="/#free" className="block bg-accent text-brand-deep">
+        <p className="container-x flex items-center justify-center gap-2 py-1.5 text-center text-[13px] font-bold sm:text-sm">
+          <span aria-hidden>🎉</span>
+          <span>Billo is 100% FREE — every feature, ₹0 setup, no hidden charges.</span>
+          <span className="hidden underline underline-offset-2 sm:inline">Book free setup →</span>
+        </p>
+      </Link>
       <div className="container-x flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2.5" aria-label="Billo home">
           <img src="/brand/billo-icon.png" alt="" width={36} height={36} className="h-9 w-9 object-contain" />

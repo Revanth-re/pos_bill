@@ -1,4 +1,4 @@
-import { type Row, paperWidth } from "./escpos";
+import { type Row, lineChars } from "./escpos";
 
 export interface StatementEntry {
   type: "CREDIT_SALE" | "PAYMENT" | "ADJUSTMENT";
@@ -26,7 +26,7 @@ const day = (iso: string) =>
 
 /** Udhaari statement as thermal-printer rows (58/80mm). */
 export function buildStatementRows(d: StatementData, paper: "58" | "80"): Row[] {
-  const W = paperWidth(paper);
+  const W = lineChars(paper);
   const rows: Row[] = [];
   // Any language: non-English text is printed as a picture (see rasterText.ts).
   const t = (text: string, align: "left" | "center" = "left", bold = false, size: 1 | 2 = 1) =>

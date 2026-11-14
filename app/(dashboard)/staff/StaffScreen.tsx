@@ -11,7 +11,7 @@ import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
-type Role = "OWNER" | "MANAGER" | "CASHIER";
+type Role = "OWNER" | "MANAGER" | "CASHIER" | "KITCHEN";
 type Status = "ACTIVE" | "DISABLED";
 
 interface StaffRow {
@@ -27,15 +27,16 @@ const ROLE_CAN: Record<string, string> = {
   OWNER: "Full access",
   MANAGER: "Discounts, refunds, cancellations, reports",
   CASHIER: "Create bills, take payments, reprint",
+  KITCHEN: "Kitchen screen only — sees orders, marks cooking / ready",
 };
 
-const ROLE_LABEL: Record<Role, string> = { OWNER: "Owner", MANAGER: "Manager", CASHIER: "Cashier" };
+const ROLE_LABEL: Record<Role, string> = { OWNER: "Owner", MANAGER: "Manager", CASHIER: "Cashier", KITCHEN: "Kitchen" };
 
 const staffSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "At least 6 characters"),
-  role: z.enum(["OWNER", "MANAGER", "CASHIER"]),
+  role: z.enum(["OWNER", "MANAGER", "CASHIER", "KITCHEN"]),
 });
 type StaffFormValues = z.infer<typeof staffSchema>;
 
@@ -150,7 +151,7 @@ export function StaffScreen({
                 aria-label="Role"
                 className="field min-h-11 flex-1 py-2 text-sm"
               >
-                {(["OWNER", "MANAGER", "CASHIER"] as Role[]).map((r) => (
+                {(["OWNER", "MANAGER", "CASHIER", "KITCHEN"] as Role[]).map((r) => (
                   <option key={r} value={r}>
                     {ROLE_LABEL[r]}
                   </option>
@@ -275,8 +276,8 @@ function AddStaffSheet({
               name="role"
               control={control}
               render={({ field }) => (
-                <div className="grid grid-cols-3 gap-2">
-                  {(["OWNER", "MANAGER", "CASHIER"] as Role[]).map((r) => (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {(["OWNER", "MANAGER", "CASHIER", "KITCHEN"] as Role[]).map((r) => (
                     <button
                       key={r}
                       type="button"

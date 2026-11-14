@@ -1,13 +1,13 @@
 "use client";
 
-import { buildReceiptRows, isAscii, paperWidth } from "@/lib/printing/escpos";
+import { buildReceiptRows, isAscii, lineChars } from "@/lib/printing/escpos";
 import type { BillFormat } from "@/lib/printing/billFormat";
 import type { ReceiptData } from "@/lib/printing/types";
 import { cn } from "@/lib/utils";
 
 /** Pixel-faithful preview of the thermal bill — built from the same rows the printer receives. */
 export function ReceiptPreview({ data, format, className }: { data: ReceiptData; format: BillFormat; className?: string }) {
-  const W = paperWidth(format.paper);
+  const W = lineChars(format.paper);
   const rows = buildReceiptRows(data, format);
   const fontSize = format.paper === "58" ? 12.5 : 10.5;
 
@@ -26,7 +26,7 @@ export function ReceiptPreview({ data, format, className }: { data: ReceiptData;
         <div style={{ width: `${W}ch` }}>
           {rows.map((r, i) => {
             if (r.kind === "rule") return <div key={i} className="whitespace-pre">{r.ch.repeat(W)}</div>;
-            if (r.kind === "feed") return <div key={i} className="h-3" />;
+            if (r.kind === "feed") return <div key={i} className="h-2" />;
             if (r.kind === "cut")
               return (
                 <div key={i} className="my-3 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#999]" style={{ fontFamily: "inherit" }}>

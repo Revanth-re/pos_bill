@@ -5,9 +5,10 @@ import { requireSession, UnauthenticatedError } from "@/lib/auth";
 import { assertPermission, PermissionError } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 import { clearFailedLogins } from "@/lib/auth/security";
+import { ensureKitchenRole } from "@/lib/db/ensureKitchenRole";
 
 const updateSchema = z.object({
-  role: z.enum(["OWNER", "MANAGER", "CASHIER"]).optional(),
+  role: z.enum(["OWNER", "MANAGER", "CASHIER", "KITCHEN"]).optional(),
   status: z.enum(["ACTIVE", "DISABLED"]).optional(),
   /** Owner/manager sets a new password for this staff member (e.g. they forgot it). */
   password: z.string().min(6).max(100).optional(),
@@ -37,6 +38,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       });
       if (!parsed.data.role && !parsed.data.status) return NextResponse.json({ ok: true });
     }
+    if (parsed.data.role === "KITCHEN") await ensureKitchenRole();
     const updates = { role: parsed.data.role, status: parsed.data.status };
 
     // Guard: never allow the business to end up with zero active owners.

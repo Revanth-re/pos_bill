@@ -103,7 +103,7 @@ export const rasterRow: RasterRenderer = (row: Extract<Row, { kind: "text" | "co
       }
   // Trim empty rows above/below the text (keeps a small gap) → fewer bytes → faster printing.
   if (bottom < 0) return { w: W, h: 8, bits: new Uint8Array(wb * 8) };
-  const pad = 3;
+  const pad = 2;
   const y0 = Math.max(0, top - pad), y1 = Math.min(H, bottom + 1 + pad);
   return { w: W, h: y1 - y0, bits: full.slice(y0 * wb, y1 * wb) };
 };
