@@ -46,25 +46,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid staff details", issues: parsed.error.flatten() }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
+    // One email = one login. Every staff member (any role) needs a NEW email that isn't used anywhere in Billo.
+    const email = parsed.data.email.trim().toLowerCase();
+    const existingUser = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } }, select: { id: true } });
     if (existingUser) {
-      const existingStaff = await prisma.staff.findUnique({
-        where: { businessId_userId: { businessId: session.businessId, userId: existingUser.id } },
-      });
-      if (existingStaff) {
-        return NextResponse.json({ error: "This person is already staff at your business." }, { status: 409 });
-      }
+      return NextResponse.json(
+        { error: "This email already has a Billo account. Please use a different email for this staff member." },
+        { status: 409 }
+      );
     }
 
     if (parsed.data.role === "KITCHEN") await ensureKitchenRole();
     const passwordHash = await bcrypt.hash(parsed.data.password, 10);
 
     const result = await prisma.$transaction(async (tx) => {
-      const user =
-        existingUser ??
-        (await tx.user.create({
-          data: { name: parsed.data.name, email: parsed.data.email.toLowerCase(), passwordHash },
-        }));
+      const user = await tx.user.create({
+        data: { name: parsed.data.name, email, passwordHash },
+      });
 
       const staff = await tx.staff.create({
         data: { businessId: session.businessId, userId: user.id, role: parsed.data.role },
@@ -89,7 +87,17 @@ export async function POST(req: Request) {
   } catch (err) {
     if (err instanceof UnauthenticatedError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     if (err instanceof PermissionError) return NextResponse.json({ error: "Not permitted" }, { status: 403 });
+    if ((err as { code?: string })?.code === "P2002") {
+      return NextResponse.json({ error: "This email already has a Billo account. Please use a different email for this staff member." }, { status: 409 });
+    }
     console.error(err);
+    const msg = String((err as Error)?.message ?? "");
+    if (/KITCHEN|StaffRole|invalid input value for enum/i.test(msg)) {
+      return NextResponse.json(
+        { error: "Kitchen role isn't set up yet. Run: npx prisma generate, then npx prisma migrate deploy, and restart the app." },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ error: "Unable to add the staff member." }, { status: 500 });
   }
 }

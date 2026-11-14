@@ -6,6 +6,7 @@ import { ChefHat, Check, Flame, Maximize2, Minimize2, Volume2, VolumeX, Undo2, W
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n/translations";
 import { kt } from "./kitchenText";
+import { logoutEverywhere } from "@/lib/auth/deviceData";
 
 type Status = "NEW" | "COOKING" | "READY" | "SERVED";
 type Order = {
@@ -352,7 +353,7 @@ export function KitchenScreen({ kitchenOnly, userName }: { kitchenOnly: boolean;
           {kitchenOnly && (
             <button
               type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => logoutEverywhere(signOut)}
               className="flex min-h-10 items-center gap-1.5 rounded-xl bg-white/10 px-3 text-sm font-bold"
               title={userName}
             >

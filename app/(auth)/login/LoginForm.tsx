@@ -1,5 +1,6 @@
 "use client";
 
+import { onLoginSwitchAccount } from "@/lib/auth/deviceData";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,6 +62,8 @@ export function LoginForm() {
     // Only same-site paths — never jump to another domain.
     const cb = searchParams.get("callbackUrl") || "";
     const dest = cb.startsWith("/") && !cb.startsWith("//") ? cb : "/dashboard";
+    // Different person on this phone? Clear the previous login's saved data first.
+    await onLoginSwitchAccount();
     window.location.replace(dest);
   }
 

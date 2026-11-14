@@ -34,9 +34,9 @@ export async function POST(req: Request) {
     }
     const { ownerName, email, password, businessName, phone } = parsed.data;
 
-    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    const existing = await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" } }, select: { id: true } });
     if (existing) {
-      return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
+      return NextResponse.json({ error: "This email already has a Billo account. Please log in, or sign up with a different email." }, { status: 409 });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -70,6 +70,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
+    if ((err as { code?: string })?.code === "P2002") {
+      return NextResponse.json({ error: "This email already has a Billo account. Please log in, or sign up with a different email." }, { status: 409 });
+    }
     console.error("Registration error:", err);
     return NextResponse.json({ error: "Unable to create your account. Please try again." }, { status: 500 });
   }
