@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/dashboard/BottomNav";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { OfflineSyncBoot } from "@/components/pos/OfflineSyncBoot";
 import { ServiceWorkerBoot } from "@/components/pos/ServiceWorkerBoot";
+import { ApiCacheBoot } from "@/components/pos/ApiCacheBoot";
 import { InstallBanner } from "@/components/dashboard/InstallBanner";
 import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
@@ -39,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <InstallBanner />
         <OfflineSyncBoot />
         <ServiceWorkerBoot />
+        <ApiCacheBoot />
       </div>
     </LanguageProvider>
   );

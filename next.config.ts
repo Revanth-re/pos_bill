@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // SPEED: keep visited screens in the browser so going back to them is instant
+  // (3 min for server-rendered screens; refreshed after any change — see ApiCacheBoot).
+  experimental: {
+    staleTimes: { dynamic: 180, static: 600 },
+  },
   images: {
     remotePatterns: [
       {
