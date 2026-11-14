@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (session.role === "KITCHEN") {
     return (
       <LanguageProvider initialLanguage={business.language}>
-        <div className="flex min-h-dvh w-full flex-col">{children}</div>
+        <div className="app-shell flex min-h-dvh w-full flex-col">{children}</div>
         <ServiceWorkerBoot />
       </LanguageProvider>
     );
@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <LanguageProvider initialLanguage={business.language}>
-      <div className="flex min-h-screen w-full max-w-full overflow-x-clip">
+      <div className="app-shell flex min-h-screen w-full max-w-full overflow-x-clip">
         <Sidebar role={session.role} businessName={business.name} />
         <div className="flex-1 flex flex-col min-w-0 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
           <TopBar businessName={business.name} />

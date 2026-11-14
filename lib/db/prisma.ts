@@ -31,9 +31,12 @@ function buildAdapter() {
   return new PrismaPg({
     connectionString,
     ssl: local ? false : { rejectUnauthorized: false },
-    max: 5,
-    idleTimeoutMillis: 60_000,
+    // SPEED: keep connections open and warm. Opening a new SSL connection to the database costs
+    // several round-trips, so we reuse them for 5 minutes and let 8 queries run side by side.
+    max: 8,
+    idleTimeoutMillis: 300_000,
     connectionTimeoutMillis: 10_000,
+    keepAlive: true,
   });
 }
 

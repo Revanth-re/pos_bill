@@ -44,20 +44,28 @@ export async function POST(req: Request) {
       }
     }
 
-    // This outlet's products + the main shop's shared menu.
-    const menuIds = (await getMenuScope(session.businessId)).ids;
-
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Validate cart — fetch live products scoped to this business only.
-      const productIds = input.items.map((i) => i.productId);
-      const products = await tx.product.findMany({
+    // SPEED: all read-only lookups run BEFORE the transaction and in parallel (one round-trip
+    // instead of three), so the locked transaction is as short as possible.
+    const productIds = input.items.map((i) => i.productId);
+    const menuIds = (await getMenuScope(session.businessId)).ids; // cached
+    const [products, customer] = await Promise.all([
+      prisma.product.findMany({
         where: { id: { in: productIds }, businessId: { in: menuIds } },
         include: { recipe: { include: { lines: true } } },
-      });
-      if (products.length !== new Set(productIds).size) {
-        throw new BillingError("One or more products were not found");
-      }
-      const productsById = new Map(products.map((p) => [p.id, p]));
+      }),
+      input.customerId
+        ? prisma.customer.findFirst({ where: { id: input.customerId, businessId: session.businessId } })
+        : Promise.resolve(null),
+    ]);
+    if (products.length !== new Set(productIds).size) {
+      return NextResponse.json({ error: "One or more products were not found" }, { status: 422 });
+    }
+    if (input.customerId && !customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 422 });
+    }
+    const productsById = new Map(products.map((p) => [p.id, p]));
+
+    const result = await prisma.$transaction(async (tx) => {
 
       // Stock check before committing to anything.
       // No stock check: Billo sells by plate and doesn't block bills on stock counts.
@@ -80,13 +88,6 @@ export async function POST(req: Request) {
       }
 
       const hasCredit = input.payments.some((p) => p.method === "CREDIT");
-      let customer = null;
-      if (input.customerId) {
-        customer = await tx.customer.findFirst({
-          where: { id: input.customerId, businessId: session.businessId },
-        });
-        if (!customer) throw new BillingError("Customer not found");
-      }
 
       // 6. Create order (status COMPLETED — held bills never reach checkout).
       const order = await tx.order.create({
@@ -201,11 +202,12 @@ export async function POST(req: Request) {
         .filter((p) => p.method === "CREDIT")
         .reduce((sum, p) => sum + p.amount, 0);
       if (creditAmount > 0 && customer) {
-        const newBalance = Number(customer.outstandingBalance) + creditAmount;
-        await tx.customer.update({
+        const updated = await tx.customer.update({
           where: { id: customer.id },
-          data: { outstandingBalance: newBalance },
+          data: { outstandingBalance: { increment: creditAmount } },
+          select: { outstandingBalance: true },
         });
+        const newBalance = Number(updated.outstandingBalance);
         await tx.customerLedger.create({
           data: {
             businessId: session.businessId,
@@ -217,18 +219,6 @@ export async function POST(req: Request) {
           },
         });
       }
-
-      // 13/14. Record cashier + audit log.
-      await tx.auditLog.create({
-        data: {
-          businessId: session.businessId,
-          staffId: session.staffId,
-          action: "BILL_CREATED",
-          entity: "Invoice",
-          entityId: invoice.id,
-          metadata: { invoiceNumber, grandTotal: totals.grandTotal },
-        },
-      });
 
       // If this checkout resumed a held bill, remove the hold.
       if (input.heldBillId) {
@@ -253,16 +243,33 @@ export async function POST(req: Request) {
         });
       }
 
-      const tokenNumber = await tx.invoice.count({
-        where: { businessId: session.businessId, createdAt: { gte: dayStart(invoice.createdAt), lte: invoice.createdAt } },
-      });
-      return { invoice, invoiceNumber, totals, tokenNumber };
+      return { invoice, invoiceNumber, totals };
     }, { maxWait: 10_000, timeout: 30_000 }); // remote DBs (Neon/Supabase) need more than the 5s default
+
+    // After the bill is saved: token number + audit log together, on separate connections.
+    const [tokenNumberRaw] = await Promise.all([
+      prisma.invoice.count({
+        where: { businessId: session.businessId, createdAt: { gte: dayStart(result.invoice.createdAt), lte: result.invoice.createdAt } },
+      }),
+      prisma.auditLog
+        .create({
+          data: {
+            businessId: session.businessId,
+            staffId: session.staffId,
+            action: "BILL_CREATED",
+            entity: "Invoice",
+            entityId: result.invoice.id,
+            metadata: { invoiceNumber: result.invoiceNumber, grandTotal: result.totals.grandTotal },
+          },
+        })
+        .catch((e) => console.error("[checkout] audit log", e)),
+    ]);
+    const result2 = { ...result, tokenNumber: tokenNumberRaw };
 
     // 15. Printable invoice is generated client-side (see lib/printing) from
     // this response payload — no server-side rendering needed for receipts.
     // Daily token for the kitchen slip + payment split for the printed bill.
-    const tokenNumber = result.tokenNumber;
+    const tokenNumber = result2.tokenNumber;
     const payments = input.payments.map((p) => ({ method: p.method, amount: p.amount }));
     return NextResponse.json({ invoice: { ...result.invoice, tokenNumber, payments }, totals: result.totals });
   } catch (err) {
