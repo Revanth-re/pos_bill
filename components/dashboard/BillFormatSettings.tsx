@@ -12,7 +12,8 @@ import {
   type BillFormat,
 } from "@/lib/printing/billFormat";
 import { getPrinterAdapter } from "@/lib/printing/getPrinterAdapter";
-import { choosePrinter, reconnectSavedPrinter } from "@/lib/printing/bluetoothPairing";
+import { choosePrinter, reconnectSavedPrinter, writeToPrinter } from "@/lib/printing/bluetoothPairing";
+import { widthTestBytes } from "@/lib/printing/escpos";
 import { imageFileToLogo } from "@/lib/printing/logo";
 import { BILL_LANGUAGES, billLabels } from "@/lib/printing/billLabels";
 import { toast } from "@/stores/toastStore";
@@ -132,6 +133,17 @@ export function BillFormatSettings({
     }
   }
 
+  async function widthTest() {
+    try {
+      if (!(await reconnectSavedPrinter())) await choosePrinter();
+      await writeToPrinter(widthTestBytes(format.paper));
+      toast.success("Width test printed — pick the last number that fits on one line");
+    } catch (e) {
+      const err = e as { name?: string; message?: string };
+      if (err.name !== "NotFoundError") toast.error(err.message || "Couldn't print.");
+    }
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
       <div className="min-w-0 space-y-5">
@@ -205,7 +217,7 @@ export function BillFormatSettings({
               { value: "58", label: "58 mm" },
               { value: "80", label: "80 mm" },
             ]}
-            onChange={(v) => set("paper", v as BillFormat["paper"])}
+            onChange={(v) => setFormat((f) => ({ ...f, paper: v as BillFormat["paper"], charsPerLine: 0 }))}
           />
           <Segment
             label="Token number"
@@ -218,6 +230,31 @@ export function BillFormatSettings({
             ]}
             onChange={(v) => set("tokenSize", v as BillFormat["tokenSize"])}
           />
+          <div className="sm:col-span-2">
+            <p className="mb-1.5 text-sm font-semibold text-ink-soft">Printer line width (characters)</p>
+            <div className="flex flex-wrap items-center gap-2">
+              {(format.paper === "58" ? [0, 31, 30, 29, 28] : [0, 46, 44, 42]).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => set("charsPerLine", n)}
+                  className={cn(
+                    "min-h-10 rounded-xl border px-3 text-sm font-semibold",
+                    (format.charsPerLine || 0) === n ? "border-brand bg-brand-soft text-brand-dark" : "border-border text-ink-soft"
+                  )}
+                >
+                  {n === 0 ? `Standard (${format.paper === "58" ? 32 : 48})` : n}
+                </button>
+              ))}
+              <Button variant="secondary" size="sm" onClick={widthTest}>
+                <Printer className="h-4 w-4" /> Width test
+              </Button>
+            </div>
+            <p className="mt-1.5 text-xs text-muted">
+              Bill lines breaking or columns not straight? Tap <b>Width test</b>, see the last number that fits on one line, and pick that number here.
+            </p>
+          </div>
         </div>
 
         {/* Logo */}

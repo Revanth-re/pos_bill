@@ -38,9 +38,15 @@ export interface BillFormat {
   billLanguage: string;
   headerNote: string;
   footerNote: string;
+  /**
+   * Characters that fit on one printed line. 0 = standard (58mm → 32, 80mm → 48).
+   * Some cheap printers fit fewer (e.g. 30) — then every line spills over and columns break.
+   * Settings has a "width test" print to find the right number.
+   */
+  charsPerLine: number;
 }
 
-type Preset = Omit<BillFormat, "template" | "paper" | "headerNote" | "footerNote" | "logo" | "showLogo" | "billLanguage"> & { showLogo?: boolean };
+type Preset = Omit<BillFormat, "template" | "paper" | "headerNote" | "footerNote" | "logo" | "showLogo" | "billLanguage" | "charsPerLine"> & { showLogo?: boolean };
 
 export const TEMPLATES: { id: TemplateId; name: string; description: string; preset: Preset }[] = [
   {
@@ -89,6 +95,7 @@ export const DEFAULT_FORMAT: BillFormat = {
   showLogo: true,
   logo: null,
   billLanguage: "en",
+  charsPerLine: 0,
   ...TEMPLATES[0].preset,
 };
 
@@ -110,6 +117,9 @@ export function normalizeFormat(raw: unknown): BillFormat {
   if (!TEMPLATES.some((t) => t.id === out.template)) out.template = "classic";
   out.logo = normalizeLogo(r.logo);
   if (!/^(en|hi|te|ta|kn|ml|mr|bn|gu|pa)$/.test(out.billLanguage)) out.billLanguage = "en";
+  // Allowed: 0 (standard) or 24–32 for 58mm, 36–48 for 80mm.
+  const c = Math.round(out.charsPerLine);
+  out.charsPerLine = !c ? 0 : out.paper === "58" ? (c >= 24 && c <= 32 ? c : 0) : c >= 36 && c <= 48 ? c : 0;
   out.headerNote = out.headerNote.slice(0, 120);
   out.footerNote = out.footerNote.slice(0, 120);
   return out;

@@ -444,7 +444,8 @@ function CustomerDetailSheet({
   async function printStatement() {
     try {
       if (!(await reconnectSavedPrinter())) await choosePrinter();
-      await writeToPrinter(rowsToBytes(buildStatementRows(statementData(), getCachedBillFormat().paper), getCachedBillFormat().paper, rasterRow));
+      const bf = getCachedBillFormat();
+      await writeToPrinter(rowsToBytes(buildStatementRows(statementData(), bf.paper, bf.charsPerLine), bf.paper, rasterRow, bf.charsPerLine));
       toast.success("Statement printed");
     } catch (e) {
       const err = e as { name?: string; message?: string };

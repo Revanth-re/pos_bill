@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 /** Pixel-faithful preview of the thermal bill — built from the same rows the printer receives. */
 export function ReceiptPreview({ data, format, className }: { data: ReceiptData; format: BillFormat; className?: string }) {
-  const W = lineChars(format.paper);
+  const W = lineChars(format.paper, format.charsPerLine);
   const rows = buildReceiptRows(data, format);
   const fontSize = format.paper === "58" ? 12.5 : 10.5;
 

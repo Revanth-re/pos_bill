@@ -31,4 +31,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Couldn't reset the password. Please try again." }, { status: 500 });
   }
 }
-// sj

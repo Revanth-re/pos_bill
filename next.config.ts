@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Play Store app link file (see app/api/assetlinks/route.ts).
+  async rewrites() {
+    return [{ source: "/.well-known/assetlinks.json", destination: "/api/assetlinks" }];
+  },
   async headers() {
     return [
       {

@@ -25,8 +25,8 @@ const day = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", weekday: "short" });
 
 /** Udhaari statement as thermal-printer rows (58/80mm). */
-export function buildStatementRows(d: StatementData, paper: "58" | "80"): Row[] {
-  const W = lineChars(paper);
+export function buildStatementRows(d: StatementData, paper: "58" | "80", charsPerLine = 0): Row[] {
+  const W = lineChars(paper, charsPerLine);
   const rows: Row[] = [];
   // Any language: non-English text is printed as a picture (see rasterText.ts).
   const t = (text: string, align: "left" | "center" = "left", bold = false, size: 1 | 2 = 1) =>

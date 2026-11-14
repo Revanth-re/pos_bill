@@ -37,8 +37,9 @@ export interface RasterImage {
 export type RasterRenderer = (row: Extract<Row, { kind: "text" | "cols" }>, paperChars: number) => RasterImage | null;
 
 /** Full printer width in characters (Font A, 12 dots each): 58mm = 32, 80mm = 48. */
-export function paperWidth(paper: "58" | "80") {
-  return paper === "58" ? 32 : 48;
+export function paperWidth(paper: "58" | "80", charsPerLine = 0) {
+  const std = paper === "58" ? 32 : 48;
+  return charsPerLine > 0 && charsPerLine <= std ? charsPerLine : std;
 }
 
 /**
@@ -46,8 +47,34 @@ export function paperWidth(paper: "58" | "80") {
  * A line that exactly fills the paper makes many cheap printers wrap and then add an
  * EMPTY line on the newline — that caused broken columns and big blank gaps.
  */
-export function lineChars(paper: "58" | "80") {
-  return paperWidth(paper) - 1;
+export function lineChars(paper: "58" | "80", charsPerLine = 0) {
+  return paperWidth(paper, charsPerLine) - 1;
+}
+
+/** "Width test": a numbered ruler so the shop can see how many characters their printer fits. */
+export function widthTestBytes(paper: "58" | "80"): Uint8Array {
+  const max = paper === "58" ? 32 : 48;
+  const out: number[] = [ESC, 0x40, ESC, 0x61, 0];
+  const line = (s: string) => {
+    for (const ch of s) out.push(ch.charCodeAt(0));
+    out.push(0x0a);
+  };
+  line("BILLO WIDTH TEST");
+  line("Find the LAST number that fits");
+  line("fully on ONE line:");
+  let tens = "", ones = "";
+  for (let i = 1; i <= max; i++) {
+    tens += i % 10 === 0 ? String(i / 10) : " ";
+    ones += String(i % 10);
+  }
+  // Without a newline the printer wraps by itself, which shows exactly where the line ends.
+  for (const ch of tens) out.push(ch.charCodeAt(0));
+  out.push(0x0a);
+  for (const ch of ones) out.push(ch.charCodeAt(0));
+  out.push(0x0a);
+  line("-".repeat(max));
+  out.push(ESC, 0x4a, 80, GS, 0x56, 0x42, 0x00);
+  return new Uint8Array(out);
 }
 
 /** Text the printer's built-in font can print (₹ → Rs). */
@@ -96,7 +123,7 @@ const rateStr = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 const shortDate = (s: string) => s.replace(/^(\d{1,2})\/(\d{1,2})\/\d{2}(\d{2}),?\s*/, "$1/$2/$3 ");
 
 export function buildReceiptRows(data: ReceiptData, format: BillFormat = DEFAULT_FORMAT): Row[] {
-  const W = lineChars(format.paper);
+  const W = lineChars(format.paper, format.charsPerLine);
   const L = billLabels(format.billLanguage);
   const rows: Row[] = [];
   const t = (text: string, align: Align = "left", bold = false, size: 1 | 2 | 3 = 1) =>
@@ -254,9 +281,15 @@ export function encodeRows(rows: Row[], paperChars: number, raster?: RasterRende
       // GS v 0 already moves the paper by the image height — no extra blank line after the logo.
       pushRaster(out, row.logo.w, row.logo.h, base64ToBytes(row.logo.bits));
     } else if (row.kind === "rule") {
-      out.push(ESC, 0x61, 0);
-      for (const ch of row.ch.repeat(lineW)) out.push(ch.charCodeAt(0));
-      out.push(0x0a);
+      // Divider lines are drawn as a thin picture, not as "-----" letters: a picture never
+      // wraps onto a second line (letters did on some printers and broke the whole bill),
+      // and it is much shorter — saves paper.
+      const w = Math.floor((lineW * 12) / 8) * 8;
+      const h = 8;
+      const bits = new Uint8Array((w / 8) * h);
+      const ys = row.ch === "=" ? [2, 5] : [3, 4];
+      for (const y of ys) for (let x = 0; x < w; x++) if (row.ch === "=" || x % 8 < 5) bits[y * (w / 8) + (x >> 3)] |= 0x80 >> (x & 7);
+      pushRaster(out, w, h, bits);
     } else {
       const text = row.kind === "text" ? row.text : row.cells.map((c) => c.text).join("");
       if (!isAscii(text) && raster) {
@@ -283,10 +316,10 @@ export function encodeRows(rows: Row[], paperChars: number, raster?: RasterRende
 
 /** Full receipt → ESC/POS bytes. */
 export function encodeReceipt(data: ReceiptData, format: BillFormat = DEFAULT_FORMAT, raster?: RasterRenderer): Uint8Array {
-  return encodeRows(buildReceiptRows(data, format), paperWidth(format.paper), raster);
+  return encodeRows(buildReceiptRows(data, format), paperWidth(format.paper, format.charsPerLine), raster);
 }
 
 /** Any row list (e.g. a customer statement) → ESC/POS bytes at the given paper width. */
-export function rowsToBytes(rows: Row[], paper: "58" | "80", raster?: RasterRenderer): Uint8Array {
-  return encodeRows(rows, paperWidth(paper), raster);
+export function rowsToBytes(rows: Row[], paper: "58" | "80", raster?: RasterRenderer, charsPerLine = 0): Uint8Array {
+  return encodeRows(rows, paperWidth(paper, charsPerLine), raster);
 }
