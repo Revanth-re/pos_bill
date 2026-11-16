@@ -69,6 +69,11 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 border border-border bg-surface rounded-2xl shadow-sm p-5">
+      {searchParams.get("deleted") === "1" && (
+        <p className="rounded-xl bg-success/10 p-3 text-sm font-semibold text-success">
+          Your Billo account and all its data have been deleted.
+        </p>
+      )}
       <div>
         <label className="mb-1 block text-xs font-semibold text-ink-soft">Email</label>
         <input

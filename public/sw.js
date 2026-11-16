@@ -12,7 +12,7 @@ const PAGE_CACHE = "billo-pages-v1";
 const KEEP = [STATIC_CACHE, PAGE_CACHE];
 
 // App screens that should open offline (cached after they're visited or warmed).
-const APP_PAGES = ["/billing", "/dashboard", "/bills", "/udhaari", "/customers", "/tiffin", "/products", "/sales", "/more", "/settings", "/shifts", "/day-closing", "/expenses", "/inventory", "/reports", "/staff", "/performance", "/profile"];
+const APP_PAGES = ["/billing", "/dashboard", "/bills", "/udhaari", "/customers", "/tiffin", "/products", "/sales", "/more", "/settings", "/shifts", "/day-closing", "/expenses", "/reports", "/staff", "/performance", "/profile"];
 // Where an offline app launch should land (first one that's cached).
 const OFFLINE_START = ["/billing", "/dashboard"];
 const PRECACHE = ["/offline.html", "/manifest.json", "/brand/billo-icon.png", "/brand/billo-logo.png"];

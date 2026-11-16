@@ -1,5 +1,6 @@
 import { dayStart } from "@/lib/billing/token";
 import { NextResponse } from "next/server";
+import { alertDbDown } from "@/lib/alerts";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { requireSession, UnauthenticatedError } from "@/lib/auth";
@@ -291,6 +292,10 @@ export async function POST(req: Request) {
       );
     }
     console.error("Checkout error:", err);
+    // Not a normal bill problem → likely the database is down. Tell the team (rate-limited).
+    if (/connect|timeout|terminated|tenant|ENOTFOUND|ECONN/i.test(String((err as Error)?.message ?? ""))) {
+      await alertDbDown(err, "saving a bill").catch(() => {});
+    }
     return NextResponse.json(
       { error: "Unable to save the bill. Please try again." },
       { status: 500 }

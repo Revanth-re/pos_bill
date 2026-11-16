@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ChefHat, Store, HandCoins, ShoppingBag, Package, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
+import { Activity, ChefHat, Store, HandCoins, ShoppingBag, Clock, Trophy, Users, Wallet, Utensils, BarChart3, Lock, UserCog, Settings, User, ChevronRight } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { can, type Permission } from "@/lib/permissions";
 import { isBilloAdmin } from "@/lib/admin";
@@ -10,7 +10,6 @@ const ITEMS: { href: string; label: string; icon: typeof Users; permission?: Per
   { href: "/outlets", label: "Outlets (all your shops)", icon: Store },
   { href: "/udhaari", label: "Udhaari (credit khata)", icon: HandCoins, permission: "customers.view" },
   { href: "/shifts", label: "Cashier Shift", icon: Clock, permission: "shift.manage" },
-  { href: "/inventory", label: "Inventory", icon: Package, permission: "inventory.view" },
   { href: "/performance", label: "Staff Performance", icon: Trophy, permission: "reports.view" },
   { href: "/products", label: "Products", icon: ShoppingBag, permission: "products.view" },
   { href: "/customers", label: "Customers", icon: Users, permission: "customers.view" },

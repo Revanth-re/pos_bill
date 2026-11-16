@@ -1,6 +1,7 @@
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { SignOutButton } from "./SignOutButton";
+import { DeleteAccountCard } from "./DeleteAccountCard";
 import { InstallAppCard } from "@/components/dashboard/InstallAppCard";
 import { T } from "@/components/i18n/T";
 import { User, Building2, ShieldCheck, Mail } from "lucide-react";
@@ -13,6 +14,11 @@ export default async function ProfilePage() {
   });
 
   const roleLabel = session.role.charAt(0) + session.role.slice(1).toLowerCase();
+  // Shops that would be deleted with the account (owner only).
+  const ownedShops =
+    session.role === "OWNER"
+      ? (await prisma.staff.findMany({ where: { userId: session.userId, role: "OWNER" }, select: { business: { select: { name: true } } } })).map((s) => s.business.name)
+      : [];
 
   return (
     <div className="p-4 lg:p-6 max-w-lg space-y-4">
@@ -46,6 +52,7 @@ export default async function ProfilePage() {
       </section>
 
       <SignOutButton />
+      {session.role === "OWNER" && <DeleteAccountCard shops={ownedShops.length ? ownedShops : [business.name]} />}
     </div>
   );
 }

@@ -1,7 +1,17 @@
 "use client";
 
-/** Friendly screen instead of the blank "This page couldn't load". */
+import { useEffect } from "react";
+
+/** Friendly screen instead of the blank "This page couldn't load". Also tells the Billo team (email alert). */
 export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    fetch("/api/report-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: window.location.pathname, digest: error.digest ?? "" }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [error.digest]);
   return (
     <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
       <p className="text-lg font-bold text-ink">Couldn&apos;t load this page</p>

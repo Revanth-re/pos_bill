@@ -44,8 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        {/* External boot script — more reliable than inline with App Router */}
-        <script src="/pwa-boot.js" />
+        {/* Catches Chrome's install popup before React loads (next/script avoids React's <script> warning) */}
+        <Script src="/pwa-boot.js" strategy="beforeInteractive" />
       </head>
       <body className="min-h-full flex flex-col bg-paper text-ink" suppressHydrationWarning>
         <Providers>{children}</Providers>
