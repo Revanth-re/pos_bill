@@ -7,6 +7,8 @@ import { TopBar } from "@/components/dashboard/TopBar";
 import { OfflineSyncBoot } from "@/components/pos/OfflineSyncBoot";
 import { ServiceWorkerBoot } from "@/components/pos/ServiceWorkerBoot";
 import { ApiCacheBoot } from "@/components/pos/ApiCacheBoot";
+import { PhoneRequiredModal } from "@/components/pos/PhoneRequiredModal";
+import { InstallTracker } from "@/components/pos/InstallTracker";
 import { InstallBanner } from "@/components/dashboard/InstallBanner";
 import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
@@ -41,6 +43,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <OfflineSyncBoot />
         <ServiceWorkerBoot />
         <ApiCacheBoot />
+        <InstallTracker />
+        {session.role === "OWNER" && !business.phone && <PhoneRequiredModal />}
       </div>
     </LanguageProvider>
   );

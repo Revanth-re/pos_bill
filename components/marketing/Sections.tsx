@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Check, ChevronDown, Printer, MessageCircle } from "lucide-react";
-import { FAQS, FEATURES, whatsapp } from "@/lib/marketing/site";
+import { FAQS, FEATURES, SITE, whatsapp } from "@/lib/marketing/site";
 import { FreeOffer } from "./FreeOffer";
 import { Icon } from "./Icon";
 
@@ -122,10 +122,10 @@ export function CtaBand({ title = "Start billing faster from tomorrow morning", 
           <h2 className="text-3xl font-extrabold sm:text-4xl">{title}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/75">{text}</p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-            <a href={whatsapp()} target="_blank" rel="noopener" className="btn btn-accent">
+            <Link href={SITE.registerUrl} className="btn btn-accent">Start free — create account</Link>
+            <a href={whatsapp()} target="_blank" rel="noopener" className="btn btn-ghost-dark">
               <MessageCircle className="h-5 w-5" /> Book free setup on WhatsApp
             </a>
-            <Link href="/pricing" className="btn btn-ghost-dark">How it&apos;s free</Link>
           </div>
         </div>
       </div>

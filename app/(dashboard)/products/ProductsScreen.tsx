@@ -18,7 +18,6 @@ type ProductRow = ManagedProduct;
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  alias: z.string().max(120).optional(),
   categoryId: z.string().optional(),
   sku: z.string().optional(),
   barcode: z.string().optional(),
@@ -347,9 +346,6 @@ function AddProductSheet({
           <Field label="Product name" error={errors.name?.message}>
             <input {...register("name")} className="field" placeholder="Masala Dosa" />
           </Field>
-          <Field label="Name on bill — your language (optional)">
-            <input {...register("alias")} className="field" placeholder="e.g. మసాలా దోశ / मसाला डोसा" />
-          </Field>
           <Field label="Category">
             <select {...register("categoryId")} className="field">
               <option value="">No category</option>
@@ -399,7 +395,6 @@ function EditProductSheet({
   const [name, setName] = useState(product.name);
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [sku, setSku] = useState(product.sku ?? "");
-  const [alias, setAlias] = useState(product.alias ?? "");
   // Billo doesn't count stock (sold by plate) — saving a product always turns old stock tracking off.
   const trackStock = false;
   const [sellingPrice, setSellingPrice] = useState(String(product.sellingPrice));
@@ -418,7 +413,6 @@ function EditProductSheet({
         name,
         categoryId: categoryId || undefined,
         sku: sku || undefined,
-        alias,
         trackInventory: trackStock,
         sellingPrice: parseFloat(sellingPrice) || 0,
         gstPercent: parseFloat(gstPercent) || 0,
@@ -439,7 +433,6 @@ function EditProductSheet({
       categoryId: categoryId || null,
       categoryName: categories.find((c) => c.id === categoryId)?.name ?? null,
       sku: sku || null,
-      alias: alias || null,
       trackInventory: trackStock,
       sellingPrice: parseFloat(sellingPrice) || 0,
       gstPercent: parseFloat(gstPercent) || 0,
@@ -461,9 +454,6 @@ function EditProductSheet({
 
           <Field label="Product name">
             <input value={name} onChange={(e) => setName(e.target.value)} className="field" />
-          </Field>
-          <Field label="Name on bill — your language (optional)">
-            <input value={alias} onChange={(e) => setAlias(e.target.value)} className="field" placeholder="e.g. మసాలా దోశ / मसाला डोसा" />
           </Field>
           <Field label="Category">
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="field">

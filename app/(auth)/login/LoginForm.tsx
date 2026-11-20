@@ -109,12 +109,12 @@ export function LoginForm() {
         </a>
       </p>
 
-      <p className="text-center text-xs text-muted">
-        New business?{" "}
-        <a href="/register" className="font-semibold text-brand">
-          Create an account
+      <div className="border-t border-border pt-4 text-center">
+        <p className="text-sm text-muted">New to Billo? It&apos;s free.</p>
+        <a href="/register" className="mt-2 flex min-h-12 w-full items-center justify-center rounded-xl border-2 border-brand text-base font-bold text-brand hover:bg-brand-soft/60">
+          Create free account
         </a>
-      </p>
+      </div>
     </form>
   );
 }

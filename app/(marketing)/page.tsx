@@ -3,7 +3,7 @@ import { ArrowRight, MessageCircle, Check, ShieldCheck, Languages, Smartphone } 
 import { PhoneMock, FeatureGrid, Pricing, Faq, CtaBand, SectionHead } from "@/components/marketing/Sections";
 import { JsonLd, faqLd } from "@/components/marketing/JsonLd";
 import { InstallButton } from "@/components/marketing/InstallButton";
-import { USE_CASES, CITIES, whatsapp } from "@/lib/marketing/site";
+import { USE_CASES, CITIES, SITE, whatsapp } from "@/lib/marketing/site";
 import { GUIDES } from "@/lib/marketing/guides";
 
 export default function Home() {
@@ -27,14 +27,16 @@ export default function Home() {
               track <strong>udhaari</strong>, staff and cash — and see today&apos;s sales from anywhere.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href={whatsapp()} target="_blank" rel="noopener" className="btn btn-primary text-base">
+              <Link href={SITE.registerUrl} className="btn btn-primary text-base">
+                Start free — create account <ArrowRight className="h-5 w-5" />
+              </Link>
+              <a href={whatsapp()} target="_blank" rel="noopener" className="btn btn-ghost text-base">
                 <MessageCircle className="h-5 w-5" /> Book free setup + demo
               </a>
-              <InstallButton className="btn btn-ghost text-base" label="Get Billo app" iconClass="h-5 w-5" />
             </div>
             <p className="mt-3 text-sm text-muted">
-              <strong className="text-ink">The complete app is free</strong> — every feature, unlimited bills, ₹0 setup at your shop ·{" "}
-              <Link href="#free" className="font-semibold text-brand hover:underline">see how <ArrowRight className="inline h-3.5 w-3.5" /></Link>
+              <strong className="text-ink">Takes 1 minute.</strong> No card needed · every feature free ·{" "}
+              <InstallButton className="font-semibold text-brand hover:underline" label="install the app" iconClass="hidden" />
             </p>
             <ul className="mt-8 grid gap-2 text-sm font-medium text-ink-soft sm:grid-cols-3">
               <li className="flex items-center gap-2"><Smartphone className="h-4 w-4 text-brand" /> Runs on your phone</li>

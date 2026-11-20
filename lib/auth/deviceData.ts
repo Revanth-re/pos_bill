@@ -10,7 +10,7 @@ import { syncOfflineBills } from "@/lib/offline/sync";
 const LAST_ACCOUNT_KEY = "billo-last-account"; // `${userId}:${businessId}`
 const PAGE_CACHE = "billo-pages-v1"; // keep in sync with public/sw.js
 /** Per-device preferences that are not account data — kept. */
-const KEEP = new Set<string>([LAST_ACCOUNT_KEY, "billo-kitchen-lang"]);
+const KEEP = new Set<string>([LAST_ACCOUNT_KEY, "billo-kitchen-lang", "billo-device-id", "billo-installed-pending", "billo-launch-twa"]);
 
 /** Bills made offline that haven't reached the server yet. */
 export async function unsyncedBillCount(): Promise<number> {

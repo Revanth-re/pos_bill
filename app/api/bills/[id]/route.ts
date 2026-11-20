@@ -57,7 +57,6 @@ export async function GET(_req: Request, ctx: Ctx) {
         },
         items: inv.items.map((i) => ({
           name: i.productName,
-          localName: i.product?.alias ?? null,
           qty: Number(i.quantity),
           unitPrice: Number(i.unitPrice),
           total: Number(i.lineTotal),

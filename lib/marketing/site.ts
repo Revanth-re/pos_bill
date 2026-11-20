@@ -6,6 +6,7 @@ export const SITE = {
   // "Get Billo" → app login with the install sheet opened automatically
   installUrl: "/login?install=1",
   loginUrl: "/login",
+  registerUrl: "/register",
   tagline: "Fast billing for Indian restaurants",
   description:
     "Billo (getbillo.in) is a fast billing software and mobile billing app for India — print bills and tokens on a Bluetooth thermal printer, mini billing machine for shops & restaurants, udhaari khata, GST bills and daily reports. Free to use, free setup.",

@@ -45,7 +45,13 @@ export function Header() {
           <Link href={loggedIn ? SITE.appUrl : SITE.loginUrl} className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-brand-dark hover:bg-brand-soft/60 sm:inline-flex">
             {loggedIn ? "Open Billo" : "Login"}
           </Link>
-          <InstallButton className="btn btn-primary !min-h-11 !gap-1.5 whitespace-nowrap !px-3.5 text-sm" iconClass="hidden h-4 w-4 min-[360px]:block" />
+          {loggedIn ? (
+            <InstallButton className="btn btn-primary !min-h-11 !gap-1.5 whitespace-nowrap !px-3.5 text-sm" iconClass="hidden h-4 w-4 min-[360px]:block" />
+          ) : (
+            <Link href={SITE.registerUrl} className="btn btn-primary !min-h-11 whitespace-nowrap !px-3.5 text-sm">
+              Start free
+            </Link>
+          )}
           <button onClick={() => setOpen(!open)} className="flex h-11 w-11 items-center justify-center rounded-xl text-brand-dark hover:bg-brand-soft/60 lg:hidden" aria-label="Menu" aria-expanded={open}>
             {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -61,7 +67,7 @@ export function Header() {
             ))}
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Link href={loggedIn ? SITE.appUrl : SITE.loginUrl} className="btn btn-ghost">{loggedIn ? "Open Billo" : "Login"}</Link>
-              <InstallButton className="btn btn-primary" />
+              {loggedIn ? <InstallButton className="btn btn-primary" /> : <Link href={SITE.registerUrl} className="btn btn-primary">Start free — create account</Link>}
             </div>
           </div>
         </nav>

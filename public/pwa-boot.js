@@ -11,6 +11,9 @@
 
     window.addEventListener("appinstalled", function () {
       window.__POS_PWA.deferred = null;
+      // Counted on /admin once this phone opens the app logged in (see InstallTracker).
+      try { localStorage.setItem("billo-installed-pending", "1"); } catch (e) {}
+      try { if (window.gtag) window.gtag("event", "app_install", { source: "chrome" }); } catch (e) {}
       window.dispatchEvent(new Event("pos-pwa-installed"));
     });
 

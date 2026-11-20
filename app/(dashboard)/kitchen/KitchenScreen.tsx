@@ -262,7 +262,6 @@ export function KitchenScreen({ kitchenOnly, userName }: { kitchenOnly: boolean;
                   <span className="min-w-10 rounded-lg bg-brand-soft px-2 py-0.5 text-center text-xl font-black text-brand-dark tabular">{fmtQty(it.qty)}</span>
                   <span className="leading-tight">
                     <span className="block text-xl font-bold">{it.name}</span>
-                    {it.alias && it.alias !== it.name && <span className="block text-sm font-semibold text-muted">{it.alias}</span>}
                   </span>
                 </button>
               </li>

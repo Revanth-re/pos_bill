@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
+import { normalizeIndianMobile, MOBILE_ERROR } from "@/lib/phone";
 
 const registerSchema = z.object({
   ownerName: z.string().min(1).max(80),
   email: z.string().email(),
   password: z.string().min(6).max(72),
   businessName: z.string().min(1).max(120),
-  phone: z.string().max(20).optional(),
+  phone: z.string().min(1, "Mobile number is required").max(20),
 });
 
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -32,7 +33,14 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid signup details", issues: parsed.error.flatten() }, { status: 400 });
     }
-    const { ownerName, email, password, businessName, phone } = parsed.data;
+    const { ownerName, email, password, businessName } = parsed.data;
+    // Mobile number is required: a real-looking Indian mobile, not used by another account.
+    const phone = normalizeIndianMobile(parsed.data.phone);
+    if (!phone) return NextResponse.json({ error: MOBILE_ERROR }, { status: 400 });
+    const phoneTaken = await prisma.user.findFirst({ where: { phone }, select: { id: true } });
+    if (phoneTaken) {
+      return NextResponse.json({ error: "This mobile number already has a Billo account. Please log in, or use a different number." }, { status: 409 });
+    }
 
     const existing = await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" } }, select: { id: true } });
     if (existing) {

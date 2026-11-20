@@ -20,7 +20,7 @@ export default async function AdminUsagePage() {
   const d30 = istDaysAgoStart(29);
   const live = { status: { notIn: ["CANCELLED", "REFUNDED"] as ("CANCELLED" | "REFUNDED")[] } };
 
-  const [businesses, last, recent] = await Promise.all([
+  const [businesses, last, recent, installs] = await Promise.all([
     prisma.business.findMany({
       select: {
         id: true,
@@ -39,7 +39,20 @@ export default async function AdminUsagePage() {
       select: { businessId: true, createdAt: true, grandTotal: true },
       take: 100_000,
     }),
+    prisma.auditLog.findMany({ where: { action: "APP_INSTALLED" }, select: { businessId: true, metadata: true, createdAt: true } }),
   ]);
+  // Installed apps per shop: devices, and how many came from the Play Store vs Chrome's "Install app".
+  const inst = new Map<string, { devices: number; play: number; chrome: number }>();
+  for (const r of installs) {
+    const x = inst.get(r.businessId) ?? { devices: 0, play: 0, chrome: 0 };
+    x.devices += 1;
+    if ((r.metadata as { source?: string } | null)?.source === "playstore") x.play += 1;
+    else x.chrome += 1;
+    inst.set(r.businessId, x);
+  }
+  const installedShops = inst.size;
+  const installedDevices = installs.length;
+  const playDevices = [...inst.values()].reduce((a, x) => a + x.play, 0);
 
   type Stat = { today: number; todaySales: number; w: number; m: number; mSales: number; days7: Set<string> };
   const stats = new Map<string, Stat>();
@@ -91,13 +104,15 @@ export default async function AdminUsagePage() {
         <p className="text-base text-muted">Every shop on Billo and how much it&apos;s really used. Visible only to the Billo team.</p>
       </div>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Shops" value={String(businesses.length)} />
         <Kpi label="Active today" value={String(activeToday)} />
         <Kpi label="Active this week" value={String(activeWeek)} />
         <Kpi label="New this week" value={String(newThisWeek)} />
         <Kpi label="Bills today" value={String(billsToday)} />
         <Kpi label="Sales today" value={formatINR(salesToday)} />
+        <Kpi label="Shops with app installed" value={String(installedShops)} />
+        <Kpi label="Installed devices" value={`${installedDevices} (${playDevices} Play Store)`} />
       </section>
 
       <div className="card overflow-x-auto">
@@ -111,6 +126,7 @@ export default async function AdminUsagePage() {
               <th className="p-3 text-right">7 days</th>
               <th className="p-3 text-right">Days used (7)</th>
               <th className="p-3 text-right">30 days</th>
+              <th className="p-3">App</th>
               <th className="p-3">Last bill</th>
               <th className="p-3">Joined</th>
             </tr>
@@ -143,6 +159,18 @@ export default async function AdminUsagePage() {
                   <td className="p-3 text-right tabular">
                     <p>{s?.m ?? 0}</p>
                     <p className="text-xs text-muted">{formatINR(s?.mSales ?? 0)}</p>
+                  </td>
+                  <td className="p-3 whitespace-nowrap">
+                    {inst.get(b.id) ? (
+                      <>
+                        <p className="font-semibold text-success">📱 {inst.get(b.id)!.devices} device{inst.get(b.id)!.devices > 1 ? "s" : ""}</p>
+                        <p className="text-xs text-muted">
+                          {[inst.get(b.id)!.play ? `${inst.get(b.id)!.play} Play Store` : "", inst.get(b.id)!.chrome ? `${inst.get(b.id)!.chrome} Chrome` : ""].filter(Boolean).join(" · ")}
+                        </p>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted">Browser only</span>
+                    )}
                   </td>
                   <td className="p-3 whitespace-nowrap">{fmtWhen(lb?.at)}</td>
                   <td className="p-3 whitespace-nowrap">{fmtWhen(b.createdAt)}</td>

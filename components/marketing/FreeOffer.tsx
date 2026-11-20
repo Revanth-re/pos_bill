@@ -168,6 +168,9 @@ export function FreeOffer() {
               <Phone className="h-4 w-4" /> Or call {SITE.phone}
             </a>
             {phone && !phoneOk && <p className="mt-2 text-xs text-danger">Check the mobile number (10 digits).</p>}
+            <a href={SITE.registerUrl} className="mt-2 block text-center text-sm font-bold text-brand hover:underline">
+              Or start yourself now — create free account →
+            </a>
             <p className="mt-3 text-center text-xs text-muted">No card · No hidden charges · No contract</p>
           </div>
         </div>

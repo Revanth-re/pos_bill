@@ -199,7 +199,6 @@ export function BillingScreen({ businessName, cashierName }: Props) {
       orderType,
       lines: lines.map((l) => ({
         name: l.product.name,
-        localName: l.product.alias,
         qty: l.quantity,
         unitPrice: l.product.sellingPrice,
         total: l.product.sellingPrice * l.quantity,
