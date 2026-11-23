@@ -52,7 +52,6 @@ export async function POST(req: Request) {
     const [products, customer] = await Promise.all([
       prisma.product.findMany({
         where: { id: { in: productIds }, businessId: { in: menuIds } },
-        include: { recipe: { include: { lines: true } } },
       }),
       input.customerId
         ? prisma.customer.findFirst({ where: { id: input.customerId, businessId: session.businessId } })
@@ -153,50 +152,12 @@ export async function POST(req: Request) {
         })),
       });
 
-      // 10–11. Deduct product stock + recipe ingredients (only now — the sale is confirmed).
-      // Movements are written in ONE createMany and ingredient deductions are merged per
-      // ingredient, so a big bill doesn't make dozens of round-trips to a remote database.
-      const movements: Prisma.InventoryMovementCreateManyInput[] = [];
-      const ingredientDeductions = new Map<string, number>();
+      // 10. Products that still have stock tracking on: take the sold quantity out of stock.
       for (const item of input.items) {
         const product = productsById.get(item.productId)!;
         if (!product.trackInventory) continue;
-
-        await tx.product.update({
-          where: { id: product.id },
-          data: { currentStock: { decrement: item.quantity } },
-        });
-        movements.push({
-          businessId: session.businessId,
-          productId: product.id,
-          type: "SALE",
-          quantity: -item.quantity,
-          reference: invoiceNumber,
-          staffId: session.staffId,
-        });
-
-        if (product.recipe) {
-          for (const line of product.recipe.lines) {
-            const deduction = Number(line.quantity) * item.quantity;
-            ingredientDeductions.set(line.ingredientId, (ingredientDeductions.get(line.ingredientId) ?? 0) + deduction);
-          }
-        }
+        await tx.product.update({ where: { id: product.id }, data: { currentStock: { decrement: item.quantity } } });
       }
-      for (const [ingredientId, deduction] of ingredientDeductions) {
-        await tx.ingredient.update({
-          where: { id: ingredientId },
-          data: { currentStock: { decrement: deduction } },
-        });
-        movements.push({
-          businessId: session.businessId,
-          ingredientId,
-          type: "RECIPE_DEDUCTION",
-          quantity: -deduction,
-          reference: invoiceNumber,
-          staffId: session.staffId,
-        });
-      }
-      if (movements.length) await tx.inventoryMovement.createMany({ data: movements });
 
       // 12. Update customer credit ledger if any portion was paid on Credit.
       const creditAmount = input.payments

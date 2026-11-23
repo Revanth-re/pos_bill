@@ -48,7 +48,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       lines: [],
-      orderType: "TAKEAWAY",
+      orderType: "DINE_IN", // most bills are dine-in; tap Takeaway only for parcels
       billDiscount: undefined,
       customerId: undefined,
       customerName: undefined,
@@ -116,7 +116,7 @@ export const useCartStore = create<CartState>()(
           customerId: undefined,
           customerName: undefined,
           heldBillId: undefined,
-          orderType: "TAKEAWAY",
+          orderType: "DINE_IN",
         }),
     }),
     {

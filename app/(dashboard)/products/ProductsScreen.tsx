@@ -4,10 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, X, Search, Utensils, Pencil } from "lucide-react";
+import { Plus, X, Search, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ImagePicker } from "@/components/dashboard/ImagePicker";
-import { RecipeEditorSheet } from "@/components/dashboard/RecipeEditorSheet";
 import { ProductImage } from "@/components/ui/ProductImage";
 import { Spinner } from "@/components/ui/Spinner";
 import { formatINR, cn } from "@/lib/utils";
@@ -54,7 +53,6 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [recipeProduct, setRecipeProduct] = useState<{ id: string; name: string } | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -160,12 +158,9 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
                   </div>
                 </div>
                 {canEdit && !p.shared && (
-                  <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
                     <button onClick={() => setEditingProduct(p)} className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-border text-sm font-semibold text-ink-soft hover:bg-paper">
                       <Pencil className="h-4 w-4" /> Edit
-                    </button>
-                    <button onClick={() => setRecipeProduct({ id: p.id, name: p.name })} className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-border text-sm font-semibold text-brand hover:bg-brand-soft/60">
-                      <Utensils className="h-4 w-4" /> Recipe
                     </button>
                     <button onClick={() => handleDelete(p.id)} className="flex min-h-11 items-center justify-center rounded-xl border border-danger/30 text-sm font-semibold text-danger hover:bg-danger-soft">
                       Remove
@@ -213,12 +208,6 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
                           className="mr-3 inline-flex items-center gap-1 text-sm font-bold text-ink-soft hover:underline"
                         >
                           <Pencil className="h-3.5 w-3.5" /> Edit
-                        </button>
-                        <button
-                          onClick={() => setRecipeProduct({ id: p.id, name: p.name })}
-                          className="mr-3 inline-flex items-center gap-1 text-sm font-bold text-brand hover:underline"
-                        >
-                          <Utensils className="h-3.5 w-3.5" /> Recipe
                         </button>
                         <button
                           onClick={() => handleDelete(p.id)}
@@ -272,14 +261,6 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
             upsertManagedProduct({ ...editingProduct, ...updated });
             setEditingProduct(null);
           }}
-        />
-      )}
-
-      {recipeProduct && (
-        <RecipeEditorSheet
-          productId={recipeProduct.id}
-          productName={recipeProduct.name}
-          onClose={() => setRecipeProduct(null)}
         />
       )}
     </div>

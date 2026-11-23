@@ -44,7 +44,7 @@ export function CartPanel({
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="font-bold text-ink">{t("pos.cart")} {itemCount > 0 && `(${itemCount})`}</h2>
         <div className="flex rounded-xl border border-border bg-paper p-0.5 text-xs font-semibold">
-          {(["TAKEAWAY", "DINE_IN"] as const).map((ot) => (
+          {(["DINE_IN", "TAKEAWAY"] as const).map((ot) => (
             <button
               key={ot}
               onClick={() => setOrderType(ot)}

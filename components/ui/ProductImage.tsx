@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Package } from "lucide-react";
+import { UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Product photo with broken-URL fallback and browser-friendly caching. */
+/**
+ * Product photo with browser-friendly caching. No photo (or a broken one) → a clean food icon,
+ * so owners can skip photos completely — uploading one is their choice.
+ */
 export function ProductImage({
   src,
   alt = "",
@@ -24,12 +27,16 @@ export function ProductImage({
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {
+    // Let the caller's classes size it (e.g. w-full + aspect ratio); fixed size only when none are given.
+    const sizedByClass = /\b(w-|h-|aspect-|inset-)/.test(className ?? "");
     return (
       <div
-        className={cn("flex items-center justify-center bg-paper text-muted", className)}
-        style={{ width, height }}
+        role="img"
+        aria-label={alt || "No photo"}
+        className={cn("flex items-center justify-center bg-brand-soft/60 text-brand/70", className)}
+        style={sizedByClass ? undefined : { width, height }}
       >
-        <Package className="h-1/3 w-1/3 max-h-8 max-w-8" />
+        <UtensilsCrossed className="h-2/5 w-2/5 max-h-10 max-w-10" strokeWidth={1.75} />
       </div>
     );
   }

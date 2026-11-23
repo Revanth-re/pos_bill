@@ -36,7 +36,6 @@ export async function deleteOwnerAccount(userId: string) {
         await run("orderItems", tx.orderItem.deleteMany({ where: { order: inB } }));
         await run("orders", tx.order.deleteMany({ where: inB }));
         await run("heldBills", tx.heldBill.deleteMany({ where: inB }));
-        await run("stockMoves", tx.inventoryMovement.deleteMany({ where: inB }));
         await run("dayClosings", tx.dayClosing.deleteMany({ where: inB }));
         await run("expenses", tx.expense.deleteMany({ where: inB }));
         await run("expenseCategories", tx.expenseCategory.deleteMany({ where: inB }));
@@ -44,10 +43,7 @@ export async function deleteOwnerAccount(userId: string) {
         await run("notifications", tx.notification.deleteMany({ where: inB }));
         await run("printers", tx.printer.deleteMany({ where: inB }));
         await run("offline", tx.offlineTransaction.deleteMany({ where: inB }));
-        await run("recipeLines", tx.recipeIngredient.deleteMany({ where: { recipe: { product: inB } } }));
-        await run("recipes", tx.recipe.deleteMany({ where: { product: inB } }));
         await run("products", tx.product.deleteMany({ where: inB }));
-        await run("ingredients", tx.ingredient.deleteMany({ where: inB }));
         await run("categories", tx.category.deleteMany({ where: inB }));
         await run("tiffinPlans", tx.tiffinPlan.deleteMany({ where: inB }));
         await run("customers", tx.customer.deleteMany({ where: inB }));

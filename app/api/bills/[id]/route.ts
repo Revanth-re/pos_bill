@@ -11,7 +11,7 @@ async function loadInvoice(businessId: string, id: string) {
   return prisma.invoice.findFirst({
     where: { id, businessId },
     include: {
-      items: { include: { product: { select: { alias: true } } } },
+      items: { include: { product: { select: { trackInventory: true } } } },
       payments: true,
       staff: { include: { user: { select: { name: true } } } },
       order: { include: { customer: { select: { id: true, name: true } } } },
@@ -139,26 +139,11 @@ export async function POST(req: Request, ctx: Ctx) {
       await tx.invoice.update({ where: { id: inv.id }, data: { status: newStatus } });
       await tx.order.update({ where: { id: inv.orderId }, data: { status: "CANCELLED" } });
 
-      // Put back everything this bill took out of stock (products + recipe ingredients).
-      const movements = await tx.inventoryMovement.findMany({
-        where: { businessId: session.businessId, reference: inv.invoiceNumber, type: { in: ["SALE", "RECIPE_DEDUCTION"] } },
-      });
-      for (const m of movements) {
-        const back = -Number(m.quantity);
-        if (m.productId) await tx.product.update({ where: { id: m.productId }, data: { currentStock: { increment: back } } });
-        if (m.ingredientId) await tx.ingredient.update({ where: { id: m.ingredientId }, data: { currentStock: { increment: back } } });
-        await tx.inventoryMovement.create({
-          data: {
-            businessId: session.businessId,
-            productId: m.productId,
-            ingredientId: m.ingredientId,
-            type: "ADJUSTMENT",
-            quantity: back,
-            reason: `${label}: ${reason}`,
-            reference: inv.invoiceNumber,
-            staffId: session.staffId,
-          },
-        });
+      // Products that still track stock: put the sold quantity back.
+      for (const it of inv.items) {
+        if (it.product?.trackInventory) {
+          await tx.product.update({ where: { id: it.productId }, data: { currentStock: { increment: Number(it.quantity) } } });
+        }
       }
 
       // Reverse any udhaari this bill added to the customer.

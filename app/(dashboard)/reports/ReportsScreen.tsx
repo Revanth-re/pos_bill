@@ -8,8 +8,6 @@ type RangeKey = "today" | "week" | "month";
 
 interface Profit {
   sales: number;
-  cogs: number;
-  grossProfit: number;
   expenses: number;
   netProfit: number;
   profitMargin: number;
@@ -81,14 +79,10 @@ export function ReportsScreen({ canViewProfit }: { canViewProfit: boolean }) {
       ) : (
         <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm space-y-3">
           <Row label="Sales" value={formatINR(data.sales)} />
-          <Row label="Cost of Goods (COGS)" value={`-${formatINR(data.cogs)}`} muted />
-          <div className="border-t border-border pt-2">
-            <Row label="Gross Profit" value={formatINR(data.grossProfit)} bold />
-          </div>
           <Row label="Expenses" value={`-${formatINR(data.expenses)}`} muted />
           <div className="border-t border-border pt-2">
             <Row
-              label="Net Profit"
+              label="Profit"
               value={formatINR(data.netProfit)}
               bold
               tone={data.netProfit >= 0 ? "success" : "danger"}
@@ -102,7 +96,7 @@ export function ReportsScreen({ canViewProfit }: { canViewProfit: boolean }) {
       )}
 
       <p className="text-sm text-muted">
-        COGS uses each product&apos;s recipe food cost where one exists, otherwise its purchase price.
+        Profit = Sales − Expenses. Add your daily costs (gas, groceries, salaries) in Expenses to see the real profit.
       </p>
     </div>
   );

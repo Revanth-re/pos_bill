@@ -20,6 +20,8 @@ export default function Privacy() {
         <p>Customer names and phone numbers you add for udhaari belong to your business. We process them only on your behalf.</p>
         <h2>Storage & security</h2>
         <p>Data is stored on secure cloud servers with encrypted connections (HTTPS). Access inside your business is controlled by staff roles.</p>
+        <h2>Who at Billo can see your data</h2>
+        <p>A small number of Billo team members can view shop accounts (shop details, staff logins, products, bills and sales totals) to provide setup, support and to keep the service running. We never sell your data or share it with advertisers.</p>
         <h2>Deleting your data</h2>
         <p>Email {SITE.email} to export or delete your business data.</p>
         <h2>Contact</h2>

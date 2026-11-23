@@ -135,7 +135,11 @@ export function ImagePicker({
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} className="hidden" />
 
       {error && <p className="mt-1 text-sm text-danger">{error}</p>}
-      {!value && <p className="mt-1.5 text-xs text-muted">Pick from {FOOD_LIBRARY.length}+ ready food photos, or upload your own (JPG/PNG/WEBP, up to 5MB).</p>}
+      {!value && (
+        <p className="mt-1.5 text-xs text-muted">
+          Photo is <b>optional</b> — skip it and a food icon shows instead. Or pick from {FOOD_LIBRARY.length}+ ready photos, or upload your own (JPG/PNG/WEBP, up to 5MB).
+        </p>
+      )}
 
       {galleryOpen && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={() => setGalleryOpen(false)}>

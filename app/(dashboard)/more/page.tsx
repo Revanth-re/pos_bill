@@ -25,7 +25,7 @@ export default async function MorePage() {
   const session = await requireSession();
   const visible = ITEMS.filter((item) => !item.permission || can(session.role, item.permission));
   // Billo team only (ADMIN_EMAILS): usage of every shop on Billo.
-  if (isBilloAdmin(session.email)) visible.unshift({ href: "/admin", label: "Billo usage (all shops)", icon: Activity });
+  if (isBilloAdmin(session.email)) visible.unshift({ href: "/admin", label: "Admin panel (Billo team)", icon: Activity });
 
   return (
     <div className="mx-auto w-full max-w-2xl p-4">

@@ -93,18 +93,6 @@ export async function POST(req: Request) {
       data: { ...parsed.data, businessId: session.businessId },
     });
 
-    if (parsed.data.currentStock > 0) {
-      await prisma.inventoryMovement.create({
-        data: {
-          businessId: session.businessId,
-          productId: product.id,
-          type: "OPENING",
-          quantity: parsed.data.currentStock,
-          staffId: session.staffId,
-        },
-      });
-    }
-
     await prisma.auditLog.create({
       data: {
         businessId: session.businessId,

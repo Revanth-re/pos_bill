@@ -3,7 +3,9 @@ import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { isBilloAdmin } from "@/lib/admin";
 import { istDayStart, istDaysAgoStart, istDateKey } from "@/lib/time";
+import Link from "next/link";
 import { formatINR } from "@/lib/utils";
+import { AdminNav } from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +13,11 @@ export const dynamic = "force-dynamic";
  * Billo usage — for the Billo team only (ADMIN_EMAILS). Shows every shop on Billo and
  * how much it is actually used: bills today / 7 days / 30 days, last bill, active days.
  */
-export default async function AdminUsagePage() {
+export default async function AdminUsagePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const session = await requireSession();
   if (!isBilloAdmin(session.email)) notFound();
 
+  const term = ((await searchParams).q ?? "").trim();
   const today = istDayStart();
   const d7 = istDaysAgoStart(6);
   const d30 = istDaysAgoStart(29);
@@ -22,6 +25,16 @@ export default async function AdminUsagePage() {
 
   const [businesses, last, recent, installs] = await Promise.all([
     prisma.business.findMany({
+      where: term
+        ? {
+            OR: [
+              { name: { contains: term, mode: "insensitive" } },
+              { city: { contains: term, mode: "insensitive" } },
+              { phone: { contains: term } },
+              { staff: { some: { user: { OR: [{ email: { contains: term, mode: "insensitive" } }, { name: { contains: term, mode: "insensitive" } }, { phone: { contains: term } }] } } } },
+            ],
+          }
+        : undefined,
       select: {
         id: true,
         name: true,
@@ -33,7 +46,7 @@ export default async function AdminUsagePage() {
       },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.invoice.groupBy({ by: ["businessId"], _max: { createdAt: true }, _count: { _all: true } }),
+    prisma.invoice.groupBy({ by: ["businessId"], where: live, _max: { createdAt: true }, _count: { _all: true }, _sum: { grandTotal: true } }),
     prisma.invoice.findMany({
       where: { createdAt: { gte: d30 }, ...live },
       select: { businessId: true, createdAt: true, grandTotal: true },
@@ -71,7 +84,7 @@ export default async function AdminUsagePage() {
     }
     stats.set(inv.businessId, s);
   }
-  const lastBill = new Map(last.map((l) => [l.businessId, { at: l._max.createdAt, total: l._count._all }]));
+  const lastBill = new Map(last.map((l) => [l.businessId, { at: l._max.createdAt, total: l._count._all, sales: Number(l._sum.grandTotal ?? 0) }]));
 
   const rows = businesses
     .map((b) => {
@@ -99,6 +112,7 @@ export default async function AdminUsagePage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 p-4 lg:p-6">
+      <AdminNav active="overview" />
       <div>
         <h1 className="text-2xl font-extrabold text-ink sm:text-[28px]">Billo usage</h1>
         <p className="text-base text-muted">Every shop on Billo and how much it&apos;s really used. Visible only to the Billo team.</p>
@@ -111,11 +125,17 @@ export default async function AdminUsagePage() {
         <Kpi label="New this week" value={String(newThisWeek)} />
         <Kpi label="Bills today" value={String(billsToday)} />
         <Kpi label="Sales today" value={formatINR(salesToday)} />
+        <Kpi label="Income — all shops, all time" value={formatINR(last.reduce((a, l) => a + Number(l._sum.grandTotal ?? 0), 0))} />
+        <Kpi label="Bills — all time" value={String(last.reduce((a, l) => a + l._count._all, 0))} />
         <Kpi label="Shops with app installed" value={String(installedShops)} />
         <Kpi label="Installed devices" value={`${installedDevices} (${playDevices} Play Store)`} />
       </section>
 
       <div className="card overflow-x-auto">
+        <form className="flex gap-2 p-3" action="/admin">
+          <input name="q" defaultValue={term} placeholder="Search shop, city, owner email or mobile" aria-label="Search shops" className="min-h-11 flex-1 rounded-xl border border-border bg-surface px-3 text-base outline-none focus:border-brand" />
+          <button type="submit" className="btn btn-primary">Search</button>
+        </form>
         <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-paper text-left text-xs uppercase tracking-wide text-muted">
             <tr>
@@ -126,6 +146,7 @@ export default async function AdminUsagePage() {
               <th className="p-3 text-right">7 days</th>
               <th className="p-3 text-right">Days used (7)</th>
               <th className="p-3 text-right">30 days</th>
+              <th className="p-3 text-right">All time</th>
               <th className="p-3">App</th>
               <th className="p-3">Last bill</th>
               <th className="p-3">Joined</th>
@@ -137,7 +158,7 @@ export default async function AdminUsagePage() {
               return (
                 <tr key={b.id} className="border-t border-border align-top">
                   <td className="p-3">
-                    <p className="font-bold text-ink">{b.name}</p>
+                    <Link href={`/admin/shops/${b.id}`} className="font-bold text-brand hover:underline">{b.name} →</Link>
                     <p className="text-xs text-muted">{[b.city, b.phone].filter(Boolean).join(" · ") || "—"}</p>
                     <p className="text-xs text-muted">
                       {b._count.products} items · {b._count.staff} staff
@@ -159,6 +180,10 @@ export default async function AdminUsagePage() {
                   <td className="p-3 text-right tabular">
                     <p>{s?.m ?? 0}</p>
                     <p className="text-xs text-muted">{formatINR(s?.mSales ?? 0)}</p>
+                  </td>
+                  <td className="p-3 text-right tabular">
+                    <p>{lb?.total ?? 0}</p>
+                    <p className="text-xs font-semibold text-ink">{formatINR(lb?.sales ?? 0)}</p>
                   </td>
                   <td className="p-3 whitespace-nowrap">
                     {inst.get(b.id) ? (
