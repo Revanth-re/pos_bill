@@ -12,7 +12,7 @@ export const SITE = {
     "Billo (getbillo.in) is a fast billing software and mobile billing app for India — print bills and tokens on a Bluetooth thermal printer, mini billing machine for shops & restaurants, udhaari khata, GST bills and daily reports. Free to use, free setup.",
   phone: "+91 76709 15570",
   phoneRaw: "917670915570",
-  email: "revanthrevi131@gmail.com",
+  email: "gettbillo@gmail.com",
   region: "India",
 };
 

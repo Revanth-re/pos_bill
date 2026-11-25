@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { isBilloAdmin } from "@/lib/admin";
-import { istDayStart, istDaysAgoStart, istDateKey } from "@/lib/time";
+import { istDayStart, istDaysAgoStart, istDateKey, nowMs } from "@/lib/time";
 import { formatINR } from "@/lib/utils";
 import { AdminNav, AdminKpi, fmtIST } from "@/components/admin/AdminNav";
 
@@ -25,7 +25,7 @@ export default async function AdminShopPage({ params }: { params: Promise<{ id: 
     where: { id },
     select: {
       id: true, name: true, city: true, state: true, address: true, phone: true, email: true, gstin: true, gstEnabled: true, language: true, createdAt: true,
-      staff: { orderBy: { createdAt: "asc" }, select: { id: true, role: true, status: true, createdAt: true, user: { select: { id: true, name: true, email: true, phone: true } } } },
+      staff: { orderBy: { createdAt: "asc" }, select: { id: true, role: true, status: true, createdAt: true, lastSeenAt: true, user: { select: { id: true, name: true, email: true, phone: true } } } },
       _count: { select: { customers: true, products: true, invoices: true, expenses: true } },
     },
   });
@@ -206,7 +206,7 @@ export default async function AdminShopPage({ params }: { params: Promise<{ id: 
         <h2 className="p-4 pb-2 text-lg font-bold text-ink">Staff & logins ({shop.staff.length})</h2>
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-paper text-left text-xs uppercase tracking-wide text-muted">
-            <tr><th className="p-3">Name</th><th className="p-3">Role</th><th className="p-3">Email</th><th className="p-3">Mobile</th><th className="p-3">Status</th><th className="p-3">Added</th></tr>
+            <tr><th className="p-3">Name</th><th className="p-3">Role</th><th className="p-3">Email</th><th className="p-3">Mobile</th><th className="p-3">Status</th><th className="p-3">Last seen</th><th className="p-3">Added</th></tr>
           </thead>
           <tbody>
             {shop.staff.map((s) => (
@@ -216,6 +216,9 @@ export default async function AdminShopPage({ params }: { params: Promise<{ id: 
                 <td className="p-3">{s.user.email}</td>
                 <td className="p-3">{s.user.phone ?? "—"}</td>
                 <td className="p-3">{s.status}</td>
+                <td className="p-3 whitespace-nowrap">
+                  {s.lastSeenAt && nowMs() - s.lastSeenAt.getTime() < 2 * 60_000 ? <span className="font-bold text-success">● Online</span> : fmtIST(s.lastSeenAt)}
+                </td>
                 <td className="p-3 whitespace-nowrap">{fmtIST(s.createdAt, false)}</td>
               </tr>
             ))}

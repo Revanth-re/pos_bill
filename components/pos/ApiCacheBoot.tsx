@@ -20,6 +20,8 @@ import { usePathname, useRouter } from "next/navigation";
 const FRESH_MS = 20_000;
 const MAX_AGE_MS = 10 * 60_000;
 const SKIP = ["/api/auth", "/api/kitchen", "/api/health", "/api/session-reset", "/api/where"];
+/** POSTs that only record activity — they don't change shop data, so they must not clear the cache. */
+const QUIET_POSTS = ["/api/presence", "/api/track/", "/api/report-error"];
 
 type Entry = { at: number; status: number; headers: [string, string][]; body: string };
 let installed = false;
@@ -67,6 +69,7 @@ function install() {
     const ours = url.origin === window.location.origin && url.pathname.startsWith("/api/");
     if (!ours) return realFetch(input, init);
 
+    if (method !== "GET" && method !== "HEAD" && QUIET_POSTS.some((p) => url.pathname.startsWith(p))) return realFetch(input, init);
     if (method !== "GET" && method !== "HEAD") {
       // Something changed → everything we remembered may be old now.
       store.clear();

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isBilloAdmin } from "@/lib/admin";
 import NextAuth from "next-auth";
 import { edgeAuthConfig } from "@/lib/auth/edgeConfig";
 
@@ -58,7 +59,14 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/kitchen", origin));
   }
 
+  // Billo team (ADMIN_EMAILS): only the admin panel — no billing, bills, kitchen or shop screens.
+  const email = (req.auth?.user as { email?: string } | undefined)?.email;
+  if (isAuthed && !isAuthRoute && isBilloAdmin(email) && !req.nextUrl.pathname.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/admin", origin));
+  }
+
   if (isAuthed && isAuthRoute) {
+    if (isBilloAdmin(email)) return NextResponse.redirect(new URL("/admin", origin));
     // Keep ?install=1 (from the website's "Get Billo") so the dashboard can offer install too.
     const dest = new URL("/dashboard", origin);
     if (req.nextUrl.searchParams.get("install") === "1") dest.searchParams.set("install", "1");

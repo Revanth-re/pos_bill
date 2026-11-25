@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, User } from "lucide-react";
+import { SupportButton } from "./SupportButton";
 
 export function TopBar({ businessName }: { businessName: string }) {
   const pathname = usePathname();
@@ -20,13 +21,16 @@ export function TopBar({ businessName }: { businessName: string }) {
         <span className="truncate text-base font-bold text-ink">{businessName}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted" />
       </Link>
+      <div className="flex shrink-0 items-center gap-2">
+      <SupportButton />
       <Link
         href="/profile"
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-dark"
         aria-label="Profile"
       >
-            <User className="h-5 w-5" />
+        <User className="h-5 w-5" />
       </Link>
+      </div>
     </header>
   );
 }

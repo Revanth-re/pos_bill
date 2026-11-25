@@ -1,3 +1,4 @@
+import { nowMs } from "@/lib/time";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/auth";
@@ -28,7 +29,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       take: 500,
       select: {
         id: true, name: true, email: true, phone: true, createdAt: true,
-        staff: { select: { role: true, status: true, business: { select: { id: true, name: true } } } },
+        staff: { select: { role: true, status: true, lastSeenAt: true, business: { select: { id: true, name: true } } } },
       },
     }),
     prisma.staff.groupBy({ by: ["role"], _count: { _all: true } }),
@@ -61,10 +62,10 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead className="bg-paper text-left text-xs uppercase tracking-wide text-muted">
-            <tr><th className="p-3">Name</th><th className="p-3">Email</th><th className="p-3">Mobile</th><th className="p-3">Shop · role</th><th className="p-3">Joined</th></tr>
+            <tr><th className="p-3">Name</th><th className="p-3">Email</th><th className="p-3">Mobile</th><th className="p-3">Shop · role</th><th className="p-3">Last seen</th><th className="p-3">Joined</th></tr>
           </thead>
           <tbody>
-            {users.length === 0 && <tr><td colSpan={5} className="p-4 text-center text-muted">No users found.</td></tr>}
+            {users.length === 0 && <tr><td colSpan={6} className="p-4 text-center text-muted">No users found.</td></tr>}
             {users.map((u) => (
               <tr key={u.id} className="border-t border-border align-top">
                 <td className="p-3 font-semibold text-ink">{u.name}</td>
@@ -82,6 +83,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                     ))
                   )}
                 </td>
+                <td className="p-3 whitespace-nowrap">{lastSeen(u.staff)}</td>
                 <td className="p-3 whitespace-nowrap">{fmtIST(u.createdAt, false)}</td>
               </tr>
             ))}
@@ -91,4 +93,12 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       </div>
     </div>
   );
+}
+
+/** Most recent time any of this person's logins had Billo open; "Online" within 2 minutes. */
+function lastSeen(staff: { lastSeenAt: Date | null }[]) {
+  const t = Math.max(0, ...staff.map((s) => s.lastSeenAt?.getTime() ?? 0));
+  if (!t) return <span className="text-muted">Never</span>;
+  if (nowMs() - t < 2 * 60_000) return <span className="font-bold text-success">● Online</span>;
+  return fmtIST(new Date(t));
 }

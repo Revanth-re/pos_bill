@@ -4,6 +4,12 @@ import { PhoneMock } from "@/components/marketing/Sections";
 import { JsonLd, faqLd } from "@/components/marketing/JsonLd";
 import { SITE, whatsapp } from "@/lib/marketing/site";
 
+/** Regional fonts for the language pages, loaded straight from Google Fonts on that page only. */
+const LANG_FONT: Record<string, { family: string; css: string }> = {
+  "--font-telugu-face": { family: "\"Noto Sans Telugu\"", css: "https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@400;600;700&display=swap" },
+  "--font-hindi-face": { family: "\"Noto Sans Devanagari\"", css: "https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" },
+};
+
 export interface LangContent {
   lang: "hi" | "te";
   fontVar: string;
@@ -30,7 +36,8 @@ export interface LangContent {
 /** Shared layout for regional-language landing pages (/hi, /te, …). */
 export function LangLanding({ c }: { c: LangContent }) {
   return (
-    <div lang={c.lang} style={{ fontFamily: `var(${c.fontVar}), var(--font-jakarta), sans-serif` }}>
+    <div lang={c.lang} style={{ fontFamily: `${LANG_FONT[c.fontVar]?.family ?? "sans-serif"}, var(--font-jakarta), sans-serif` }}>
+      {LANG_FONT[c.fontVar] && <link rel="stylesheet" href={LANG_FONT[c.fontVar].css} precedence="default" />}
       <JsonLd data={faqLd(c.faqs)} />
       <section className="relative overflow-hidden bg-[radial-gradient(60%_60%_at_80%_10%,rgba(242,210,27,.18),transparent)]">
         <div className="container-x grid items-center gap-10 py-14 lg:grid-cols-[1.1fr_1fr]">

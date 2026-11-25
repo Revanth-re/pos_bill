@@ -1,5 +1,6 @@
 "use client";
 
+import { SupportButton } from "./SupportButton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChefHat, Store,
@@ -51,13 +52,15 @@ export function Sidebar({ role, businessName }: { role: StaffRole; businessName:
 
   return (
     <aside className="hidden md:flex md:w-[76px] lg:w-64 shrink-0 flex-col sticky top-0 h-screen overflow-y-auto bg-brand-dark text-white">
-      <div className="flex items-center justify-center px-3 pb-4 pt-5 lg:justify-start lg:px-5">
+      <div className="flex flex-col items-center gap-2 px-3 pb-4 pt-5 lg:flex-row lg:justify-between lg:px-5">
         <Link href="/dashboard" aria-label="Billo home" className="flex items-center gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
             <img src="/brand/billo-icon.png" alt="" className="h-8 w-8 object-contain" />
           </span>
           <img src="/brand/billo-wordmark-light.png" alt="Billo" className="hidden h-7 w-auto lg:block" />
         </Link>
+        {/* Small help icon next to the logo */}
+        <SupportButton variant="dot" />
       </div>
       <Link
         href="/profile"

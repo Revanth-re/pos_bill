@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { isBilloAdmin } from "@/lib/admin";
-import { istDayStart, istDaysAgoStart, istDateKey } from "@/lib/time";
+import { istDayStart, istDaysAgoStart, istDateKey, nowMs } from "@/lib/time";
 import Link from "next/link";
 import { formatINR } from "@/lib/utils";
 import { AdminNav } from "@/components/admin/AdminNav";
@@ -23,7 +23,8 @@ export default async function AdminUsagePage({ searchParams }: { searchParams: P
   const d30 = istDaysAgoStart(29);
   const live = { status: { notIn: ["CANCELLED", "REFUNDED"] as ("CANCELLED" | "REFUNDED")[] } };
 
-  const [businesses, last, recent, installs] = await Promise.all([
+  const onlineSince = new Date(nowMs() - 2 * 60_000); // seen in the last 2 minutes = online
+  const [businesses, last, recent, installs, online, active15, ratings] = await Promise.all([
     prisma.business.findMany({
       where: term
         ? {
@@ -53,7 +54,19 @@ export default async function AdminUsagePage({ searchParams }: { searchParams: P
       take: 100_000,
     }),
     prisma.auditLog.findMany({ where: { action: "APP_INSTALLED" }, select: { businessId: true, metadata: true, createdAt: true } }),
+    prisma.staff.findMany({
+      where: { lastSeenAt: { gte: onlineSince } },
+      orderBy: { lastSeenAt: "desc" },
+      select: { id: true, role: true, lastSeenAt: true, lastSeenPath: true, user: { select: { name: true } }, business: { select: { id: true, name: true } } },
+    }),
+    prisma.staff.count({ where: { lastSeenAt: { gte: new Date(nowMs() - 15 * 60_000) } } }),
+    prisma.auditLog.findMany({ where: { action: "APP_RATING" }, select: { businessId: true, metadata: true, createdAt: true }, orderBy: { createdAt: "asc" } }),
   ]);
+  // Star ratings: latest per shop, and the average across all ratings.
+  const starsOf = (m: unknown) => Number((m as { stars?: number } | null)?.stars ?? 0);
+  const latestRating = new Map<string, number>();
+  for (const r of ratings) latestRating.set(r.businessId, starsOf(r.metadata));
+  const avgRating = ratings.length ? ratings.reduce((a, r) => a + starsOf(r.metadata), 0) / ratings.length : 0;
   // Installed apps per shop: devices, and how many came from the Play Store vs Chrome's "Install app".
   const inst = new Map<string, { devices: number; play: number; chrome: number }>();
   for (const r of installs) {
@@ -118,6 +131,34 @@ export default async function AdminUsagePage({ searchParams }: { searchParams: P
         <p className="text-base text-muted">Every shop on Billo and how much it&apos;s really used. Visible only to the Billo team.</p>
       </div>
 
+      <section className="card p-4">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-success" />
+          </span>
+          <h2 className="text-lg font-bold text-ink">Online now: {online.length}</h2>
+          <span className="text-sm text-muted">· {active15} in the last 15 min · refresh to update</span>
+        </div>
+        {online.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">Nobody has Billo open right now.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border">
+            {online.map((o) => (
+              <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                <span>
+                  <b className="text-ink">{o.user.name}</b> <span className="text-muted">· {o.role}</span> ·{" "}
+                  <Link href={`/admin/shops/${o.business.id}`} className="font-semibold text-brand hover:underline">{o.business.name}</Link>
+                </span>
+                <span className="text-xs text-muted">
+                  on {o.lastSeenPath ?? "—"} · {fmtWhen(o.lastSeenAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Shops" value={String(businesses.length)} />
         <Kpi label="Active today" value={String(activeToday)} />
@@ -128,6 +169,8 @@ export default async function AdminUsagePage({ searchParams }: { searchParams: P
         <Kpi label="Income — all shops, all time" value={formatINR(last.reduce((a, l) => a + Number(l._sum.grandTotal ?? 0), 0))} />
         <Kpi label="Bills — all time" value={String(last.reduce((a, l) => a + l._count._all, 0))} />
         <Kpi label="Shops with app installed" value={String(installedShops)} />
+        <Kpi label="Rating" value={ratings.length ? `${avgRating.toFixed(1)} ★` : "—"} />
+        <Kpi label="Ratings given" value={String(ratings.length)} />
         <Kpi label="Installed devices" value={`${installedDevices} (${playDevices} Play Store)`} />
       </section>
 
@@ -163,6 +206,7 @@ export default async function AdminUsagePage({ searchParams }: { searchParams: P
                     <p className="text-xs text-muted">
                       {b._count.products} items · {b._count.staff} staff
                     </p>
+                    {latestRating.get(b.id) ? <p className="text-xs font-bold text-accent-dark">{"★".repeat(latestRating.get(b.id)!)}{"☆".repeat(5 - latestRating.get(b.id)!)}</p> : null}
                   </td>
                   <td className="p-3">
                     <p className="text-ink">{owner?.name ?? "—"}</p>

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Minus, Plus, Trash2, Percent, Tag, Printer, Save } from "lucide-react";
-import { useCartStore, estimateCartTotal } from "@/stores/cartStore";
+import { useCartStore } from "@/stores/cartStore";
+import { cartTotals } from "@/lib/billing/clientTotals";
 import { formatINR, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/LanguageProvider";
@@ -36,7 +37,9 @@ export function CartPanel({
 
   const [discountingLineId, setDiscountingLineId] = useState<string | null>(null);
 
-  const estimatedTotal = estimateCartTotal(lines);
+  // Same maths as the saved bill: item discounts + BILL discount (was missing before) + GST settings.
+  const totals = cartTotals(lines, billDiscount);
+  const estimatedTotal = totals.grandTotal;
   const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
 
   return (
@@ -156,6 +159,11 @@ export function CartPanel({
               <span>{t("pos.total")}</span>
               <span className="tabular text-2xl font-extrabold text-accent">{formatINR(estimatedTotal)}</span>
             </div>
+            {totals.discountTotal > 0 && (
+              <p className="mt-0.5 text-right text-xs font-semibold text-accent/90 tabular">
+                Discount −{formatINR(totals.discountTotal)} applied
+              </p>
+            )}
             <p className="mt-0.5 text-xs opacity-70">Includes GST · Cash by default, tap Split for other methods</p>
           </div>
 

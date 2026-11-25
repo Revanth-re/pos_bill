@@ -111,6 +111,9 @@ model Staff {
 
   role       StaffRole
   status     StaffStatus @default(ACTIVE)
+  /// Last time this login had Billo open (heartbeat every minute) — "Online now" on /admin.
+  lastSeenAt DateTime?
+  lastSeenPath String?
   pin        String?     // optional quick-login PIN for shared POS terminals
 
   orders        Order[]

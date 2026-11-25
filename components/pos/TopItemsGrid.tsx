@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductImage } from "@/components/ui/ProductImage";
 import { formatINR, cn } from "@/lib/utils";
+import { TileStepper } from "./TileStepper";
 import { useCartStore, type CartProduct } from "@/stores/cartStore";
 import { TOP_PAGE_SIZE } from "@/lib/pos/topItems";
 
@@ -37,23 +38,27 @@ export function TopItemsGrid({ products }: { products: CartProduct[] }) {
           const inCartQty = lines.find((l) => l.product.id === product.id)?.quantity ?? 0;
           const outOfStock = false; // no stock tracking
           return (
-            <button
+            // Whole tile adds one; the − qty + bar (above the name & price) adjusts without opening the cart.
+            <div
               key={product.id}
-              disabled={outOfStock}
+              role="button"
+              tabIndex={0}
+              aria-label={`Add ${product.name}`}
               onClick={() => addProduct(product)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  addProduct(product);
+                }
+              }}
               className={cn(
                 // Height is sized so 3 rows (6 cards) fit between the search bar and the cart bar.
-                "no-select relative flex h-[clamp(100px,calc((100dvh-27rem)/3),180px)] flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-sm transition-all duration-150",
-                "hover:border-brand/50 hover:shadow-md active:scale-[0.97]",
+                "no-select relative flex h-[clamp(100px,calc((100dvh-27rem)/3),180px)] cursor-pointer flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-sm transition-all duration-150",
+                "hover:border-brand/50 hover:shadow-md active:scale-[0.98]",
                 outOfStock && "pointer-events-none opacity-40",
                 inCartQty > 0 && "border-brand ring-2 ring-brand"
               )}
             >
-              {inCartQty > 0 && (
-                <span className="absolute right-1.5 top-1.5 z-10 flex h-7 min-w-7 items-center justify-center rounded-full bg-brand px-1.5 text-sm font-bold text-white tabular">
-                  {inCartQty}
-                </span>
-              )}
               <div className="relative min-h-0 w-full flex-1 overflow-hidden border-b border-border">
                 <ProductImage
                   src={product.imageUrl}
@@ -63,11 +68,16 @@ export function TopItemsGrid({ products }: { products: CartProduct[] }) {
                   className="absolute inset-0 h-full! w-full! object-cover"
                 />
               </div>
+              {inCartQty > 0 && (
+                <div className="shrink-0 px-2 pt-1">
+                  <TileStepper productId={product.id} qty={inCartQty} />
+                </div>
+              )}
               <div className="flex w-full shrink-0 items-end justify-between gap-1 px-2.5 py-2">
                 <span className="line-clamp-2 text-sm font-bold leading-tight text-ink">{product.name}</span>
                 <span className="shrink-0 text-base font-extrabold text-brand tabular">{formatINR(product.sellingPrice)}</span>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

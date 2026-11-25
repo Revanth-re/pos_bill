@@ -3,6 +3,7 @@
 import { ProductImage } from "@/components/ui/ProductImage";
 import { formatINR, cn } from "@/lib/utils";
 import { useCartStore, type CartProduct } from "@/stores/cartStore";
+import { TileStepper } from "./TileStepper";
 
 export function ProductGrid({ products }: { products: CartProduct[] }) {
   const addProduct = useCartStore((s) => s.addProduct);
@@ -26,23 +27,26 @@ export function ProductGrid({ products }: { products: CartProduct[] }) {
         const lowStock = false;
 
         return (
-          <button
+          // Whole tile adds one; the − qty + bar (above the price) adjusts without opening the cart.
+          <div
             key={product.id}
-            disabled={outOfStock}
+            role="button"
+            tabIndex={0}
+            aria-label={`Add ${product.name}`}
             onClick={() => addProduct(product)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                addProduct(product);
+              }
+            }}
             className={cn(
-              "no-select relative flex flex-col items-start overflow-hidden rounded-2xl border border-border bg-surface text-left transition-all duration-150 touch-target shadow-sm",
-              "hover:border-brand/50 hover:shadow-md active:scale-[0.97]",
+              "no-select relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-sm transition-all duration-150 touch-target",
+              "hover:border-brand/50 hover:shadow-md active:scale-[0.98]",
               outOfStock && "opacity-40 pointer-events-none",
               inCartQty > 0 && "border-brand ring-2 ring-brand"
             )}
           >
-            {inCartQty > 0 && (
-              <span className="absolute top-1.5 right-1.5 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-bold text-white tabular">
-                {inCartQty}
-              </span>
-            )}
-
             <ProductImage
               src={product.imageUrl}
               width={200}
@@ -55,17 +59,15 @@ export function ProductGrid({ products }: { products: CartProduct[] }) {
               <span className="text-sm font-bold text-ink line-clamp-2 min-h-[2.5em]">
                 {product.name}
               </span>
+              {inCartQty > 0 && <TileStepper productId={product.id} qty={inCartQty} />}
               <span className="mt-auto pt-1 text-base font-extrabold text-brand tabular">
                 {formatINR(product.sellingPrice)}
               </span>
-              {outOfStock && (
-                <span className="mt-1 text-xs font-semibold text-danger">Out of stock</span>
-              )}
               {!outOfStock && lowStock && (
                 <span className="mt-1 text-xs font-semibold text-accent-dark">Only {product.currentStock} left</span>
               )}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

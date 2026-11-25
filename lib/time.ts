@@ -49,3 +49,8 @@ export function istDateKey(d: Date): string {
 export function istHour(d: Date): number {
   return new Date(d.getTime() + IST_MS).getUTCHours();
 }
+
+/** Current time in ms (server components; keeps React's purity lint quiet). */
+export function nowMs(): number {
+  return Date.now();
+}

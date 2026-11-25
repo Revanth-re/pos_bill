@@ -6,6 +6,8 @@ import { getBusinessInsights, getQuickInsights } from "@/lib/insights/getBusines
 import { formatINR } from "@/lib/utils";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { DashboardText } from "@/components/dashboard/DashboardText";
+import { RatingPrompt } from "@/components/dashboard/RatingPrompt";
+import { pendingRatingMilestone } from "@/lib/rating";
 
 // "Today" = India-time day (servers run in UTC).
 const startOfToday = () => istDayStart();
@@ -45,7 +47,10 @@ export default async function DashboardPage() {
     value: formatINR(byMethod[m]),
     share: paidTotal > 0 ? (byMethod[m] / paidTotal) * 100 : 0,
   }));
-  const quickInsights = await getQuickInsights(session.businessId, todayInvoices, todaySales);
+  const [quickInsights, ratingMilestone] = await Promise.all([
+    getQuickInsights(session.businessId, todayInvoices, todaySales),
+    session.role === "OWNER" ? pendingRatingMilestone(session.businessId) : Promise.resolve(null),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 lg:p-6">
@@ -66,6 +71,7 @@ export default async function DashboardPage() {
       />
 
       <DashboardCharts />
+      {ratingMilestone && <RatingPrompt milestone={ratingMilestone} />}
     </div>
   );
 }

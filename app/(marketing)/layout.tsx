@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Telugu, Noto_Sans_Devanagari } from "next/font/google";
 import "./marketing.css";
 import { SITE } from "@/lib/marketing/site";
 import { Header } from "@/components/marketing/Header";
@@ -7,9 +6,8 @@ import { Footer } from "@/components/marketing/Footer";
 import { WhatsAppFab } from "@/components/marketing/WhatsAppFab";
 import { JsonLd, organizationLd, websiteLd, softwareLd } from "@/components/marketing/JsonLd";
 
-// Regional fonts only load on the public website pages (not inside the billing app).
-const telugu = Noto_Sans_Telugu({ subsets: ["telugu"], weight: ["400", "600", "700"], variable: "--font-telugu-face", display: "swap", preload: false });
-const hindi = Noto_Sans_Devanagari({ subsets: ["devanagari"], weight: ["400", "600", "700"], variable: "--font-hindi-face", display: "swap", preload: false });
+// Telugu / Hindi fonts load only on the /te and /hi pages (see LangLanding) — not through next/font,
+// whose Turbopack loader crashes on these fonts ("next/font/google queries have exactly one entry").
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -53,7 +51,7 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`mkt ${telugu.variable} ${hindi.variable} flex min-h-screen w-full flex-col`}>
+    <div className="mkt flex min-h-screen w-full flex-col">
       <JsonLd data={[organizationLd(), websiteLd(), softwareLd()]} />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">Skip to content</a>
       <Header />

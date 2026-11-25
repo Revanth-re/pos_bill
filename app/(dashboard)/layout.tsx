@@ -9,9 +9,12 @@ import { ServiceWorkerBoot } from "@/components/pos/ServiceWorkerBoot";
 import { ApiCacheBoot } from "@/components/pos/ApiCacheBoot";
 import { PhoneRequiredModal } from "@/components/pos/PhoneRequiredModal";
 import { InstallTracker } from "@/components/pos/InstallTracker";
+import { PresenceBeat } from "@/components/pos/PresenceBeat";
 import { InstallBanner } from "@/components/dashboard/InstallBanner";
 import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
+import { isBilloAdmin } from "@/lib/admin";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
@@ -19,12 +22,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Logged in with a shop that no longer exists (e.g. after a database move) → log out cleanly.
   if (!business) redirect("/api/session-reset");
 
+  // Billo team: only the admin panel, in its own simple frame (no shop menus, billing or popups).
+  if (isBilloAdmin(session.email)) return <AdminShell name={session.name}>{children}</AdminShell>;
+
   // Kitchen staff get a clean full-screen kitchen display — no menus, billing or reports.
   if (session.role === "KITCHEN") {
     return (
       <LanguageProvider initialLanguage={business.language}>
         <div className="app-shell flex min-h-dvh w-full flex-col">{children}</div>
         <ServiceWorkerBoot />
+        <PresenceBeat />
       </LanguageProvider>
     );
   }
@@ -44,6 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <ServiceWorkerBoot />
         <ApiCacheBoot />
         <InstallTracker />
+        <PresenceBeat />
         {session.role === "OWNER" && !business.phone && <PhoneRequiredModal />}
       </div>
     </LanguageProvider>

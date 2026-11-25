@@ -12,7 +12,7 @@ import { PaymentSheet } from "./PaymentSheet";
 import { HeldBillsSheet } from "./HeldBillsSheet";
 import { ReceiptModal } from "./ReceiptModal";
 import { ConnectionStatus } from "./ConnectionStatus";
-import { useCartStore, estimateCartTotal, type CartProduct } from "@/stores/cartStore";
+import { useCartStore, type CartProduct } from "@/stores/cartStore";
 import { useCatalogStore } from "@/stores/catalogStore";
 import { formatINR } from "@/lib/utils";
 import { submitBill } from "@/lib/billing/submitBill";
@@ -61,6 +61,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
   const t = useT();
 
   const lines = useCartStore((s) => s.lines);
+  const cartBillDiscount = useCartStore((s) => s.billDiscount);
   const orderType = useCartStore((s) => s.orderType);
   const addProduct = useCartStore((s) => s.addProduct);
 
@@ -223,7 +224,7 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     );
     const isUdhaari = creditOnly || (serverPayments.length > 0 && serverPayments.every((p) => p.method === "CREDIT"));
     if (isUdhaari) {
-      const total = Number((invoice as { grandTotal?: number } | undefined)?.grandTotal ?? totals?.grandTotal ?? estimateCartTotal(lines));
+      const total = Number((invoice as { grandTotal?: number } | undefined)?.grandTotal ?? totals?.grandTotal ?? cartTotals(lines, useCartStore.getState().billDiscount).grandTotal);
       toast.success(`${formatINR(total)} added to the customer's credit`);
       void useCatalogStore.getState().ensureCustomers({ force: true });
       useCartStore.getState().clear();
@@ -277,7 +278,8 @@ export function BillingScreen({ businessName, cashierName }: Props) {
     setReceipt({ data, offline: result.offline });
   }
 
-  const estimatedTotal = estimateCartTotal(lines);
+  // Same maths as the saved bill: item discounts + BILL discount + GST settings.
+  const estimatedTotal = cartTotals(lines, cartBillDiscount).grandTotal;
   const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
   const showBootSpinner = products.length === 0 && (loadingProducts || !hydrated);
 
@@ -336,9 +338,9 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           <button
             onClick={() => handleQuickPrint(false)}
             disabled={quickPrinting}
-            className="flex min-h-14 flex-col items-center justify-center gap-0.5 border-r border-white/10 px-3.5 text-xs font-semibold text-white/90 active:bg-white/5 disabled:opacity-60"
+            className="flex min-h-14 flex-col items-center justify-center gap-0 border-r border-white/10 px-2.5 text-[11px] font-semibold text-white/90 active:bg-white/5 disabled:opacity-60"
           >
-            <Save className="h-5 w-5" />
+            <Save className="h-4 w-4" />
             Save
           </button>
           <button
