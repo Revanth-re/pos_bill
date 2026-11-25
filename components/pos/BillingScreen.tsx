@@ -24,6 +24,7 @@ import { toast } from "@/stores/toastStore";
 import { useT } from "@/lib/i18n/LanguageProvider";
 import type { ReceiptData } from "@/lib/printing/types";
 import { reconnectSavedPrinter } from "@/lib/printing/bluetoothPairing";
+import { AddProductsNudge } from "@/components/dashboard/AddProductsNudge";
 import { loadBillFormat } from "@/lib/printing/billFormat";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -312,6 +313,11 @@ export function BillingScreen({ businessName, cashierName }: Props) {
           {showBootSpinner ? (
             <div className="flex justify-center py-16">
               <Spinner />
+            </div>
+          ) : products.length === 0 ? (
+            // Brand-new shop: nothing to bill yet → point straight to the Add Product form.
+            <div className="mx-auto max-w-xl py-6">
+              <AddProductsNudge compact />
             </div>
           ) : activeCategory === TOP_TAB && !query && topProducts.length > 0 ? (
             <TopItemsGrid products={topProducts} />

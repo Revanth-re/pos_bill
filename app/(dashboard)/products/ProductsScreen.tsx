@@ -42,7 +42,7 @@ function Thumbnail({ url, size = 44 }: { url: string | null; size?: number }) {
   );
 }
 
-export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
+export function ProductsScreen({ canEdit, openNew = false }: { canEdit: boolean; openNew?: boolean }) {
   const products = useCatalogStore((s) => s.managedProducts);
   const categories = useCatalogStore((s) => s.categories);
   const loading = useCatalogStore((s) => s.loadingManaged);
@@ -52,7 +52,7 @@ export function ProductsScreen({ canEdit }: { canEdit: boolean }) {
 
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(openNew);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
   const [hydrated, setHydrated] = useState(false);
 

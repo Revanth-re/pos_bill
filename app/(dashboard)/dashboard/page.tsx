@@ -7,6 +7,8 @@ import { formatINR } from "@/lib/utils";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { DashboardText } from "@/components/dashboard/DashboardText";
 import { RatingPrompt } from "@/components/dashboard/RatingPrompt";
+import { AddProductsNudge } from "@/components/dashboard/AddProductsNudge";
+import { getMenuScope } from "@/lib/menu";
 import { pendingRatingMilestone } from "@/lib/rating";
 
 // "Today" = India-time day (servers run in UTC).
@@ -47,13 +49,16 @@ export default async function DashboardPage() {
     value: formatINR(byMethod[m]),
     share: paidTotal > 0 ? (byMethod[m] / paidTotal) * 100 : 0,
   }));
-  const [quickInsights, ratingMilestone] = await Promise.all([
+  const [quickInsights, ratingMilestone, productCount] = await Promise.all([
     getQuickInsights(session.businessId, todayInvoices, todaySales),
     session.role === "OWNER" ? pendingRatingMilestone(session.businessId) : Promise.resolve(null),
+    getMenuScope(session.businessId).then((m) => prisma.product.count({ where: { businessId: { in: m.ids } } })),
   ]);
+  const canAddProducts = can(session.role, "products.edit");
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 lg:p-6">
+      {productCount === 0 && canAddProducts && <AddProductsNudge />}
       <DashboardText
         firstName={session.name.split(" ")[0]}
         todaySales={formatINR(todaySales)}
